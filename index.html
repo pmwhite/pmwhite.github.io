@@ -1,0 +1,97 @@
+<!DOCTYPE>
+<html>
+  <head>
+    <link rel="stylesheet" href="style.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Blog Post</title>
+  </head>
+  <body>
+    <h1>Make new types more often</h1>
+    <p>I believe it is better for different kinds of things to have different
+    types. This has a few benefits:</p>
+
+    <ul>
+      <li>The compiler can help you not mix things up as much.</li>
+      <li>You can understanding some of the meaning of data just from its type,
+        without even looking at what produced it.</li>
+      <li>Fewer irrelevant functions can be called on each piece of data.</li>
+    </ul>
+
+    <p>It is possible to divide data with the wrong types, of course, but it is
+    not possible to go "too far" or "not far enough" - the failure mode is only
+    "wrong". The structure of types should match the structure of behavior/domain
+    concepts, so mistakes are simply places where the types don't match the
+    behavior; type structure design is the practice of using your language's type
+    system tools to match behavior as closely as possible.</p>
+
+    <p>The option type is an excellent example of where I think people go
+    wrong. It shows up when some data doesn't exist or can't be found. The
+    problem is that because it is used everywhere, all the type communicates is
+    this absence; there's no indication of why the data is gone, or what to do
+    in that case. In other words, option has no domain meaning.</p>
+
+    <p>Another good example is result. It is just like option, but instead of
+    an empty "none" case, it has an "error" case filled with some error
+    data. If the error data is a domain-specific type, then it is easy enough
+    to understand what the error intends to communicate; however, having the
+    all-purpose error as a wrapper around the domain type still adds unnecessary
+    noise, not to mention the possibility for mistakes (more on this later).</p>
+
+    <p>One way to look at option and result is that they are they same sort of
+    thing as records and variants: ways of building complex types out of
+    simpler types. By this argument, why should they be bad types, since we use
+    records and variants all the time. My response to this is that the much
+    better comparison is with tuples and the "either" type. The difference
+    between tuples and records, and between either and variants, is that the
+    former are structural, and do not introduce new types, but the latter
+    always introduce new, incompatible types. The incompatibility is, in my
+    opinion, the killer feature, more than anything like the ability to name
+    fields or use more concise syntax for field access.</p>
+
+    <p>I hinted before that result's error case increases the chances of making
+    mistakes. The reason is that the result module comes with a lot of utility
+    functions, and only some of them will be used in each domain-specific
+    type. For example, having access to a monadic result-chaining API makes it
+    easy to abort immediately when an error occurs, rather than attempting to
+    handle it gracefully. If each result type were a distinct type, rather than
+    sharing the all-purpose result type, then you would only have access to a
+    monadic API where it is appropraite.</p>
+
+    <h2>But DRY!</h2>
+
+    <p>You might think that taking my suggestions to the extreme would cause to
+    build a different hash table implementation for each domain that needs a
+    hash table. Of course I don't think this, and the reason is that everything
+    I'm saying is about <em>interfaces</em>. Every worthwhile software design
+    principle is about interfaces. I don't care how abstractions are
+    implemented. You can use result or option or hash tables or persistent
+    maps as much as you want; just don't let any of that stuff leak into the
+    interface of your module. I don't want to see it!</p>
+
+    <p>My position is that you should build useful abstractions, and each
+    abstraction will be its own domain, with its own set of domain types. The
+    implementation can deal with several other abstractions, each with
+    <em>their</em> own domain. So programming is about composing low-level
+    domains together to build higher-level domains.</p>
+
+    <h2>Ugggh, but option and result are so convenient.</h2>
+
+    <p>Yeah, true. It can be annoying that you can't have access to
+    <code>Option.map</code> because of you used a new, domain-specific type
+    instead of the option type. A reasonable approach is to use common sense to
+    make a new type where appropriate. However, I believe this is not a good
+    approach because all the convenience you gain from being able to use custom
+    types will be lost in a couple ways:</p>
+
+    <ul>
+      <li>You'll make more mistakes, because general-purpose types are more
+        error-prone than special-purpose types. (this is certainly a debatable
+        point, but the whole point of this post is to convince you of my
+        position here.)</li>
+
+      <li>You'll have to waste a bunch of your time talking with colleagues
+        about when it is or is not worth adding a new type. Don't bikeshed
+        about it! Just make a new type every time; it's not <em>that</em> much extra.</li>
+    </ul>
+  </body>
+</html>
