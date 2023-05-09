@@ -12,3 +12,34 @@ html, body {
 h1 {
   line-height: 1.35;
 }
+
+pre, code {
+  color: black;
+  background-color: #d3d3d361;
+}
+
+pre {
+  padding: 1em;
+  border-radius: 1em;
+}
+
+code {
+  padding-left: 0.5em;
+  padding-right: 0.5em;
+  padding-top: 0.2em;
+  padding-bottom: 0.2em;
+  border-radius: 0.5em;
+}
+
+pre em {
+  font-style: normal;
+  font-weight: bold;
+}
+
+kw {
+  color: darkblue;
+}
+
+type {
+  color: brown;
+}
