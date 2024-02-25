@@ -10,7 +10,7 @@
 
     <p>OCaml has this weird feature of its type system called "Generalized
     Algebraic Data Types", or GADTs, for short. Experts typically use this
-    feature to haze newcomers to the language. (unintentionally, of course)
+    feature to haze newcomers to the language (unintentionally, of course).
     This page aims to fix this problem by enabling the reader to be the expert
     inflicting the suffering, rather than the sufferer.</p>
 
@@ -83,7 +83,7 @@ type 'a list
     values, then this shouldn't bother you at all; <code>Map</code> is just an
     ordinary constructor that contains two pieces of sub-data.</p>
 
-    <p>One way to look at constructors is that they are functions the don't do
+    <p>One way to look at constructors is that they are functions that don't do
     anything in the moment, but then later you can look at them to see what
     parameters they were called with. We can pattern match on the fancy list
     type and eliminate the <code>Map</code> constructor by actually doing the
@@ -105,7 +105,7 @@ type 'a list
     reading on.</p>
 
     <p>The answer is that the compiler has to make up a temporary abstract type
-    for parameter of the list, so <code>xs</code> has a type like <code>$1 <type>list</type></code>.
+    for the items of the list, so <code>xs</code> has a type like <code>$1 <type>list</type></code>.
     The <code>$1</code> is the type of the list items when
     <code>Map</code> was originally called, but the compiler doesn't remember
     what the type is, so the body of that match case has to treat it as an
@@ -121,8 +121,8 @@ type 'a list
 
     <p>The view that constructors are like functions is helpful for seeing the
     extra power that GADTs provide. The ordinary <code><kw>of</kw></code>-syntax for
-    variants requires any type parameters in the parameters to be matched by
-    type parameters in the type itself. For example, here is some invalid code
+    variants requires any type variables in the constructor to be matched by
+    type variables in the type itself. For example, here is some invalid code
     in which we try to define the fancy list type with <code><kw>of</kw></code>-syntax.</p>
 
     <pre>
