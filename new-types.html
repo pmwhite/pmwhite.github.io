@@ -37,7 +37,7 @@
     all-purpose error as a wrapper around the domain type still adds unnecessary
     noise, not to mention the possibility for mistakes (more on this later).</p>
 
-    <p>One way to look at option and result is that they are they same sort of
+    <p>One way to look at option and result is that they are the same sort of
     thing as records and variants: ways of building complex types out of
     simpler types. By this argument, why should they be bad types, since we use
     records and variants all the time. My response to this is that the much
@@ -77,7 +77,7 @@
     <h2>Ugggh, but option and result are so convenient.</h2>
 
     <p>Yeah, true. It can be annoying that you can't have access to
-    <code>Option.map</code> because of you used a new, domain-specific type
+    <code>Option.map</code> because you used a new, domain-specific type
     instead of the option type. A reasonable approach is to use common sense to
     make a new type where appropriate. However, I believe this is not a good
     approach because all the convenience you gain from being able to use custom
@@ -91,7 +91,7 @@
 
       <li>You'll have to waste a bunch of your time talking with colleagues
         about when it is or is not worth adding a new type. Don't bikeshed
-        about it! Just make a new type every time; it's not <em>that</em> much extra.</li>
+        about it! Just make a new type every time; it's not <em>that</em> much extra work.</li>
     </ul>
   </body>
 </html>
