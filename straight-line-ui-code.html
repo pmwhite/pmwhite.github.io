@@ -1,0 +1,61 @@
+<!DOCTYPE>
+<html>
+  <head>
+    <link rel="stylesheet" href="styles.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>On writing interactive UIs with straight-line code.</title>
+  </head>
+  <body>
+
+    <h1>On writing interactive UIs with straight-line code.</h1>
+
+    <p>The first several programs I wrote were command-line apps that used C#'s
+    <code>Console.ReadLine</code> method to get input from the user. It was simple,
+    blocking, direct, straight-line code; whenever I wanted something from the
+    user, and asked for it and waited until they replied. There are a lot
+    convenient things about this style of user interface.</p>
+
+    <p>Later, when I learned to build graphical programs and web apps, I
+    transitioned to using event handlers that would modify some data that would
+    then get rendered on the page. It was tricky, asynchronous, callback-heavy,
+    and scattered code; whenever I wanted something from the user, I gave them
+    a button to click, added a click listener to update some state, and
+    then read that state in the place where I actually wanted it.</p>
+
+    <p>The main pain point of this later approach that I wish I could get away
+    from is that all state must be explicit. I'm not referring to the state the
+    gets displayed to and modified by the user; that always needs to be
+    explicit. What I'm talking about is the state of some interaction flow.
+    It's the progress that the user has made through some function, and the
+    information about which variables are available for computation. In the
+    first approach, this state was kept implicitly by the programming
+    language's scope, and the runtime's program counter.</p>
+
+    <p>An analog to this dichotomy exists in other fields of programming. In
+    parsing, recursive descent parsers are direct and easy to write by hand,
+    while automata parsers are indirect and so annoying to write that we rely on
+    tools like Yacc to generate them. Another example is the recent trend for
+    programming languages to support <code>async</code> and <code>await</code>
+    keywords to facilitate clean asynchronous code; before these features
+    existed, programmers had to choose between "callback purgatory" and making
+    the state of the control flow totally explicit.</p>
+
+    <p>Here is an idea for how to make UI programming more convenient: enrich
+    the kind of requests that <code>Console.ReadLine</code> can make. Instead
+    of asking for plain text, the function should present a rendered snippet of
+    HTML and wait for the user to interact with it. The function would return
+    the specific interaction performed by the user, and then the rest of the
+    code can branch on it and perform computations until it eventually calls
+    <code>Console.ReadLine</code> again.</p>
+
+    <p>The result of this ida is that you write programs whose execution steps
+    through various UI states. The user, then, is the agent that determines
+    which branches of execution to take.</p>
+
+    <p>The mention of <code>Console.ReadLine</code> is purely for concreteness.
+    In reality, you might have some monadic library with a <code>present</code>
+    operation. Application code would be written inside this monad, and there
+    would be a separate <code>eval</code> function that drives the UI forward
+    as guided by the user.</p>
+  </body>
+</html>
