@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <link rel="stylesheet" href="styles.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Bottlenecks.</title>
+  </head>
+  <body>
+    <p><em>Prelude:</em> This is a short essay about abstraction in software
+    design, but instead of the word "abstraction", I use the phrase "design
+    bottleneck". I hope the reason for this will be apparent in the ensuing
+    paragraphs.</p>
+
+    <h1>Bottlenecks.</h1>
+
+    <p>The time it takes to empty a bottle of liquid depends on size of the
+    bottle's neck. If the neck is small, it may take a long time to drain the
+    bottle, even if it is completely upside-down.</p>
+
+    <p>Programmers often use the imagery of emptying a bottle with a small neck
+    to describe what happens when a relatively small piece of code has an
+    outsided impact on the overall speed of the software. Just like how it
+    takes a long time for gravity to force a lot of liquid through a small
+    opening, so also it takes a long time for a CPU to force a lot of data
+    through an inefficient or expensive piece of code.</p>
+
+    <p>The point of finding bottlenecks in code is so that you can eliminate
+    them, or at least reduce their signficance, by either visiting that code
+    more often or making it much faster.</p>
+
+    <p>There is another aspect of small bottle necks that is interesting,
+    besides the fact that the slow the rate of flow: they also force all flow
+    to go through a common area. In other words, they constrain the area
+    through which the inside of the bottle and the outside world can
+    interact.</p>
+
+    <p>This second feature of bottlenecks is useful imagery for describing some
+    abstractions. Consider, for example, a compiler for a functional
+    programming language. The frontend of this theoretical compiler is
+    responsible for translating high-level expression syntax into pure lambda
+    calculus terms. The backend is responsible for translating the lambda
+    calculus terms into efficient machine code. I would call this lambda
+    calculus intermediate representation a "design bottleneck" because it
+    forces the frontend and backend to meet in the middle at a very small
+    interface. For contrast, you could also imagine a different design in there
+    is just one section of the compiler that translates high-level expression
+    syntax directly into machine code.</p>
+
+    <p>For both sides of the bottleneck, the constraint provides a sort of
+    freedom. The frontend can define syntactic constructs entirely by their
+    desugaring to lambda calculus terms, and the backend can focus completely
+    on translating the simple language of lambda calculus to machine code.</p>
+
+    <p>But it is also true that each part of the compiler has a more difficult
+    job than before. If the frontend communicated more information about the
+    terms it produced, the backend would likely be able to generate more
+    efficient output. Conversely, if the backend accepted more than just lambda
+    calculus, the frontend may not have to do some kinds of analysis to get to
+    the final form.</p>
+
+    <p>A large part of designing systems is choosing a bottleneck (a.k.a. an
+    abstraction) whose constraints provide a lot of freedom without imposing
+    much extra burden. In addition, since design bottlenecks often make code
+    less efficient, it is usually best if they do not coincide with performance
+    bottlenecks.</p>
+
+    <p>I will end with some exhortations. Think outside the box when picking a set
+    of abstractions for a piece of software. Experiment before settling on a
+    final design. Pick various parts of the system and see what happens when
+    their bottlenecks are almost impossibly small. Sometimes ideas that seem
+    ridiculous turn out to be extremely powerful and freeing.</p>
+  </body>
+</html>
