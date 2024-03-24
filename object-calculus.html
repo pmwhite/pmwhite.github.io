@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <link rel="stylesheet" href="styles.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Object calculus.</title>
+  </head>
+  <body>
+
+    <h1>Object calculus.</h1>
+
+    <p>Object calculus is an alternative to lambda calculus as a minimal
+    foundation of computation. The one construct in the language is the
+    "object", which encodes both data and computation. You can play around with
+    it in the sandbox editor below.</p>
+
+    <div id="sandbox">
+      <div class="grow-wrap">
+        <textarea id="sandbox-input"
+          spellcheck="false"
+          oninput="this.parentNode.dataset.replicatedValue = this.value"></textarea>
+      </div>
+      <div id="sandbox-message"></div>
+    </div>
+
+    <h2>Syntax</h2>
+
+    <p>An object is a series of "equations", which are pairs of "expressions".
+    An expression is a name, object, fixpoint, field access, merge, or resolve. The
+    following examples illustrate these cases:</p>
+
+    <p>The empty object.</p>
+
+    <pre class="example">
+{}</pre>
+
+    <p>The abstract name</p>
+
+    <pre class="example">
+name</pre>
+
+    <p>Equations of two names.</p>
+
+    <pre class="example">
+{ x = x }</pre>
+
+    <pre class="example">
+{ a = b }</pre>
+
+    <p>Equations between variable and object.</p>
+
+    <pre class="example">
+{ x = {} }</pre>
+
+    <pre class="example">
+{ x = { x = { x = { x = {} } } } }</pre>
+
+    <pre class="example">
+{ x = { x = { x = { x = {} } } } }</pre>
+
+
+
+    <p>Object with a lot of fields.</p>
+
+    <pre class="example">
+{ zero = {}
+, one = { x = {} }
+, two = { x = { x = {} } }
+, three = { x = { x = { x = {} } } }
+, four = { x = { x = { x = { x = {} } } } }
+}</pre>
+
+    <p>Recursive object. The <code>$</code> character represents the current object.</p>
+
+    <pre class="example">
+{ x = $ }</pre>
+
+    <p>Field access.</p>
+
+    <pre class="example">
+{ x = {} }.x</pre>
+
+    <p>Merging two objects. Merging is denoted by juxtaposition instead of an
+    explicit operator.</p>
+
+    <pre class="example">
+{ x = {} } &amp; { y = {} }</pre>
+
+    <pre class="example">
+{ x = {}, x = y } &amp; { y = z }</pre>
+
+    <script src="object-calculus.js"></script>
+  </body>
+</html>

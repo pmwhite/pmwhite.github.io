@@ -43,3 +43,46 @@ kw {
 type {
   color: brown;
 }
+
+.grow-wrap {
+  display: grid;
+}
+
+.grow-wrap > textarea {
+  resize: none;
+  overflow: hidden;
+}
+
+.grow-wrap::after {
+  content : attr(data-replicated-value) " ";
+  white-space: pre-wrap;
+  visibility: hidden;
+}
+
+.grow-wrap > textarea,
+.grow-wrap::after {
+  border: 1px solid black;
+  padding: 0.5rem;
+  font-family: monospace;
+  font-size: 1rem;
+  grid-area: 1 / 1 / 2 / 2;
+  line-height: 1.2rem;
+}
+
+#sandbox-message {
+  font-size: 0.75rem;
+}
+
+span.error-location {
+  color: red;
+  font-weight: bold;
+  font-style: normal;
+}
+
+.example hr {
+  opacity: 0.3;
+}
+
+.example {
+  overflow-x: auto;
+}
