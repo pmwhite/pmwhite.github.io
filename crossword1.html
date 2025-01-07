@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <link rel="stylesheet" href="styles.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Crossword 1</title>
+  </head>
+  <body>
+    <div class="crossword">
+      <div class="crossword-row">
+        <div class="crossword-close"></div>
+        <div class="crossword-open">1</div>
+        <div class="crossword-open">2</div>
+        <div class="crossword-open">3</div>
+        <div class="crossword-open">4</div>
+      </div>
+      <div class="crossword-row">
+        <div class="crossword-open">5</div>
+        <div class="crossword-open"></div>
+        <div class="crossword-open"></div>
+        <div class="crossword-open"></div>
+        <div class="crossword-open"></div>
+      </div>
+      <div class="crossword-row">
+        <div class="crossword-open">6</div>
+        <div class="crossword-open"></div>
+        <div class="crossword-open"></div>
+        <div class="crossword-open"></div>
+        <div class="crossword-open"></div>
+      </div>
+      <div class="crossword-row">
+        <div class="crossword-open">7</div>
+        <div class="crossword-open"></div>
+        <div class="crossword-open"></div>
+        <div class="crossword-open"></div>
+        <div class="crossword-open"></div>
+      </div>
+      <div class="crossword-row">
+        <div class="crossword-open">8</div>
+        <div class="crossword-open"></div>
+        <div class="crossword-open"></div>
+        <div class="crossword-open"></div>
+        <div class="crossword-close"></div>
+      </div>
+    </div>
+    <div class="crossword-clues">
+      <div>
+        <h2>Across</h2>
+        <ol>
+          <li value="1">Weekly gathering of Catholics</li>
+          <li value="5">___ polo</li>
+          <li value="6">Beneficiary of a bell ring</li>
+          <li value="7">Song sung with staggered start times</li>
+          <li value="8">Forest inhabitant</li>
+        </ol>
+      </div>
+      <div>
+        <h2>Down</h2>
+        <ol>
+          <li value="1">Large house, maybe owned by a lord</li>
+          <li value="2">Bicker</li>
+          <li value="3">Where clues to a crime are typically found</li>
+          <li value="4">In other words, we are no longer accepting offers</li>
+          <li value="5">Common gas station attachment</li>
+        </ol>
+      </div>
+    </div>
+    <div class="crossword-solution">
+      <div id="crossword-solution" class="crossword crossword-hidden">
+        <div class="crossword-row">
+          <div class="crossword-close"></div>
+          <div class="crossword-open-solution">M</div>
+          <div class="crossword-open-solution">A</div>
+          <div class="crossword-open-solution">S</div>
+          <div class="crossword-open-solution">S</div>
+        </div>
+        <div class="crossword-row">
+          <div class="crossword-open-solution">M</div>
+          <div class="crossword-open-solution">A</div>
+          <div class="crossword-open-solution">R</div>
+          <div class="crossword-open-solution">C</div>
+          <div class="crossword-open-solution">O</div>
+        </div>
+        <div class="crossword-row">
+          <div class="crossword-open-solution">A</div>
+          <div class="crossword-open-solution">N</div>
+          <div class="crossword-open-solution">G</div>
+          <div class="crossword-open-solution">E</div>
+          <div class="crossword-open-solution">L</div>
+        </div>
+        <div class="crossword-row">
+          <div class="crossword-open-solution">R</div>
+          <div class="crossword-open-solution">O</div>
+          <div class="crossword-open-solution">U</div>
+          <div class="crossword-open-solution">N</div>
+          <div class="crossword-open-solution">D</div>
+        </div>
+        <div class="crossword-row">
+          <div class="crossword-open-solution">T</div>
+          <div class="crossword-open-solution">R</div>
+          <div class="crossword-open-solution">E</div>
+          <div class="crossword-open-solution">E</div>
+          <div class="crossword-close"></div>
+        </div>
+      </div>
+      <button onclick="reveal_crossword_solution()" id="crossword-reveal-button" type="button">Reveal</button>
+    </div>
+    <script type="application/javascript" src="crossword.js"></script>
+  </body>
+</html>

@@ -86,3 +86,71 @@ span.error-location {
 .example {
   overflow-x: auto;
 }
+
+.crossword {
+  margin: auto;
+  width: fit-content;
+}
+
+.crossword-row {
+  display: flex;
+  flex-direction: horizontal;
+}
+
+.crossword-open-solution {
+  width: 50px;
+  height: 50px;
+  background-color: #e2e8f0;
+  margin: 1px;
+  font-size: 30px;
+  line-height: 50px;
+  text-align: center;
+}
+
+.crossword-open {
+  width: 47px;
+  height: 47px;
+  background-color: #e2e8f0;
+  margin: 1px;
+  font-size: 15px;
+  padding-top: 3px;
+  padding-left: 3px;
+}
+
+.crossword-open:before {
+  width: 15px;
+}
+
+.crossword-close {
+  width: 50px;
+  height: 50px;
+  background-color: #334155;
+  margin: 1px;
+}
+
+.crossword-clues {
+  display: flex;
+  flex-direction: horizontal;
+  justify-content: space-around;
+}
+
+.crossword.crossword-hidden {
+  opacity: 0%;
+  transition: opacity 1s;
+}
+.crossword {
+  opacity: 100%;
+  transition: opacity 1s;
+}
+
+.crossword-solution {
+  position: relative;
+}
+
+#crossword-reveal-button {
+  position: absolute;
+  margin: auto;
+  inset: 0;
+  width: fit-content;
+  height: fit-content;
+}
