@@ -154,3 +154,7 @@ span.error-location {
   width: fit-content;
   height: fit-content;
 }
+
+.crossword-attribution {
+  text-align: center;
+}
