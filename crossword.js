@@ -84,23 +84,19 @@ const set_selected_square_text = text => {
   text_element.innerHTML = text;
 };
 
-document.addEventListener('keydown', event => {
-  switch (event.key) {
+const handle_key = key => {
+  switch (key) {
     case 'ArrowRight':
       move_forward_horizontally();
-      event.preventDefault();
       break;
     case 'ArrowLeft':
       move_backward_horizontally();
-      event.preventDefault();
       break;
     case 'ArrowDown':
       move_forward_vertically();
-      event.preventDefault();
       break;
     case 'ArrowUp':
       move_backward_vertically();
-      event.preventDefault();
       break;
     case 'Backspace':
       if (current_direction === 'horizontal') {
@@ -109,7 +105,6 @@ document.addEventListener('keydown', event => {
         move_backward_vertically();
       }
       set_selected_square_text('');
-      event.preventDefault();
       break;
     case 'a':
     case 'A':
@@ -163,7 +158,7 @@ document.addEventListener('keydown', event => {
     case 'Y':
     case 'z':
     case 'Z':
-      set_selected_square_text(event.key.toUpperCase());
+      set_selected_square_text(key.toUpperCase());
       if (current_direction === 'horizontal') {
         move_forward_horizontally();
       } else if (current_direction === 'vertical') {
@@ -171,7 +166,9 @@ document.addEventListener('keydown', event => {
       }
       break;
   }
-});
+}
+
+document.addEventListener('keydown', event => handle_key(event.key));
 
 for (const square of horizontal_order) {
   square.classList.add('cursor-pointer');
@@ -192,5 +189,12 @@ for (const square of horizontal_order) {
       let on_deck_index = (current_index + 1) % horizontal_order.length;
       set_selected_square(square, horizontal_order[on_deck_index]);
     }
+  });
+}
+
+for (let key of document.querySelectorAll('.crossword-keyboard>div')) {
+  key.addEventListener('click', () => {
+    console.log(key.innerHTML);
+    handle_key(key.innerHTML);
   });
 }

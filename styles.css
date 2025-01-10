@@ -166,3 +166,27 @@ span.error-location {
   cursor: pointer;
   user-select: none;
 }
+
+.crossword-keyboard {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 25px;
+}
+
+.crossword-keyboard>div {
+  padding: 4px 25px;
+  margin: 1px;
+  background: #e4e4e7;
+  user-select: none;
+  cursor: pointer;
+}
+
+.crossword-keyboard>div:hover {
+  background: #d4d4d8;
+}
+
+.crossword-keyboard>div:active {
+  background: #a1a1aa;
+}
