@@ -97,16 +97,6 @@ span.error-location {
   flex-direction: horizontal;
 }
 
-.crossword-open-solution {
-  width: 50px;
-  height: 50px;
-  background-color: #e2e8f0;
-  margin: 1px;
-  font-size: 30px;
-  line-height: 50px;
-  text-align: center;
-}
-
 .crossword-open {
   width: 50px;
   height: 50px;
@@ -126,8 +116,12 @@ span.error-location {
   left: 3px;
 }
 
-.crossword-open:before {
-  width: 15px;
+.crossword-selected-square {
+  background-color: #d2d8ff;
+}
+
+.crossword-on-deck-square {
+  background-color: #e9e9ff;
 }
 
 .crossword-close {
@@ -166,4 +160,9 @@ span.error-location {
 
 .crossword-attribution {
   text-align: center;
+}
+
+.cursor-pointer {
+  cursor: pointer;
+  user-select: none;
 }
