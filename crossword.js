@@ -194,7 +194,6 @@ for (const square of horizontal_order) {
 
 for (let key of document.querySelectorAll('.crossword-keyboard>div')) {
   key.addEventListener('click', () => {
-    console.log(key.innerHTML);
     handle_key(key.innerHTML);
   });
 }

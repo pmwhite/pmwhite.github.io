@@ -137,6 +137,10 @@ span.error-location {
   justify-content: space-around;
 }
 
+.crossword-clues>div {
+  flex: 1
+}
+
 .crossword.crossword-hidden {
   opacity: 0%;
   transition: opacity 1s;
@@ -172,7 +176,7 @@ span.error-location {
   flex-direction: row;
   flex-wrap: wrap;
   justify-content: center;
-  margin-top: 25px;
+  margin-top: 15px;
 }
 
 .crossword-keyboard>div {
