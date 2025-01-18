@@ -194,3 +194,29 @@ span.error-location {
 .crossword-keyboard>div:active {
   background: #a1a1aa;
 }
+
+.crossword-link {
+  display: block;
+  width: 100px;
+  height: 100px;
+  text-align: center;
+  line-height: 100px;
+  margin: 1px;
+  text-decoration: none;
+  font-size: 25px;
+  background: #e4e4e7;
+  color: black;
+}
+
+.crossword-link:hover {
+  background: #d4d4d8;
+}
+
+.crossword-link:active {
+  background: #a1a1aa;
+}
+.crossword-link-container {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+}
