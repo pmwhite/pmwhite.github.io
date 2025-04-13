@@ -1,11 +1,17 @@
 <?php
+
+$ocaml_gadts_page = 
+  [ "title" => "How to understand OCaml's GADTs."
+  , "id" => "ocaml-gadts" ];
+
+$modularity_page = 
+  [ "title" => "Modularity is about dependencies."
+  , "id" => "modularity" ];
+
 $pages = [
 
-  [ "title" => "How to understand OCaml's GADTs."
-  , "id" => "ocaml-gadts" ],
-
-  [ "title" => "Modularity is about dependencies."
-  , "id" => "modularity" ],
+  $ocaml_gadts_page,
+  $modularity_page,
 
   [ "title" => "Make new types more often."
   , "id" => "new-types" ],
@@ -23,4 +29,26 @@ $pages = [
   , "id" => "cycling-log-2025" ],
 
 ];
+
+function essay_begin($page) {
+?>
+<!DOCTYPE>
+<html>
+<head>
+  <link rel="stylesheet" href="styles.css" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title><?php echo $page["title"] ?></title>
+</head>
+<body>
+<h1><?php echo $page["title"] ?></h1>
+<?php
+}
+
+function essay_end() {
+?>
+</body>
+</html>
+<?php
+}
+
 ?>

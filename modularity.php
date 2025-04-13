@@ -1,12 +1,7 @@
-<!DOCTYPE>
-<html>
-<head>
-  <link rel="stylesheet" href="styles.css" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Modularity is about dependencies.</title>
-</head>
-<body>
-<h1>Modularity is about dependencies.</h1>
+<?php
+include "common.php";
+essay_begin($modularity_page);
+?>
 
 <p>Sometimes I see people attempt to make programs more modular by
 taking a big file and splitting it into a bunch of small files, or by
@@ -82,5 +77,4 @@ rarely get to the point of slowing down my editor, but commands like
 sorts of concerns are pragmatic and language-dependent, and they do not
 hurt my overall point.</p>
 
-</body>
-</html>
+<?php essay_end() ?>
