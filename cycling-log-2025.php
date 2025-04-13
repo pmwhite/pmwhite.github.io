@@ -8,7 +8,7 @@
   <body>
     <h1>2025 Cycling log.</h1>
 
-    <p>My goal this year is to hit a thousand miles in my bike. Below is the
+    <p>My goal this year is to hit a thousand miles on my bike. Below is the
     list of all my rides this year.</p>
 
     <table class="cycling-log-table">
