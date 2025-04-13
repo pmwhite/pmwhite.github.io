@@ -220,3 +220,15 @@ span.error-location {
   flex-direction: row;
   flex-wrap: wrap;
 }
+
+table.cycling-log-table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+.cycling-log-table th,
+.cycling-log-table td {
+  border: 1px solid black;
+  padding: 6px;
+  padding-left: 12px;
+}
