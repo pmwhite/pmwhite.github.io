@@ -63,7 +63,7 @@ foreach ($data as $item) {
 <?php
 } 
 $total_fractional_hours = $total_seconds / 60 / 60;
-$total_hours = floor($fractional_hours);
+$total_hours = floor($total_fractional_hours);
 $total_seconds -= $total_hours * 60 * 60;
 $total_minutes = floor($total_seconds / 60);
 $total_seconds -= $total_minutes * 60;
