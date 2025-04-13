@@ -7,13 +7,16 @@
   </head>
   <body>
     <h1>Pages</h1>
-    <ul>
+    <ul class="index-page-list">
 <?php
 include "common.php";
 
-foreach ($pages as $page) {
+foreach (array_reverse($pages) as $page) {
 ?>
-      <li><a href="<?php echo $page["id"] ?>.html"><?php echo $page["title"] ?></a></li>
+      <li>
+        <a href="<?php echo $page["id"] ?>.html"><?php echo $page["title"] ?></a>
+        <em><?php echo $page["date"] ?></em>
+      </li>
 <?php
 }
 ?>

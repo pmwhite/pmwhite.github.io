@@ -1,35 +1,42 @@
 <?php
 
-$ocaml_gadts_page = 
-  [ "title" => "How to understand OCaml's GADTs."
-  , "id" => "ocaml-gadts" ];
+$new_types_page =
+  [ "title" => "Make new types more often."
+  , "id" => "new-types"
+  , "date" => "May 8, 2023" ];
 
 $modularity_page = 
   [ "title" => "Modularity is about dependencies."
-  , "id" => "modularity" ];
+  , "id" => "modularity"
+  , "date" => "May 8, 2023" ];
 
-$new_types_page =
-  [ "title" => "Make new types more often."
-  , "id" => "new-types" ];
+$ocaml_gadts_page = 
+  [ "title" => "How to understand OCaml's GADTs."
+  , "id" => "ocaml-gadts"
+  , "date" => "May 9, 2023" ];
 
 
 $pages = [
 
-  $ocaml_gadts_page,
-  $modularity_page,
   $new_types_page,
+  $modularity_page,
+  $ocaml_gadts_page,
 
   [ "title" => "On writing interactive UIs with straight-line code."
-  , "id" => "straight-line-ui-code" ],
+  , "id" => "straight-line-ui-code"
+  , "date" => "Feb 28, 2024" ],
 
   [ "title" => "Bottlenecks."
-  , "id" => "bottlenecks" ],
+  , "id" => "bottlenecks"
+  , "date" => "Feb 29, 2024" ],
 
   [ "title" => "Opinions about crossword clues."
-  , "id" => "opinions-about-crossword-clues" ],
+  , "id" => "opinions-about-crossword-clues"
+  , "date" => "Apr 11, 2025" ],
 
   [ "title" => "2025 Cycling log."
-  , "id" => "cycling-log-2025" ],
+  , "id" => "cycling-log-2025"
+  , "date" => "Apr 12, 2025" ],
 
 ];
 
