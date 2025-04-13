@@ -8,13 +8,16 @@ $modularity_page =
   [ "title" => "Modularity is about dependencies."
   , "id" => "modularity" ];
 
+$new_types_page =
+  [ "title" => "Make new types more often."
+  , "id" => "new-types" ];
+
+
 $pages = [
 
   $ocaml_gadts_page,
   $modularity_page,
-
-  [ "title" => "Make new types more often."
-  , "id" => "new-types" ],
+  $new_types_page,
 
   [ "title" => "On writing interactive UIs with straight-line code."
   , "id" => "straight-line-ui-code" ],

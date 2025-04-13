@@ -1,12 +1,7 @@
-<!DOCTYPE>
-<html>
-<head>
-  <link rel="stylesheet" href="styles.css" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>How to understand OCaml's GADTs.</title>
-</head>
-<body>
-<h1>How to understand OCaml's GADTs.</h1>
+<?php
+include "common.php";
+essay_begin($ocaml_gadts_page);
+?>
 
 <p>OCaml has this weird feature of its type system called "Generalized
 Algebraic Data Types", or GADTs, for short. Experts typically use this
@@ -217,5 +212,4 @@ information required by generated code.</p>
 <p>To me, the bottom line is that you should use them if they are useful, with
 a slight bias toward avoiding them, since they tend to increase code noise.</p>
 
-</body>
-</html>
+<?php essay_end() ?>
