@@ -15,6 +15,10 @@ $ocaml_gadts_page =
   , "id" => "ocaml-gadts"
   , "date" => "May 9, 2023" ];
 
+$parts_of_a_pl_implementation_page =
+  [ "title" => "Parts of a programming language implementation"
+  , "id" => "parts-of-a-pl-implementation"
+  , "date" => "Apr 14, 2025" ];
 
 $pages = [
 
@@ -37,6 +41,8 @@ $pages = [
   [ "title" => "2025 Cycling log."
   , "id" => "cycling-log-2025"
   , "date" => "Apr 12, 2025" ],
+
+  $parts_of_a_pl_implementation_page
 
 ];
 
