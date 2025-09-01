@@ -108,10 +108,9 @@ atomic way, so that the app progressively gets better and better incrementally.
 We don't want to ever regress. Also, remember to preserve this initial comment,
 since the new contents of the file will be passed to future iterations.
 
-Parts 2 and 3 exist and are in the same card. But part 4 does not exist yet, so
-we need to implement it. It should go inside that same card. At the same time,
-we need to clean up the labelling. "Standard stock length" applies just to part
-2, so it is confusing that it is the label for the whole card.
+We should improve the stock cutting plan visualization to more accurately match
+the process by adding space between each cut. The amount of space should be the
+waste per cut, of course.
 
 -->
 
@@ -379,7 +378,7 @@ Also allowed: 3' X, 4' W, 3' L, 8' X, 2' R"></textarea>
       <div class="stock-wrap">
         <svg id="stockSvg" class="stock-svg" viewBox="0 0 100 40" aria-label="Stock cutting visualization"></svg>
       </div>
-      <div class="help">Shows how your pieces can be cut from each stock using first‑fit decreasing. Gray = leftover/waste.</div>
+      <div class="help">Shows how your pieces can be cut from each stock using first‑fit decreasing. Gray = kerf and leftover.</div>
     </div>
   </main>
 
@@ -878,21 +877,27 @@ Also allowed: 3' X, 4' W, 3' L, 8' X, 2' R"></textarea>
         const y = pad + i * (rowH + gap);
         // Stock outline
         rect(pad, y, baseW, rowH, { fill: '#fff', stroke: '#d1d5db', sw: 1.2, rx: 3, ry: 3 });
-        // Cuts
+        // Cuts with kerf gaps
         let cx = pad;
-        for (const cut of bins[i].cuts) {
+        const cuts = bins[i].cuts;
+        for (let j = 0; j < cuts.length; j++) {
+          const cut = cuts[j];
           const w = Math.max(0, cut * scale);
           rect(cx, y, w, rowH, { fill: trimColor, opacity: 0.6 });
           if (w >= 8) {
             text(cx + w / 2, y + rowH / 2, fmtInches(cut), { fill: '#0b225a', size: 7, anchor: 'middle' });
           }
           cx += w;
+          // Kerf gap between cuts
+          if (kerf > 0 && j < cuts.length - 1) {
+            const kw = kerf * scale;
+            rect(cx, y, kw, rowH, { fill: '#e5e7eb' });
+            cx += kw;
+          }
         }
-        // Waste (kerf + end leftover)
+        // Trailing waste (last kerf if any + leftover)
         const m = bins[i].count;
-        const exactFit = Math.abs(stockLen - (bins[i].used + kerf * (m - 1))) <= 1e-6;
-        const cutsEff = exactFit ? (m - 1) : m;
-        const waste = Math.max(0, stockLen - (bins[i].used + kerf * cutsEff));
+        const waste = Math.max(0, stockLen - (bins[i].used + kerf * (m - 1)));
         if (waste > 1e-6) {
           const w = waste * scale;
           rect(cx, y, w, rowH, { fill: '#e5e7eb' });
