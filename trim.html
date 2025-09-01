@@ -62,23 +62,33 @@ message is displayed.
 Part 2. A text input for specifying the standard length, for use in later
 validation. Again, an error is shown if syntax is invalid.
 
-Part 3. A text input describing the all the trim pieces. The syntax is a list of
+Part 3. A text input for specifying the joint overlap when there is a seam in a
+wall. Whenever multiple pieces must be used for the same wall, it is common to
+have them overlap a little bit in order to make it a smooth transition. The
+amount overlap is up to the user, so we need to allow them to specify it.
+
+Part 4. A text input for specifying the amount of waste from each cut. This
+ensures that we don't accidentally end up with a short last piece from a stock
+item, due to things like the saw blades destroying a little bit trim during
+cutting.
+
+Part 5. A text input describing all the trim pieces. The syntax is a list of
 measurements of all the trim pieces that will be used, in order, following the
 walls that were described in the first input. If the syntax is invalid, an
 error message is displayed. In addition, an error message is displayed if any
 trim piece is longer than the standard length, or if a trim piece would end up
 spanning multiple walls (based on the room specification from the first input).
 
-Part 4. A button that, when clicked, reads the first two text inputs, computes a
+Part 6. A button that, when clicked, reads the first two text inputs, computes a
 reasonable first approximation of a good trim piece length sequence, and then
 fills in the third text input with that specification, so that the user can
 then modify it to their liking.
 
-Part 5. Some text computed from prior inputs that describes some things about the
+Part 7. Some text computed from prior inputs that describes some things about the
 given design. This should include: total wall length, number of pre-cut
 standard length trim pieces needed, and number of post-cut pieces.
 
-Part 6. A 2d wireframe visualization of the wall layout, as well as the trim
+Part 8. A 2d wireframe visualization of the wall layout, as well as the trim
 piece positioning. Care should be taken such that neither the trim piece
 positioning nor the wall layout obscures the other. It should be easy to tell
 where the trim pieces are split up.
@@ -98,7 +108,10 @@ atomic way, so that the app progressively gets better and better incrementally.
 We don't want to ever regress. Also, remember to preserve this initial comment,
 since the new contents of the file will be passed to future iterations.
 
-We'd like to be able to save layouts somewhere, so we want to save all the input values in the URL. A nice and easy way of doing that is to package them up as an object, turn it into a string, and then base64-encode it so that it is safe to put in a URL. Do that, please.
+Parts 2 and 3 exist and are in the same card. But part 4 does not exist yet, so
+we need to implement it. It should go inside that same card. At the same time,
+we need to clean up the labelling. "Standard stock length" applies just to part
+2, so it is confusing that it is the label for the whole card.
 
 -->
 
@@ -295,7 +308,7 @@ We'd like to be able to save layouts somewhere, so we want to save all the input
   <main>
     <div class="row two">
       <div class="card">
-        <h2>1) Room layout</h2>
+        <h2>Room layout</h2>
         <label for="room">One room per line. Measurements interleaved with directions (L,R,W,X). X = doorway (no trim). Example: 12' W, 8' R, 12' R, 8' R</label>
         <textarea id="room" class="mono" placeholder="Each line = a room.
 Example: 12' W, 8' R, 12' R, 8' R
@@ -305,8 +318,8 @@ Also allowed: 3' X, 4' W, 3' L, 8' X, 2' R"></textarea>
       </div>
 
       <div class="card">
-        <h2>2) Standard stock length</h2>
-        <label for="stock">One measurement</label>
+        <h2>Stock & cutting</h2>
+        <label for="stock">Standard stock length</label>
         <input id="stock" type="text" class="mono" placeholder="e.g., 8' or 12'0&quot;">
         <div class="help">All cut pieces must be ≤ this length.</div>
         <div id="stockErrors" class="errors"></div>
@@ -315,12 +328,17 @@ Also allowed: 3' X, 4' W, 3' L, 8' X, 2' R"></textarea>
         <input id="overlap" type="text" class="mono" placeholder='e.g., 1"'>
         <div class="help">When a wall uses multiple pieces, each joint overlaps by this amount.</div>
         <div id="overlapErrors" class="errors"></div>
+
+        <label for="kerf" style="margin-top:10px;">Waste per cut (optional)</label>
+        <input id="kerf" type="text" class="mono" placeholder='e.g., 0.125"'>
+        <div class="help">Saw kerf or loss per cut. Counted each time a piece is cut from stock or a leftover.</div>
+        <div id="kerfErrors" class="errors"></div>
       </div>
     </div>
 
     <div class="row two">
       <div class="card">
-        <h2>3) Trim pieces (in order)</h2>
+        <h2>Trim pieces (in order)</h2>
         <label for="pieces">One room per line. Each line lists piece lengths following its room's walls (skip X segments). Example: 8', 4', 8', 8', 4'</label>
         <textarea id="pieces" class="mono" placeholder="Auto-fill with Suggest below, then tweak as needed. One room per line."></textarea>
         <div id="piecesErrors" class="errors"></div>
@@ -331,7 +349,7 @@ Also allowed: 3' X, 4' W, 3' L, 8' X, 2' R"></textarea>
       </div>
 
       <div class="card">
-        <h2>5) Summary</h2>
+        <h2>Summary</h2>
         <div class="stats">
           <div class="stat"><b>Total wall length</b><span id="statTotal">—</span></div>
           <div class="stat"><b>Stock pieces needed</b><span id="statStocks">—</span></div>
@@ -343,7 +361,7 @@ Also allowed: 3' X, 4' W, 3' L, 8' X, 2' R"></textarea>
     </div>
 
     <div class="card">
-      <h2>6) Layout & trim visualization</h2>
+      <h2>Layout & trim visualization</h2>
       <div class="viz-wrap">
         <svg id="svg" viewBox="0 0 100 100" aria-label="Room and trim visualization">
           <!-- Rendered dynamically -->
@@ -357,7 +375,7 @@ Also allowed: 3' X, 4' W, 3' L, 8' X, 2' R"></textarea>
     </div>
 
     <div class="card">
-      <h2>7) Stock cutting plan</h2>
+      <h2>Stock cutting plan</h2>
       <div class="stock-wrap">
         <svg id="stockSvg" class="stock-svg" viewBox="0 0 100 40" aria-label="Stock cutting visualization"></svg>
       </div>
@@ -558,46 +576,69 @@ Also allowed: 3' X, 4' W, 3' L, 8' X, 2' R"></textarea>
       return { errors, perSegPieces, covered, totalWall };
     }
 
-    function firstFitDecreasingBins(pieces, stockLen) {
+    function firstFitDecreasingBins(pieces, stockLen, kerf = 0) {
       if (!isFinite(stockLen) || stockLen <= 0) return { bins: 0 };
+      kerf = isFinite(kerf) && kerf > 0 ? kerf : 0;
       const arr = pieces.slice().sort((a, b) => b - a);
       const bins = [];
+      const eps = 1e-9;
       for (const p of arr) {
         let placed = false;
         for (let i = 0; i < bins.length; i++) {
-          if (bins[i] + p <= stockLen + 1e-9) {
-            bins[i] += p;
+          const b = bins[i];
+          const m = b.count;
+          if (b.used + p + kerf * (m + 1) <= stockLen + eps || Math.abs(b.used + p + kerf * m - stockLen) <= eps) {
+            b.used += p;
+            b.count += 1;
             placed = true;
             break;
           }
         }
-        if (!placed) bins.push(p);
+        if (!placed) bins.push({ used: p, count: 1 });
       }
       return { bins: bins.length };
     }
 
-    function suggestPieces(segments, stockLen, overlap) {
+    function suggestPieces(segments, stockLen, overlap, kerf = 0) {
       overlap = isFinite(overlap) && overlap > 0 ? overlap : 0;
-      const pool = []; // leftover lengths
+      kerf = isFinite(kerf) && kerf > 0 ? kerf : 0;
+      const pool = []; // leftover usable lengths
       const pieces = [];
+      const eps = 1e-6;
+
       function takeFromPoolOrStock(targetLen) {
+        // Try exact or cut from pool
         pool.sort((a, b) => a - b);
-        let idx = -1;
         for (let i = 0; i < pool.length; i++) {
-          if (pool[i] + 1e-6 >= targetLen) { idx = i; break; }
+          const x = pool[i];
+          if (Math.abs(x - targetLen) <= eps) {
+            // Use whole leftover as-is (no new cut)
+            pool.splice(i, 1);
+            pieces.push(targetLen);
+            return;
+          }
+          if (x - targetLen - kerf >= -eps) {
+            const rem = x - targetLen - kerf;
+            pool.splice(i, 1);
+            if (rem > eps) pool.push(rem);
+            pieces.push(targetLen);
+            return;
+          }
         }
-        if (idx >= 0) {
-          const x = pool.splice(idx, 1)[0];
-          const rem = x - targetLen;
-          if (rem > 1e-6) pool.push(rem);
+        // Cut from new stock
+        if (Math.abs(stockLen - targetLen) <= eps) {
           pieces.push(targetLen);
-        } else {
-          const rem = stockLen - targetLen;
-          if (rem < -1e-6) throw new Error('Target piece exceeds stock length');
-          if (rem > 1e-6) pool.push(rem);
-          pieces.push(targetLen);
+          return; // no kerf when using whole stock
         }
+        if (stockLen - targetLen - kerf >= -eps) {
+          const rem = stockLen - targetLen - kerf;
+          if (rem > eps) pool.push(rem);
+          pieces.push(targetLen);
+          return;
+        }
+        throw new Error('Target piece ' + fmtInches(targetLen) + ' cannot be cut from stock ' + fmtInches(stockLen) + ' with cut waste ' + fmtInches(kerf) + '.');
       }
+
       for (const seg of segments) {
         if (!seg.hasWall) continue;
         let L = seg.len;
@@ -605,14 +646,13 @@ Also allowed: 3' X, 4' W, 3' L, 8' X, 2' R"></textarea>
         if (overlap >= stockLen - 1e-9 && L > 0) {
           throw new Error('Overlap must be less than stock length.');
         }
-        // Minimal pieces k such that k*stock - overlap*(k-1) >= L
+        // Minimal pieces k such that k*stock - overlap*(k-1) >= L (stock-only baseline)
         const den = stockLen - overlap;
         let k = 1;
         if (L > stockLen) {
           k = Math.ceil((L - overlap) / den);
           if (!isFinite(k) || k < 1) k = 1;
         }
-        // Build piece lengths
         const list = [];
         if (k === 1) {
           list.push(L);
@@ -766,26 +806,30 @@ Also allowed: 3' X, 4' W, 3' L, 8' X, 2' R"></textarea>
       }
     }
 
-    function packPiecesDetailed(pieces, stockLen) {
+    function packPiecesDetailed(pieces, stockLen, kerf = 0) {
       if (!isFinite(stockLen) || stockLen <= 0) return { bins: [] };
+      kerf = isFinite(kerf) && kerf > 0 ? kerf : 0;
       const arr = pieces.slice().sort((a, b) => b - a);
-      const bins = []; // { used, cuts: [] }
+      const bins = []; // { used, count, cuts: [] }
+      const eps = 1e-9;
       for (const p of arr) {
         let placed = false;
         for (const bin of bins) {
-          if (bin.used + p <= stockLen + 1e-9) {
+          const m = bin.count;
+          if (bin.used + p + kerf * (m + 1) <= stockLen + eps || Math.abs(bin.used + p + kerf * m - stockLen) <= eps) {
             bin.cuts.push(p);
             bin.used += p;
+            bin.count += 1;
             placed = true;
             break;
           }
         }
-        if (!placed) bins.push({ used: p, cuts: [p] });
+        if (!placed) bins.push({ used: p, count: 1, cuts: [p] });
       }
       return { bins };
     }
 
-    function renderStockCuts(bins, stockLen) {
+    function renderStockCuts(bins, stockLen, kerf = 0) {
       const svg = $('#stockSvg');
       while (svg.firstChild) svg.removeChild(svg.firstChild);
       const trimColor = getComputedStyle(document.documentElement).getPropertyValue('--trim') || '#2563eb';
@@ -844,8 +888,11 @@ Also allowed: 3' X, 4' W, 3' L, 8' X, 2' R"></textarea>
           }
           cx += w;
         }
-        // Waste
-        const waste = Math.max(0, stockLen - bins[i].used);
+        // Waste (kerf + end leftover)
+        const m = bins[i].count;
+        const exactFit = Math.abs(stockLen - (bins[i].used + kerf * (m - 1))) <= 1e-6;
+        const cutsEff = exactFit ? (m - 1) : m;
+        const waste = Math.max(0, stockLen - (bins[i].used + kerf * cutsEff));
         if (waste > 1e-6) {
           const w = waste * scale;
           rect(cx, y, w, rowH, { fill: '#e5e7eb' });
@@ -888,7 +935,8 @@ Also allowed: 3' X, 4' W, 3' L, 8' X, 2' R"></textarea>
         room: $('#room').value || '',
         stock: $('#stock').value || '',
         pieces: $('#pieces').value || '',
-        overlap: $('#overlap').value || ''
+        overlap: $('#overlap').value || '',
+        kerf: $('#kerf').value || ''
       };
     }
     function applyStateToInputs(obj) {
@@ -897,6 +945,7 @@ Also allowed: 3' X, 4' W, 3' L, 8' X, 2' R"></textarea>
       if (typeof obj.stock === 'string') $('#stock').value = obj.stock;
       if (typeof obj.pieces === 'string') $('#pieces').value = obj.pieces;
       if (typeof obj.overlap === 'string') $('#overlap').value = obj.overlap;
+      if (typeof obj.kerf === 'string') $('#kerf').value = obj.kerf;
     }
     function updateURLFromInputs() {
       if (__suppressURL) return;
@@ -925,12 +974,14 @@ Also allowed: 3' X, 4' W, 3' L, 8' X, 2' R"></textarea>
       const stockStr = $('#stock').value;
       const piecesStr = $('#pieces').value;
       const overlapStr = $('#overlap').value;
+      const kerfStr = $('#kerf').value;
 
       // Clear errors
       $('#roomErrors').textContent = '';
       $('#stockErrors').textContent = '';
       $('#piecesErrors').textContent = '';
       $('#overlapErrors').textContent = '';
+      $('#kerfErrors').textContent = '';
 
       const { rooms } = parseRoomsMulti(roomStr);
       const stockPM = parseMeasurement(stockStr);
@@ -956,6 +1007,19 @@ Also allowed: 3' X, 4' W, 3' L, 8' X, 2' R"></textarea>
       }
       if (isFinite(stockLen) && stockLen > 0 && overlap >= stockLen - 1e-9) {
         $('#overlapErrors').textContent = 'Overlap must be less than stock length.';
+      }
+
+      // Kerf (waste per cut)
+      let kerf = 0;
+      if (trimStr(kerfStr) !== '') {
+        const kpm = parseMeasurement(kerfStr);
+        if (!kpm.ok) {
+          $('#kerfErrors').textContent = kpm.err || 'Invalid waste per cut.';
+        } else if (kpm.inches < 0) {
+          $('#kerfErrors').textContent = 'Waste per cut must be ≥ 0.';
+        } else {
+          kerf = kpm.inches;
+        }
       }
 
       // Build piece lines aligned to rooms
@@ -993,7 +1057,7 @@ Also allowed: 3' X, 4' W, 3' L, 8' X, 2' R"></textarea>
         const parsedPieces = parsePiecesList(pieceLine);
         if (pieceLine.trim().length > 0) anyPiecesProvided = true;
         if (parsedPieces.errors.length) {
-          allErrors.push('Room ' + (i + 1) + piecesStr.includes('\n') ? ' pieces: ' + parsedPieces.errors.join('; ') : ' pieces: ' + parsedPieces.errors.join('; '));
+          allErrors.push('Room ' + (i + 1) + ' pieces: ' + parsedPieces.errors.join('; '));
         }
         const validation = validatePiecesAgainstPlan(r.segments, parsedPieces.pieces, stockLen, overlap);
         if (validation.errors.length) {
@@ -1015,7 +1079,7 @@ Also allowed: 3' X, 4' W, 3' L, 8' X, 2' R"></textarea>
       $('#statPieces').textContent = anyPiecesProvided ? String(allPiecesFlat.length) : '—';
 
       if (anyPiecesProvided && isFinite(stockLen) && stockLen > 0) {
-        const ffd = firstFitDecreasingBins(allPiecesFlat, stockLen);
+        const ffd = firstFitDecreasingBins(allPiecesFlat, stockLen, kerf);
         $('#statStocks').textContent = ffd.bins > 0 ? String(ffd.bins) : '—';
       } else {
         $('#statStocks').textContent = '—';
@@ -1056,10 +1120,10 @@ Also allowed: 3' X, 4' W, 3' L, 8' X, 2' R"></textarea>
 
       // Render stock cutting plan
       if (anyPiecesProvided && isFinite(stockLen) && stockLen > 0 && allErrors.length === 0) {
-        const packed = packPiecesDetailed(allPiecesFlat, stockLen);
-        renderStockCuts(packed.bins, stockLen);
+        const packed = packPiecesDetailed(allPiecesFlat, stockLen, kerf);
+        renderStockCuts(packed.bins, stockLen, kerf);
       } else {
-        renderStockCuts([], stockLen);
+        renderStockCuts([], stockLen, kerf);
       }
 
       // Update URL with current inputs
@@ -1070,27 +1134,37 @@ Also allowed: 3' X, 4' W, 3' L, 8' X, 2' R"></textarea>
       const { rooms } = parseRoomsMulti($('#room').value);
       const stockPM = parseMeasurement($('#stock').value);
       const overlapStr = $('#overlap').value;
+      const kerfStr = $('#kerf').value;
       let overlap = 0;
+      let kerf = 0;
       let overlapErr = '';
+      let kerfErr = '';
       if (trimStr(overlapStr) !== '') {
         const opm = parseMeasurement(overlapStr);
         if (!opm.ok) overlapErr = opm.err || 'Invalid overlap.';
         else if (opm.inches < 0) overlapErr = 'Overlap must be ≥ 0.';
         else overlap = opm.inches;
       }
+      if (trimStr(kerfStr) !== '') {
+        const kpm = parseMeasurement(kerfStr);
+        if (!kpm.ok) kerfErr = kpm.err || 'Invalid waste per cut.';
+        else if (kpm.inches < 0) kerfErr = 'Waste per cut must be ≥ 0.';
+        else kerf = kpm.inches;
+      }
       $('#overlapErrors').textContent = overlapErr;
+      $('#kerfErrors').textContent = kerfErr;
       const roomErrs = rooms.filter(r => !r.ok).map((r, idx) => 'Room ' + (idx + 1) + ' (line ' + r.lineIndex + '): ' + r.errors.join('; '));
       $('#roomErrors').textContent = roomErrs.join('\n');
       $('#stockErrors').textContent = stockPM.ok && stockPM.inches > 0 ? '' : (stockPM.err || 'Invalid stock length.');
       if (isFinite(stockPM.inches) && stockPM.inches > 0 && overlap >= stockPM.inches - 1e-9) {
         $('#overlapErrors').textContent = 'Overlap must be less than stock length.';
       }
-      if (!rooms.length || roomErrs.length || !stockPM.ok || stockPM.inches <= 0 || $('#overlapErrors').textContent) return;
+      if (!rooms.length || roomErrs.length || !stockPM.ok || stockPM.inches <= 0 || $('#overlapErrors').textContent || $('#kerfErrors').textContent) return;
 
       try {
         const piecesLines = rooms.map((r, i) => {
           if (!r.ok) return '';
-          const pieces = suggestPieces(r.segments, stockPM.inches, overlap);
+          const pieces = suggestPieces(r.segments, stockPM.inches, overlap, kerf);
           return pieces.map(fmtInches).join(', ');
         });
         $('#pieces').value = piecesLines.join('\n');
@@ -1111,6 +1185,7 @@ Also allowed: 3' X, 4' W, 3' L, 8' X, 2' R"></textarea>
     $('#stock').addEventListener('input', recompute);
     $('#pieces').addEventListener('input', recompute);
     $('#overlap').addEventListener('input', recompute);
+    $('#kerf').addEventListener('input', recompute);
 
     // Load state from URL or seed example
     window.addEventListener('DOMContentLoaded', () => {
