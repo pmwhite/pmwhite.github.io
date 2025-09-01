@@ -1,0 +1,1135 @@
+<!DOCTYPE html>
+
+<!--
+
+INTRODUCTION
+
+This is the contents of a single-file html app. You are a helpful AI assistant
+whose sole job is to understand the contents of this file and spit it back out
+in a slightly modified form. You should not produce any extra commentary or
+fluff whatsoever because the text you output will replace the contents of the
+html app.
+
+A few guidelines to keep in mind:
+
+- Each token of difference from these original file contents costs $1. So
+  although you should definitely be productive and make useful changes, you
+  should as much as possible avoid deviating from the input.
+- Every 1000 tokens in this file will cost $1 for each big change. So it is
+  worth prioritizing brevity. No need to write long explanatory comments, and
+  no need to make big general frameworks for things. That said, do not
+  compromise on actual behavior. The system should be correct, and the code
+  should be readable.
+- If you ever need to update this description comment, please be brief. Fight
+  any feelings you might have of being overly descriptive and explanatory.
+
+PROJECT DESCRIPTION
+
+This is a web app written in pure html, css, and javascript that aims to help
+in a particular home improvement task: putting trim pieces around some room in
+the house. We buy uncut trim pieces from the hardware store of a standard
+length. Some walls in a room will be longer than the standard length, which
+means it takesmore than one trim piece to cover the whole wall. Also, walls
+will rarely be an exact multiple of the standard length, so they will need to
+be cut up.
+
+This app should help users interactively find exactly which size they need to
+cut the standard length pieces into, and also how many standard length pieces
+they need to buy at the store. When determining these answers, two slightly
+competing concerns must be considered:
+
+Concern 1. Having multiple pieces on a wall is ugly, so it is best to minimize
+the number of pieces a wall will use. If possible, a wall should use the
+ceiling of the wall length divided by the the standard length.
+
+Concern 2. Trim pieces are not cheap or possibly in limited supply, so it is
+best to avoid using more than necessary. This may compete with concern 1, since
+it is possible that there are a bunch of leftover pieces from one wall that
+could group together to cover a larger wall.
+
+USER INTERFACE
+
+The UI is generally arranged from top to bottom, to keep the resizing flow
+simple. The different parts are as follows:
+
+Part 1. A text input describing the shape of the room. The syntax is a list of
+measurements interleaved with a list of directions. Measurements are foot-inch
+pairs, like 4'3". Directions are one of L for left, R for right, W for
+straight, and X for a doorway, in which there is no wall (and thus, no trim
+piece is needed for that segment). If the syntax is invalid, a useful error
+message is displayed.
+
+Part 2. A text input for specifying the standard length, for use in later
+validation. Again, an error is shown if syntax is invalid.
+
+Part 3. A text input describing the all the trim pieces. The syntax is a list of
+measurements of all the trim pieces that will be used, in order, following the
+walls that were described in the first input. If the syntax is invalid, an
+error message is displayed. In addition, an error message is displayed if any
+trim piece is longer than the standard length, or if a trim piece would end up
+spanning multiple walls (based on the room specification from the first input).
+
+Part 4. A button that, when clicked, reads the first two text inputs, computes a
+reasonable first approximation of a good trim piece length sequence, and then
+fills in the third text input with that specification, so that the user can
+then modify it to their liking.
+
+Part 5. Some text computed from prior inputs that describes some things about the
+given design. This should include: total wall length, number of pre-cut
+standard length trim pieces needed, and number of post-cut pieces.
+
+Part 6. A 2d wireframe visualization of the wall layout, as well as the trim
+piece positioning. Care should be taken such that neither the trim piece
+positioning nor the wall layout obscures the other. It should be easy to tell
+where the trim pieces are split up.
+
+CODE STYLE AND ARCHITECTURE
+
+Prefer to put styling information in the main styling block instead of inline
+styles. Also, aim to make the html structure such that the styling decisions
+are generally made in css, rather than via the html structure; in other words,
+let's maintain a separation of concerns between content and styles (this is
+aspirational of course; compromises are sometimes necessary).
+
+CURRENT TASK
+
+Don't leave things in a half-working state. Each task should do something in an
+atomic way, so that the app progressively gets better and better incrementally.
+We don't want to ever regress. Also, remember to preserve this initial comment,
+since the new contents of the file will be passed to future iterations.
+
+We'd like to be able to save layouts somewhere, so we want to save all the input values in the URL. A nice and easy way of doing that is to package them up as an object, turn it into a string, and then base64-encode it so that it is safe to put in a URL. Do that, please.
+
+-->
+
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Trim Planner</title>
+  <style>
+    :root {
+      --bg: #f7f7f9;
+      --fg: #222;
+      --muted: #666;
+      --accent: #2563eb;
+      --bad: #b00020;
+      --ok: #0a7a32;
+      --wall: #999;
+      --door: #cbb;
+      --trim: #2563eb;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      color: var(--fg);
+      background: var(--bg);
+      line-height: 1.4;
+    }
+    header {
+      padding: 16px 20px 4px;
+    }
+    header h1 {
+      margin: 0 0 6px;
+      font-size: 18px;
+      font-weight: 700;
+    }
+    header p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+    main {
+      padding: 8px 20px 20px;
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 14px;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+    .row {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+    @media (min-width: 900px) {
+      .row.two {
+        grid-template-columns: 1.2fr 1fr;
+      }
+      .row.three {
+        grid-template-columns: 1fr 1fr 1fr;
+      }
+    }
+    .card {
+      background: white;
+      border: 1px solid #e6e6ee;
+      border-radius: 10px;
+      padding: 14px;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+    }
+    .card h2 {
+      margin: 0 0 10px 0;
+      font-size: 15px;
+    }
+    label {
+      font-size: 13px;
+      color: var(--muted);
+      display: block;
+      margin-bottom: 6px;
+    }
+    textarea, input[type=text] {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #d6d6df;
+      border-radius: 8px;
+      font: inherit;
+      background: #fff;
+    }
+    textarea {
+      min-height: 74px;
+      resize: vertical;
+    }
+    .help {
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 6px;
+    }
+    .errors {
+      margin-top: 8px;
+      color: var(--bad);
+      font-size: 13px;
+      white-space: pre-wrap;
+    }
+    .actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    button {
+      background: var(--accent);
+      color: white;
+      border: none;
+      padding: 10px 14px;
+      border-radius: 8px;
+      font: inherit;
+      cursor: pointer;
+    }
+    button.secondary {
+      background: #e8eefe;
+      color: #1e40af;
+    }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 10px;
+      margin-top: 8px;
+    }
+    .stat {
+      padding: 10px 12px;
+      background: #fafafe;
+      border: 1px solid #ececf5;
+      border-radius: 8px;
+      font-size: 14px;
+    }
+    .stat b {
+      display: block;
+      color: #111;
+      margin-bottom: 2px;
+    }
+    .viz-wrap {
+      width: 100%;
+      height: 440px;
+      background: white;
+      border: 1px solid #e6e6ee;
+      border-radius: 10px;
+      padding: 8px;
+    }
+    svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+      background: #fff;
+      border-radius: 8px;
+    }
+    .legend {
+      display: flex;
+      gap: 16px;
+      align-items: center;
+      font-size: 13px;
+      color: var(--muted);
+      margin-top: 8px;
+      flex-wrap: wrap;
+    }
+    .legend-item { display: inline-flex; align-items: center; gap: 6px; }
+    .chip { width: 22px; height: 4px; border-radius: 2px; display: inline-block; }
+    .chip.wall { background: var(--wall); }
+    .chip.door { background: var(--door); }
+    .chip.trim { background: var(--trim); opacity: 0.3; }
+    .ok { color: var(--ok); }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+
+    /* Stock cutting viz */
+    .stock-wrap {
+      width: 100%;
+      background: white;
+      border: 1px solid #e6e6ee;
+      border-radius: 10px;
+      padding: 8px;
+    }
+    .stock-svg {
+      width: 100%;
+      display: block;
+      background: #fff;
+      border-radius: 8px;
+      min-height: 220px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Trim Planner</h1>
+    <p>Plan wall trim cuts from a standard length. Enter room, stock length, and pieces. Get counts, validation, and a visual layout.</p>
+  </header>
+
+  <main>
+    <div class="row two">
+      <div class="card">
+        <h2>1) Room layout</h2>
+        <label for="room">One room per line. Measurements interleaved with directions (L,R,W,X). X = doorway (no trim). Example: 12' W, 8' R, 12' R, 8' R</label>
+        <textarea id="room" class="mono" placeholder="Each line = a room.
+Example: 12' W, 8' R, 12' R, 8' R
+Also allowed: 3' X, 4' W, 3' L, 8' X, 2' R"></textarea>
+        <div class="help">Tips: Use feet/inches like 10'6" or 126". Directions: L=left, R=right, W=straight, X=doorway.</div>
+        <div id="roomErrors" class="errors"></div>
+      </div>
+
+      <div class="card">
+        <h2>2) Standard stock length</h2>
+        <label for="stock">One measurement</label>
+        <input id="stock" type="text" class="mono" placeholder="e.g., 8' or 12'0&quot;">
+        <div class="help">All cut pieces must be ≤ this length.</div>
+        <div id="stockErrors" class="errors"></div>
+
+        <label for="overlap" style="margin-top:10px;">Joint overlap per seam (optional)</label>
+        <input id="overlap" type="text" class="mono" placeholder='e.g., 1"'>
+        <div class="help">When a wall uses multiple pieces, each joint overlaps by this amount.</div>
+        <div id="overlapErrors" class="errors"></div>
+      </div>
+    </div>
+
+    <div class="row two">
+      <div class="card">
+        <h2>3) Trim pieces (in order)</h2>
+        <label for="pieces">One room per line. Each line lists piece lengths following its room's walls (skip X segments). Example: 8', 4', 8', 8', 4'</label>
+        <textarea id="pieces" class="mono" placeholder="Auto-fill with Suggest below, then tweak as needed. One room per line."></textarea>
+        <div id="piecesErrors" class="errors"></div>
+        <div class="actions">
+          <button id="suggest">Suggest pieces from room + stock</button>
+          <button id="clearPieces" class="secondary">Clear pieces</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>5) Summary</h2>
+        <div class="stats">
+          <div class="stat"><b>Total wall length</b><span id="statTotal">—</span></div>
+          <div class="stat"><b>Stock pieces needed</b><span id="statStocks">—</span></div>
+          <div class="stat"><b>Post-cut pieces</b><span id="statPieces">—</span></div>
+          <div class="stat"><b>Status</b><span id="statStatus">—</span></div>
+        </div>
+        <div class="help">Stock count uses first-fit decreasing packing of your pieces into the stock length.</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>6) Layout & trim visualization</h2>
+      <div class="viz-wrap">
+        <svg id="svg" viewBox="0 0 100 100" aria-label="Room and trim visualization">
+          <!-- Rendered dynamically -->
+        </svg>
+      </div>
+      <div class="legend">
+        <span class="legend-item"><span class="chip wall"></span>Wall</span>
+        <span class="legend-item"><span class="chip door"></span>Doorway run (no trim)</span>
+        <span class="legend-item"><span class="chip trim"></span>Trim pieces</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>7) Stock cutting plan</h2>
+      <div class="stock-wrap">
+        <svg id="stockSvg" class="stock-svg" viewBox="0 0 100 40" aria-label="Stock cutting visualization"></svg>
+      </div>
+      <div class="help">Shows how your pieces can be cut from each stock using first‑fit decreasing. Gray = leftover/waste.</div>
+    </div>
+  </main>
+
+  <script>
+    const $ = sel => document.querySelector(sel);
+
+    function trimStr(s) { return (s||'').trim(); }
+
+    function fmtInches(inches) {
+      if (!isFinite(inches)) return '—';
+      const neg = inches < 0;
+      inches = Math.abs(inches);
+      const feet = Math.floor(inches / 12);
+      let inch = inches - feet * 12;
+      inch = Math.round(inch * 100) / 100; // 2 decimals
+      if (Math.abs(inch - 12) < 1e-6) { // carry
+        return (neg ? '-' : '') + (feet + 1) + '\'';
+      }
+      const inchStr = inch.toFixed(inch % 1 === 0 ? 0 : 2);
+      if (feet > 0) return (neg ? '-' : '') + feet + '\'' + (inch > 0 ? inchStr + '"' : '');
+      return (neg ? '-' : '') + inchStr + '"';
+    }
+
+    function parseMeasurement(s) {
+      s = (s || '').trim();
+      if (!s) return { ok: false, err: 'Empty measurement' };
+      // Normalize spaces and lowercase markers
+      s = s.replace(/ft/ig, "'").replace(/in/ig, '"');
+      // 12'6" or 12' or 6"
+      const re = /^\s*(?:(-?\d+(?:\.\d+)?)\s*')?\s*(?:(\d+(?:\.\d+)?)\s*")?\s*$/;
+      const m = s.match(re);
+      if (m) {
+        const feet = m[1] !== undefined ? parseFloat(m[1]) : 0;
+        const inch = m[2] !== undefined ? parseFloat(m[2]) : 0;
+        if (isNaN(feet) || isNaN(inch)) return { ok: false, err: 'Bad number: ' + s };
+        return { ok: true, inches: feet * 12 + inch };
+      }
+      // plain number -> inches
+      const r2 = /^\s*(-?\d+(?:\.\d+)?)\s*$/;
+      const m2 = s.match(r2);
+      if (m2) {
+        return { ok: true, inches: parseFloat(m2[1]) };
+      }
+      return { ok: false, err: 'Invalid measurement: ' + s };
+    }
+
+    function preprocessRoomString(s) {
+      // Insert spaces between number/quote and direction letters stuck together
+      s = (s || '').replace(/([0-9"'])([LRWXlrwx])/g, '$1 $2');
+      s = s.replace(/[–—]/g, '-');
+      return s;
+    }
+
+    function tokenizeRoom(s) {
+      s = preprocessRoomString(s).toUpperCase();
+      const raw = s.split(/[\s,]+/).filter(Boolean);
+      return raw;
+    }
+
+    function parseRoomSpec(s) {
+      const tokens = tokenizeRoom(s);
+      const segments = [];
+      const errors = [];
+      if (tokens.length === 0) {
+        errors.push('Enter measurements interleaved with directions. Example: 12\' W, 8\' R, 12\' R, 8\' R');
+        return { ok: false, segments, errors };
+      }
+      let expectMeasure = true;
+      let pendingLen = null;
+      for (let i = 0; i < tokens.length; i++) {
+        const t = tokens[i];
+        if (expectMeasure) {
+          const pm = parseMeasurement(t);
+          if (!pm.ok) {
+            errors.push('Expected measurement at token ' + (i + 1) + ' but got "' + t + '". ' + (pm.err || ''));
+            break;
+          }
+          if (pm.inches < 0) {
+            errors.push('Measurement cannot be negative: "' + t + '"');
+            break;
+          }
+          pendingLen = pm.inches;
+          expectMeasure = false;
+        } else {
+          if (!/^[LRWX]$/.test(t)) {
+            errors.push('Expected direction L/R/W/X at token ' + (i + 1) + ' but got "' + t + '".');
+            break;
+          }
+          const dir = t;
+          segments.push({ len: pendingLen, dir, hasWall: dir !== 'X' });
+          pendingLen = null;
+          expectMeasure = true;
+        }
+      }
+      if (!expectMeasure && pendingLen != null) {
+        // Last measurement without direction: assume W
+        segments.push({ len: pendingLen, dir: 'W', hasWall: true });
+      }
+      if (segments.length === 0 && errors.length === 0) {
+        errors.push('No segments parsed.');
+      }
+      return { ok: errors.length === 0, segments, errors };
+    }
+
+    function parsePiecesList(s) {
+      const tokens = (s || '').replace(/\s+/g, ' ').split(/[, ]+/).filter(Boolean);
+      const pieces = [];
+      const errors = [];
+      for (let i = 0; i < tokens.length; i++) {
+        const pm = parseMeasurement(tokens[i]);
+        if (!pm.ok) {
+          errors.push('Piece ' + (i + 1) + ': ' + (pm.err || 'Invalid.'));
+          continue;
+        }
+        if (pm.inches <= 0) {
+          errors.push('Piece ' + (i + 1) + ' must be > 0.');
+          continue;
+        }
+        pieces.push(pm.inches);
+      }
+      return { pieces, errors, rawCount: tokens.filter(Boolean).length };
+    }
+
+    function validatePiecesAgainstPlan(segments, pieces, stockLen, overlap) {
+      const errors = [];
+      const perSegPieces = segments.map(() => []);
+      let segIdx = 0;
+      let remain = 0;
+      let totalWall = 0;
+      overlap = isFinite(overlap) && overlap > 0 ? overlap : 0;
+
+      for (const seg of segments) if (seg.hasWall) totalWall += seg.len;
+
+      if (!isFinite(stockLen) || stockLen <= 0) {
+        return { errors: ['Enter a valid stock length.'], perSegPieces, covered: false, totalWall };
+      }
+
+      for (let i = 0; i < pieces.length; i++) {
+        const pc = pieces[i];
+        if (pc > stockLen + 1e-6) {
+          errors.push('Piece ' + (i + 1) + ' (' + fmtInches(pc) + ') exceeds stock length ' + fmtInches(stockLen) + '.');
+        }
+      }
+
+      // Walk segments and place pieces
+      segIdx = 0;
+      while (segIdx < segments.length && !segments[segIdx].hasWall) segIdx++;
+      if (segIdx < segments.length) remain = segments[segIdx].len;
+
+      for (let i = 0; i < pieces.length; i++) {
+        const pc = pieces[i];
+
+        while (segIdx < segments.length && (!segments[segIdx].hasWall || remain <= 1e-9)) {
+          segIdx++;
+          if (segIdx < segments.length) remain = segments[segIdx].len;
+        }
+        if (segIdx >= segments.length) {
+          errors.push('Extra pieces provided beyond total wall length. First extra is piece ' + (i + 1) + ' (' + fmtInches(pc) + ').');
+          break;
+        }
+
+        const prevCount = perSegPieces[segIdx].length;
+        const eff = pc - (prevCount > 0 ? overlap : 0);
+        if (prevCount > 0 && eff <= 1e-6) {
+          errors.push('Piece ' + (i + 1) + ' (' + fmtInches(pc) + ') is too short given overlap ' + fmtInches(overlap) + '.');
+          break;
+        }
+        if (eff - remain > 1e-6) {
+          errors.push('Piece ' + (i + 1) + ' (' + fmtInches(pc) + ') does not fit in current wall segment (' + fmtInches(remain) + ' left) with overlap ' + fmtInches(overlap) + '. Pieces may not span multiple walls.');
+          break;
+        } else {
+          perSegPieces[segIdx].push(pc);
+          remain -= eff;
+          if (remain < 1e-9) remain = 0;
+        }
+      }
+
+      // After placing all pieces, check coverage
+      let uncovered = 0;
+      for (let si = 0; si < segments.length; si++) {
+        if (!segments[si].hasWall) continue;
+        const pcs = perSegPieces[si];
+        const usedRaw = pcs.reduce((a, b) => a + b, 0);
+        const usedEff = usedRaw - Math.max(0, pcs.length - 1) * overlap;
+        const diff = segments[si].len - usedEff;
+        if (diff > 1e-6) uncovered += diff;
+        if (diff < -1e-6 && errors.length === 0) {
+          errors.push('Over-coverage on a wall segment by ' + fmtInches(-diff) + '.');
+        }
+      }
+
+      const covered = errors.length === 0 && uncovered <= 1e-6;
+
+      return { errors, perSegPieces, covered, totalWall };
+    }
+
+    function firstFitDecreasingBins(pieces, stockLen) {
+      if (!isFinite(stockLen) || stockLen <= 0) return { bins: 0 };
+      const arr = pieces.slice().sort((a, b) => b - a);
+      const bins = [];
+      for (const p of arr) {
+        let placed = false;
+        for (let i = 0; i < bins.length; i++) {
+          if (bins[i] + p <= stockLen + 1e-9) {
+            bins[i] += p;
+            placed = true;
+            break;
+          }
+        }
+        if (!placed) bins.push(p);
+      }
+      return { bins: bins.length };
+    }
+
+    function suggestPieces(segments, stockLen, overlap) {
+      overlap = isFinite(overlap) && overlap > 0 ? overlap : 0;
+      const pool = []; // leftover lengths
+      const pieces = [];
+      function takeFromPoolOrStock(targetLen) {
+        pool.sort((a, b) => a - b);
+        let idx = -1;
+        for (let i = 0; i < pool.length; i++) {
+          if (pool[i] + 1e-6 >= targetLen) { idx = i; break; }
+        }
+        if (idx >= 0) {
+          const x = pool.splice(idx, 1)[0];
+          const rem = x - targetLen;
+          if (rem > 1e-6) pool.push(rem);
+          pieces.push(targetLen);
+        } else {
+          const rem = stockLen - targetLen;
+          if (rem < -1e-6) throw new Error('Target piece exceeds stock length');
+          if (rem > 1e-6) pool.push(rem);
+          pieces.push(targetLen);
+        }
+      }
+      for (const seg of segments) {
+        if (!seg.hasWall) continue;
+        let L = seg.len;
+        if (L <= 1e-9) continue;
+        if (overlap >= stockLen - 1e-9 && L > 0) {
+          throw new Error('Overlap must be less than stock length.');
+        }
+        // Minimal pieces k such that k*stock - overlap*(k-1) >= L
+        const den = stockLen - overlap;
+        let k = 1;
+        if (L > stockLen) {
+          k = Math.ceil((L - overlap) / den);
+          if (!isFinite(k) || k < 1) k = 1;
+        }
+        // Build piece lengths
+        const list = [];
+        if (k === 1) {
+          list.push(L);
+        } else {
+          for (let i = 0; i < k - 1; i++) list.push(stockLen);
+          const remEff = L - ((k - 1) * stockLen - (k - 2) * overlap);
+          const lastLen = Math.min(stockLen, remEff + overlap);
+          list.push(lastLen);
+        }
+        list.sort((a, b) => b - a);
+        for (const t of list) takeFromPoolOrStock(t);
+      }
+      return pieces;
+    }
+
+    function computePathPoints(segments) {
+      const pts = [{ x: 0, y: 0 }]; // Start
+      let angle = 0; // radians, 0 east
+      for (const seg of segments) {
+        const dx = Math.cos(angle) * seg.len;
+        const dy = Math.sin(angle) * seg.len;
+        const last = pts[pts.length - 1];
+        pts.push({ x: last.x + dx, y: last.y + dy });
+        if (seg.dir === 'L') angle += Math.PI / 2;
+        else if (seg.dir === 'R') angle -= Math.PI / 2;
+        // W or X: no turn
+      }
+      return pts;
+    }
+
+    // Multi-room helpers
+    function parseRoomsMulti(roomText) {
+      const lines = (roomText || '').split(/\r?\n/);
+      const rooms = [];
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i].trim();
+        if (!line) continue;
+        const parsed = parseRoomSpec(line);
+        rooms.push({ lineIndex: i + 1, ...parsed });
+      }
+      if (rooms.length === 0) {
+        // Preserve original error UX
+        const parsed = parseRoomSpec((roomText || '').trim());
+        return { rooms: [{ lineIndex: 1, ...parsed }], anyOk: parsed.ok };
+      }
+      const anyOk = rooms.some(r => r.ok);
+      return { rooms, anyOk };
+    }
+
+    function renderSVGAll(rooms, perRoomPieces, overlap) {
+      const svg = $('#svg');
+      while (svg.firstChild) svg.removeChild(svg.firstChild);
+      if (!rooms || rooms.length === 0) return;
+
+      // Precompute per-room geometry
+      const gap = 24; // visual gap between rooms (inches)
+      const roomGeom = [];
+      let totalHeight = 0;
+      let maxWidth = 0;
+
+      for (let i = 0; i < rooms.length; i++) {
+        const segments = rooms[i].segments;
+        const pts = computePathPoints(segments);
+        let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+        for (const p of pts) {
+          if (p.x < minX) minX = p.x;
+          if (p.x > maxX) maxX = p.x;
+          if (p.y < minY) minY = p.y;
+          if (p.y > maxY) maxY = p.y;
+        }
+        const width = Math.max(10, maxX - minX);
+        const height = Math.max(10, maxY - minY);
+        roomGeom.push({
+          segments,
+          pts,
+          minX, maxX, minY, maxY,
+          width, height,
+          perSegPieces: perRoomPieces[i] || []
+        });
+        totalHeight += (i === 0 ? 0 : gap) + height;
+        if (width > maxWidth) maxWidth = width;
+      }
+
+      const pad = 24;
+      const viewX = -pad;
+      const viewY = -(0 + pad);
+      const viewW = maxWidth + 2 * pad;
+      const viewH = totalHeight + 2 * pad;
+      svg.setAttribute('viewBox', viewX + ' ' + viewY + ' ' + viewW + ' ' + viewH);
+
+      function line(x1, y1, x2, y2, opts = {}) {
+        const el = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        el.setAttribute('x1', x1);
+        el.setAttribute('y1', -y1);
+        el.setAttribute('x2', x2);
+        el.setAttribute('y2', -y2);
+        el.setAttribute('stroke', opts.stroke || '#000');
+        el.setAttribute('stroke-width', opts.width || 4);
+        if (opts.dash) el.setAttribute('stroke-dasharray', opts.dash);
+        el.setAttribute('stroke-linecap', 'round');
+        el.setAttribute('opacity', opts.opacity != null ? opts.opacity : 1);
+        svg.appendChild(el);
+      }
+
+      const wallColor = getComputedStyle(document.documentElement).getPropertyValue('--wall') || '#999';
+      const doorColor = getComputedStyle(document.documentElement).getPropertyValue('--door') || '#cbb';
+      const trimColor = getComputedStyle(document.documentElement).getPropertyValue('--trim') || '#2563eb';
+
+      // Draw each room stacked vertically
+      let stackY = 0;
+      for (let i = 0; i < roomGeom.length; i++) {
+        const g = roomGeom[i];
+        const shiftX = -g.minX;
+        const shiftY = -g.maxY - stackY;
+        const tpts = g.pts.map(p => ({ x: p.x + shiftX, y: p.y + shiftY }));
+
+        // Walls/doors
+        for (let si = 0; si < g.segments.length; si++) {
+          const a = tpts[si], b = tpts[si + 1];
+          if (g.segments[si].hasWall) {
+            line(a.x, a.y, b.x, b.y, { stroke: wallColor, width: 6, opacity: 0.5 });
+          } else {
+            line(a.x, a.y, b.x, b.y, { stroke: doorColor, width: 4, dash: '6,6', opacity: 0.5 });
+          }
+        }
+
+        // Trim pieces
+        for (let si = 0; si < g.segments.length; si++) {
+          if (!g.segments[si].hasWall) continue;
+          const a = tpts[si], b = tpts[si + 1];
+          const segLen = g.segments[si].len;
+          const vx = (b.x - a.x) / segLen;
+          const vy = (b.y - a.y) / segLen;
+          const pieces = g.perSegPieces[si] || [];
+          let cursor = 0;
+          for (let pi = 0; pi < pieces.length; pi++) {
+            const p = pieces[pi];
+            const o = pi > 0 ? Math.min(overlap || 0, segLen) : 0;
+            const start = Math.max(cursor - o, 0);
+            const end = Math.min(cursor + p, segLen);
+            const x1 = a.x + vx * start, y1 = a.y + vy * start;
+            const x2 = a.x + vx * end, y2 = a.y + vy * end;
+            line(x1, y1, x2, y2, { stroke: trimColor, width: 4.5, opacity: 0.6 });
+            const eff = p - (pi > 0 ? o : 0);
+            cursor += Math.max(0, eff);
+          }
+        }
+
+        // Increment stack
+        stackY += g.height + (i < roomGeom.length - 1 ? gap : 0);
+      }
+    }
+
+    function packPiecesDetailed(pieces, stockLen) {
+      if (!isFinite(stockLen) || stockLen <= 0) return { bins: [] };
+      const arr = pieces.slice().sort((a, b) => b - a);
+      const bins = []; // { used, cuts: [] }
+      for (const p of arr) {
+        let placed = false;
+        for (const bin of bins) {
+          if (bin.used + p <= stockLen + 1e-9) {
+            bin.cuts.push(p);
+            bin.used += p;
+            placed = true;
+            break;
+          }
+        }
+        if (!placed) bins.push({ used: p, cuts: [p] });
+      }
+      return { bins };
+    }
+
+    function renderStockCuts(bins, stockLen) {
+      const svg = $('#stockSvg');
+      while (svg.firstChild) svg.removeChild(svg.firstChild);
+      const trimColor = getComputedStyle(document.documentElement).getPropertyValue('--trim') || '#2563eb';
+      const baseW = 500;
+      const pad = 6;
+      const rowH = 20;
+      const gap = 8;
+      if (!bins || !bins.length || !isFinite(stockLen) || stockLen <= 0) {
+        svg.setAttribute('viewBox', '0 0 120 80');
+        svg.style.height = '200px';
+        return;
+      }
+      const scale = baseW / stockLen;
+      const vw = baseW + 2 * pad;
+      const vh = bins.length * rowH + (bins.length - 1) * gap + 2 * pad;
+      svg.setAttribute('viewBox', '0 0 ' + vw + ' ' + vh);
+      svg.style.height = Math.max(200, vh * 1.35) + 'px';
+
+      function rect(x, y, w, h, opts = {}) {
+        const el = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        el.setAttribute('x', x);
+        el.setAttribute('y', y);
+        el.setAttribute('width', w);
+        el.setAttribute('height', h);
+        if (opts.fill) el.setAttribute('fill', opts.fill);
+        if (opts.stroke) el.setAttribute('stroke', opts.stroke);
+        if (opts.sw) el.setAttribute('stroke-width', opts.sw);
+        el.setAttribute('rx', opts.rx || 2);
+        el.setAttribute('ry', opts.ry || 2);
+        el.setAttribute('opacity', opts.opacity != null ? opts.opacity : 1);
+        svg.appendChild(el);
+      }
+      function text(x, y, str, opts = {}) {
+        const el = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        el.setAttribute('x', x);
+        el.setAttribute('y', y);
+        el.setAttribute('fill', opts.fill || '#111');
+        el.setAttribute('font-size', opts.size || 7);
+        el.setAttribute('dominant-baseline', 'middle');
+        el.setAttribute('text-anchor', opts.anchor || 'middle');
+        el.textContent = str;
+        svg.appendChild(el);
+      }
+
+      for (let i = 0; i < bins.length; i++) {
+        const y = pad + i * (rowH + gap);
+        // Stock outline
+        rect(pad, y, baseW, rowH, { fill: '#fff', stroke: '#d1d5db', sw: 1.2, rx: 3, ry: 3 });
+        // Cuts
+        let cx = pad;
+        for (const cut of bins[i].cuts) {
+          const w = Math.max(0, cut * scale);
+          rect(cx, y, w, rowH, { fill: trimColor, opacity: 0.6 });
+          if (w >= 8) {
+            text(cx + w / 2, y + rowH / 2, fmtInches(cut), { fill: '#0b225a', size: 7, anchor: 'middle' });
+          }
+          cx += w;
+        }
+        // Waste
+        const waste = Math.max(0, stockLen - bins[i].used);
+        if (waste > 1e-6) {
+          const w = waste * scale;
+          rect(cx, y, w, rowH, { fill: '#e5e7eb' });
+          if (w >= 8) {
+            text(cx + w / 2, y + rowH / 2, fmtInches(waste), { fill: '#6b7280', size: 7, anchor: 'middle' });
+          }
+        }
+        // Label left side
+        text(pad - 2, y + rowH / 2, String(i + 1), { fill: '#6b7280', size: 7, anchor: 'end' });
+      }
+    }
+
+    // URL state (base64-encoded JSON in ?s=)
+    let __suppressURL = false;
+    let __lastURLState = '';
+
+    function b64urlEncode(str) {
+      const b64 = btoa(unescape(encodeURIComponent(str)));
+      return b64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/,'');
+    }
+    function b64urlDecode(s) {
+      try {
+        s = (s || '').replace(/-/g, '+').replace(/_/g, '/');
+        while (s.length % 4) s += '=';
+        return decodeURIComponent(escape(atob(s)));
+      } catch (e) {
+        return null;
+      }
+    }
+    function encodeStateObj(obj) {
+      try { return b64urlEncode(JSON.stringify(obj)); } catch (e) { return ''; }
+    }
+    function decodeStateStr(s) {
+      const json = b64urlDecode(s);
+      if (!json) return null;
+      try { return JSON.parse(json); } catch (e) { return null; }
+    }
+    function getStateFromInputs() {
+      return {
+        room: $('#room').value || '',
+        stock: $('#stock').value || '',
+        pieces: $('#pieces').value || '',
+        overlap: $('#overlap').value || ''
+      };
+    }
+    function applyStateToInputs(obj) {
+      if (!obj || typeof obj !== 'object') return;
+      if (typeof obj.room === 'string') $('#room').value = obj.room;
+      if (typeof obj.stock === 'string') $('#stock').value = obj.stock;
+      if (typeof obj.pieces === 'string') $('#pieces').value = obj.pieces;
+      if (typeof obj.overlap === 'string') $('#overlap').value = obj.overlap;
+    }
+    function updateURLFromInputs() {
+      if (__suppressURL) return;
+      const s = encodeStateObj(getStateFromInputs());
+      if (!s || s === __lastURLState) return;
+      const url = new URL(location.href);
+      url.searchParams.set('s', s);
+      history.replaceState(null, '', url.toString());
+      __lastURLState = s;
+    }
+    function loadStateFromURL() {
+      const url = new URL(location.href);
+      const s = url.searchParams.get('s');
+      if (!s) return false;
+      const obj = decodeStateStr(s);
+      if (!obj) return false;
+      __suppressURL = true;
+      applyStateToInputs(obj);
+      __suppressURL = false;
+      __lastURLState = encodeStateObj(getStateFromInputs());
+      return true;
+    }
+
+    function recompute() {
+      const roomStr = $('#room').value;
+      const stockStr = $('#stock').value;
+      const piecesStr = $('#pieces').value;
+      const overlapStr = $('#overlap').value;
+
+      // Clear errors
+      $('#roomErrors').textContent = '';
+      $('#stockErrors').textContent = '';
+      $('#piecesErrors').textContent = '';
+      $('#overlapErrors').textContent = '';
+
+      const { rooms } = parseRoomsMulti(roomStr);
+      const stockPM = parseMeasurement(stockStr);
+      let stockLen = NaN;
+      if (!stockPM.ok) {
+        $('#stockErrors').textContent = stockStr.trim() ? (stockPM.err || 'Invalid stock length.') : '';
+      } else {
+        stockLen = stockPM.inches;
+        if (stockLen <= 0) $('#stockErrors').textContent = 'Stock length must be > 0.';
+      }
+
+      // Overlap
+      let overlap = 0;
+      if (trimStr(overlapStr) !== '') {
+        const opm = parseMeasurement(overlapStr);
+        if (!opm.ok) {
+          $('#overlapErrors').textContent = opm.err || 'Invalid overlap.';
+        } else if (opm.inches < 0) {
+          $('#overlapErrors').textContent = 'Overlap must be ≥ 0.';
+        } else {
+          overlap = opm.inches;
+        }
+      }
+      if (isFinite(stockLen) && stockLen > 0 && overlap >= stockLen - 1e-9) {
+        $('#overlapErrors').textContent = 'Overlap must be less than stock length.';
+      }
+
+      // Build piece lines aligned to rooms
+      const pieceLines = (piecesStr || '').split(/\r?\n/);
+      const perRoomPiecesParsed = [];
+      const allErrors = [];
+      const perRoomPerSegPieces = [];
+      const validRooms = [];
+      const allPiecesFlat = [];
+      let totalWall = 0;
+      let anyPiecesProvided = false;
+
+      // Detect extra pieces lines beyond rooms (non-empty)
+      const nonEmptyPieceLines = pieceLines.map(s => s.trim()).filter(s => s.length > 0).length;
+      const roomCount = rooms.length;
+      if (pieceLines.length > roomCount) {
+        for (let i = roomCount; i < pieceLines.length; i++) {
+          if (pieceLines[i].trim()) {
+            allErrors.push('Pieces line ' + (i + 1) + ' provided but no corresponding room.');
+          }
+        }
+      }
+
+      for (let i = 0; i < rooms.length; i++) {
+        const r = rooms[i];
+        if (!r.ok) {
+          allErrors.push('Room ' + (i + 1) + ' (line ' + r.lineIndex + '): ' + r.errors.join('; '));
+          perRoomPiecesParsed.push({ pieces: [], errors: [], rawCount: 0 });
+          perRoomPerSegPieces.push(r.segments.map(() => []));
+          continue;
+        }
+        validRooms.push(r);
+
+        const pieceLine = pieceLines[i] != null ? pieceLines[i] : '';
+        const parsedPieces = parsePiecesList(pieceLine);
+        if (pieceLine.trim().length > 0) anyPiecesProvided = true;
+        if (parsedPieces.errors.length) {
+          allErrors.push('Room ' + (i + 1) + piecesStr.includes('\n') ? ' pieces: ' + parsedPieces.errors.join('; ') : ' pieces: ' + parsedPieces.errors.join('; '));
+        }
+        const validation = validatePiecesAgainstPlan(r.segments, parsedPieces.pieces, stockLen, overlap);
+        if (validation.errors.length) {
+          allErrors.push('Room ' + (i + 1) + ': ' + validation.errors.join('; '));
+        }
+        perRoomPiecesParsed.push(parsedPieces);
+        perRoomPerSegPieces.push(validation.perSegPieces);
+        totalWall += r.segments.filter(s => s.hasWall).reduce((a, s) => a + s.len, 0);
+        allPiecesFlat.push(...parsedPieces.pieces);
+      }
+
+      // Stats display
+      if (validRooms.length > 0) {
+        $('#statTotal').textContent = fmtInches(totalWall);
+      } else {
+        $('#statTotal').textContent = '—';
+      }
+
+      $('#statPieces').textContent = anyPiecesProvided ? String(allPiecesFlat.length) : '—';
+
+      if (anyPiecesProvided && isFinite(stockLen) && stockLen > 0) {
+        const ffd = firstFitDecreasingBins(allPiecesFlat, stockLen);
+        $('#statStocks').textContent = ffd.bins > 0 ? String(ffd.bins) : '—';
+      } else {
+        $('#statStocks').textContent = '—';
+      }
+
+      let statusText = '—';
+      let statusOk = false;
+      const anyRooms = rooms.length > 0 && validRooms.length > 0;
+      if (allErrors.length) {
+        $('#piecesErrors').textContent = allErrors.join('\n');
+        statusText = 'Has errors';
+        statusOk = false;
+      } else if (anyRooms) {
+        // Determine coverage across rooms
+        let allCovered = true;
+        for (let i = 0; i < rooms.length; i++) {
+          const r = rooms[i];
+          if (!r.ok) { allCovered = false; break; }
+          const pieceLine = pieceLines[i] != null ? pieceLines[i] : '';
+          const parsedPieces = parsePiecesList(pieceLine);
+          const validation = validatePiecesAgainstPlan(r.segments, parsedPieces.pieces, stockLen, overlap);
+          if (!validation.covered) { allCovered = false; }
+        }
+        statusOk = allCovered;
+        statusText = allCovered ? 'All walls covered.' : 'Incomplete coverage.';
+      }
+
+      const statEl = $('#statStatus');
+      statEl.textContent = statusText;
+      statEl.className = statusOk ? 'ok' : '';
+
+      // Render layout
+      const onlyRooms = rooms.filter(r => r.ok).map(r => ({ segments: r.segments }));
+      renderSVGAll(onlyRooms, perRoomPerSegPieces.filter((_, idx) => rooms[idx].ok), overlap);
+      // Room-level errors
+      const roomOnlyErrors = rooms.filter(r => !r.ok).map((r, idx) => 'Room ' + (idx + 1) + ' (line ' + r.lineIndex + '): ' + r.errors.join('; '));
+      $('#roomErrors').textContent = roomOnlyErrors.join('\n');
+
+      // Render stock cutting plan
+      if (anyPiecesProvided && isFinite(stockLen) && stockLen > 0 && allErrors.length === 0) {
+        const packed = packPiecesDetailed(allPiecesFlat, stockLen);
+        renderStockCuts(packed.bins, stockLen);
+      } else {
+        renderStockCuts([], stockLen);
+      }
+
+      // Update URL with current inputs
+      updateURLFromInputs();
+    }
+
+    $('#suggest').addEventListener('click', () => {
+      const { rooms } = parseRoomsMulti($('#room').value);
+      const stockPM = parseMeasurement($('#stock').value);
+      const overlapStr = $('#overlap').value;
+      let overlap = 0;
+      let overlapErr = '';
+      if (trimStr(overlapStr) !== '') {
+        const opm = parseMeasurement(overlapStr);
+        if (!opm.ok) overlapErr = opm.err || 'Invalid overlap.';
+        else if (opm.inches < 0) overlapErr = 'Overlap must be ≥ 0.';
+        else overlap = opm.inches;
+      }
+      $('#overlapErrors').textContent = overlapErr;
+      const roomErrs = rooms.filter(r => !r.ok).map((r, idx) => 'Room ' + (idx + 1) + ' (line ' + r.lineIndex + '): ' + r.errors.join('; '));
+      $('#roomErrors').textContent = roomErrs.join('\n');
+      $('#stockErrors').textContent = stockPM.ok && stockPM.inches > 0 ? '' : (stockPM.err || 'Invalid stock length.');
+      if (isFinite(stockPM.inches) && stockPM.inches > 0 && overlap >= stockPM.inches - 1e-9) {
+        $('#overlapErrors').textContent = 'Overlap must be less than stock length.';
+      }
+      if (!rooms.length || roomErrs.length || !stockPM.ok || stockPM.inches <= 0 || $('#overlapErrors').textContent) return;
+
+      try {
+        const piecesLines = rooms.map((r, i) => {
+          if (!r.ok) return '';
+          const pieces = suggestPieces(r.segments, stockPM.inches, overlap);
+          return pieces.map(fmtInches).join(', ');
+        });
+        $('#pieces').value = piecesLines.join('\n');
+        $('#piecesErrors').textContent = '';
+      } catch (e) {
+        $('#piecesErrors').textContent = 'Suggest failed: ' + e.message;
+      }
+      recompute();
+    });
+
+    $('#clearPieces').addEventListener('click', () => {
+      $('#pieces').value = '';
+      recompute();
+    });
+
+    // Live recompute
+    $('#room').addEventListener('input', recompute);
+    $('#stock').addEventListener('input', recompute);
+    $('#pieces').addEventListener('input', recompute);
+    $('#overlap').addEventListener('input', recompute);
+
+    // Load state from URL or seed example
+    window.addEventListener('DOMContentLoaded', () => {
+      const loaded = loadStateFromURL();
+      if (!loaded) {
+        if (!$('#room').value.trim()) {
+          $('#room').value = "12' W, 8' R, 12' R, 8' R";
+        }
+        if (!$('#stock').value.trim()) {
+          $('#stock').value = "8'";
+        }
+      }
+      recompute();
+    });
+
+    // Handle back/forward
+    window.addEventListener('popstate', () => {
+      if (loadStateFromURL()) recompute();
+    });
+  </script>
+</body>
+</html>
