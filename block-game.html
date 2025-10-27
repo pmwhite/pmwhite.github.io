@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Block Game</title>
+  <style>
+    :root, html, body {
+      margin: 0px;
+      padding: 0px;
+    }
+    body {
+      margin: 0px auto;
+    }
+    #game {
+      display: block;
+      background: #fff;
+      width: 1200px;
+      height: 480px;
+      margin: 0px auto;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="game" width="1200" height="480"></canvas>
+  <script>
+    const grid_square_size = 60;
+    const grid_height = 8;
+    const grid_width = 20;
+    const step_duration = 200;
+    const canvas = document.getElementById('game');
+    const ctx = canvas.getContext('2d');
+    let player = { column: 0, row: 0 };
+    let blocks = [];
+    const history = [];
+    const cursor = { column: 0, row: 0 };
+    let current_history_transition_started_at = 0;
+    let mode = 'play';
+    let edit_data = 
+      {"player":{"column":0,"row":0},"blocks":[{"column":9,"row":0},{"column":9,"row":1},{"column":9,"row":2},{"column":9,"row":3},{"column":9,"row":4},{"column":9,"row":5},{"column":9,"row":6},{"column":9,"row":7},{"column":10,"row":7},{"column":10,"row":6},{"column":10,"row":5},{"column":10,"row":2},{"column":10,"row":1},{"column":10,"row":0},{"column":11,"row":0},{"column":13,"row":0},{"column":12,"row":0},{"column":17,"row":1},{"column":16,"row":1},{"column":14,"row":1},{"column":11,"row":6},{"column":11,"row":7},{"column":12,"row":7},{"column":12,"row":6},{"column":12,"row":4},{"column":12,"row":3},{"column":12,"row":2},{"column":13,"row":2},{"column":13,"row":3},{"column":13,"row":6},{"column":13,"row":7},{"column":14,"row":7},{"column":14,"row":6},{"column":14,"row":4},{"column":14,"row":3},{"column":14,"row":2},{"column":15,"row":2},{"column":15,"row":3},{"column":15,"row":4},{"column":15,"row":6},{"column":15,"row":7},{"column":16,"row":7},{"column":16,"row":6},{"column":16,"row":4},{"column":16,"row":2},{"column":17,"row":2},{"column":17,"row":3},{"column":17,"row":5},{"column":17,"row":6},{"column":17,"row":7},{"column":18,"row":7},{"column":18,"row":6},{"column":18,"row":5},{"column":19,"row":5},{"column":19,"row":6},{"column":19,"row":7},{"column":8,"row":3},{"column":8,"row":2},{"column":8,"row":1},{"column":8,"row":0},{"column":8,"row":5},{"column":8,"row":6},{"column":8,"row":7},{"column":18,"row":3},{"column":18,"row":2},{"column":18,"row":0},{"column":19,"row":3},{"column":19,"row":0}]};
+
+    function add_block(column, row) {
+      blocks.push({ column: column, row: row });
+    }
+
+    function add_big_block(column1, row1, column2, row2) {
+      for (let c = column1; c <= column2; c++) {
+        for (let r = row1; r <= row2; r++) {
+          add_block(c, r);
+        }
+      }
+    }
+
+    add_big_block(10, 0, 11, 4);
+    add_big_block(10, 6, 12, 8);
+    add_big_block(13, 7, 20, 8);
+    add_big_block(12, 0, 20, 8);
+    add_block(10, 5);
+    add_block(14, 5);
+
+    function should_extend_history() {
+      return history.length < 5;
+    }
+
+    function add_current_state_to_history() {
+      if (history.length === 1) {
+        current_history_transition_started_at = performance.now();
+      }
+      history.push(structuredClone({ player: player, blocks: blocks }));
+    }
+
+    add_current_state_to_history();
+
+    function in_bounds(column, row) {
+      return column >= 0 && column < grid_width && row >= 0 && row < grid_height;
+    }
+
+    function move_player(column_diff, row_diff) {
+      const target_column = player.column + column_diff;
+      const target_row = player.row + row_diff;
+      if (in_bounds(target_column, target_row)) {
+        let can_move_to_space = true;
+        for (const key in blocks) {
+          const block = blocks[key];
+          if (block.row === target_row && block.column === target_column) {
+            const block_target_column = block.column + column_diff;
+            const block_target_row = block.row + row_diff;
+            let can_move_block = in_bounds(block_target_column, block_target_row);
+            can_move_to_space = false;
+            for (const other_key in blocks) {
+              const other = blocks[other_key];
+              if (other.column === block_target_column && other.row === block_target_row) {
+                can_move_block = false;
+                break;
+              }
+            }
+            if (can_move_block) {
+              block.column = block_target_column;
+              block.row = block_target_row;
+              can_move_to_space = true;
+              break;
+            }
+          }
+        }
+        if (can_move_to_space) {
+          player.column = target_column;
+          player.row = target_row;
+        }
+      }
+    }
+
+    function move_cursor(column_diff, row_diff) {
+      const target_column = cursor.column + column_diff;
+      const target_row = cursor.row + row_diff;
+      if (in_bounds(target_column, target_row)) {
+        cursor.column = target_column;
+        cursor.row = target_row;
+      }
+    }
+
+    document.addEventListener('keydown', ev => {
+      if (should_extend_history()) {
+        switch (mode) {
+          case 'play':
+            switch (ev.key) {
+              case 'ArrowLeft':
+                move_player(-1, 0);
+                break;
+              case 'ArrowRight':
+                move_player(1, 0);
+                break;
+              case 'ArrowUp':
+                move_player(0, -1);
+                break;
+              case 'ArrowDown':
+                move_player(0, 1);
+                break;
+              case 'm':
+                const data = structuredClone(edit_data);
+                player = data.player;
+                blocks = data.blocks;
+                mode = 'edit';
+                break;
+            }
+            break;
+          case 'edit':
+            switch (ev.key) {
+              case 'ArrowLeft':
+                move_cursor(-1, 0);
+                break;
+              case 'ArrowRight':
+                move_cursor(1, 0);
+                break;
+              case 'ArrowUp':
+                move_cursor(0, -1);
+                break;
+              case 'ArrowDown':
+                move_cursor(0, 1);
+                break;
+              case 'm':
+                edit_data = structuredClone({ player: player, blocks: blocks });
+                const data = structuredClone(edit_data);
+                player = data.player;
+                blocks = data.blocks;
+                mode = 'play';
+                break;
+              case 'b':
+                console.log('b');
+                let found_block = false;
+                for (let key in blocks) {
+                  let block = blocks[key];
+                  if (block.column === cursor.column && block.row === cursor.row) {
+                    found_block = true;
+                    delete blocks[key];
+                    break;
+                  }
+                }
+                if (!found_block) {
+                  blocks.push({ column: cursor.column, row: cursor.row });
+                }
+                break;
+            }
+            break;
+        }
+        add_current_state_to_history();
+      }
+    });
+
+    function lerp(a, b, t) {
+      return a + (b - a) * t;
+    }
+
+    function loop() {
+      ctx.fillStyle = '#44403c';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      if (false) {
+        ctx.strokeStyle = '#57534e';
+        for (let r = 1; r < grid_height; r++) {
+          ctx.beginPath();
+          const y = r * grid_square_size;
+          ctx.moveTo(0, y);
+          ctx.lineTo(grid_width * grid_square_size, y);
+          ctx.stroke();
+        }
+
+        for (let c = 1; c < grid_width; c++) {
+          ctx.beginPath();
+          const x = c * grid_square_size;
+          ctx.moveTo(x, 0);
+          ctx.lineTo(x, grid_height * grid_square_size);
+          ctx.stroke();
+        }
+      }
+
+      let now = performance.now();
+
+      ctx.fillStyle = '#f43f5e';
+      const delta = now - current_history_transition_started_at;
+      const lerp_t = delta / step_duration;
+      const lerp_floor = Math.floor(lerp_t);
+      const lerp_remainder = lerp_t - lerp_floor;
+      const from = history[Math.min(history.length - 1, lerp_floor)];
+      const to = history[Math.min(history.length - 1, lerp_floor + 1)]; 
+      ctx.fillRect(
+        grid_square_size * lerp(from.player.column, to.player.column, lerp_remainder),
+        grid_square_size * lerp(from.player.row, to.player.row, lerp_remainder),
+        grid_square_size, grid_square_size);
+
+      for (const key in to.blocks) {
+        const from_block = from.blocks[key];
+        const to_block = to.blocks[key];
+        ctx.fillStyle = '#a8a29e';
+        let column = to_block.column;
+        let row = to_block.row;
+        if (from_block) {
+          column = lerp(from_block.column, to_block.column, lerp_remainder);
+          row = lerp(from_block.row, to_block.row, lerp_remainder)
+        }
+        ctx.fillRect(grid_square_size * column, grid_square_size * row, grid_square_size, grid_square_size);
+      }
+
+      switch (mode) {
+        case 'play':
+          break;
+        case 'edit':
+          ctx.strokeStyle = '#059669';
+          ctx.lineWidth = 2;
+          ctx.strokeRect(grid_square_size * cursor.column, grid_square_size * cursor.row, grid_square_size, grid_square_size);
+          ctx.font = '20px sans-serif';
+          ctx.fillStyle = '#e2e8f0';
+          ctx.fillText('Editor', 10, 30);
+          break;
+      }
+
+      if (history.length > 1 && lerp_t > 1) {
+        history.shift(Math.max(0, Math.min(history.length - 1, lerp_floor)));
+        current_history_transition_started_at = now - lerp_remainder;
+      }
+
+      requestAnimationFrame(loop);
+    }
+    requestAnimationFrame(loop);
+
+  </script>
+</body>
+</html>
