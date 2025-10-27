@@ -36,10 +36,113 @@
     let current_history_transition_started_at = 0;
     let mode = 'play';
 
-    let edit_data = {"player":{"column":0,"row":0},"blocks":[{"column":9,"row":0},{"column":9,"row":1},{"column":9,"row":2},{"column":9,"row":3},{"column":9,"row":4},{"column":9,"row":5},{"column":9,"row":6},{"column":9,"row":7},{"column":10,"row":7},{"column":10,"row":6},{"column":10,"row":5},{"column":10,"row":2},{"column":10,"row":1},{"column":10,"row":0},{"column":11,"row":0},{"column":13,"row":0},{"column":12,"row":0},{"column":17,"row":1},{"column":16,"row":1},{"column":14,"row":1},{"column":11,"row":6},{"column":11,"row":7},{"column":12,"row":7},{"column":12,"row":6},{"column":12,"row":4},{"column":12,"row":3},{"column":12,"row":2},{"column":13,"row":2},{"column":13,"row":3},{"column":13,"row":6},{"column":13,"row":7},{"column":14,"row":7},{"column":14,"row":6},{"column":14,"row":4},{"column":14,"row":3},{"column":14,"row":2},{"column":15,"row":2},{"column":15,"row":3},{"column":15,"row":4},{"column":15,"row":6},{"column":15,"row":7},{"column":16,"row":7},{"column":16,"row":6},{"column":16,"row":4},{"column":16,"row":2},{"column":17,"row":2},{"column":17,"row":3},{"column":17,"row":5},{"column":17,"row":6},{"column":17,"row":7},{"column":18,"row":7},{"column":18,"row":6},{"column":18,"row":5},{"column":19,"row":5},{"column":19,"row":6},{"column":19,"row":7},{"column":8,"row":3},{"column":8,"row":2},{"column":8,"row":1},{"column":8,"row":0},{"column":8,"row":5},{"column":8,"row":6},{"column":8,"row":7},{"column":18,"row":3},{"column":18,"row":2},{"column":18,"row":0},{"column":19,"row":3},{"column":19,"row":0},{"column":7,"row":6},{"column":6,"row":6},{"column":7,"row":4},{"column":6,"row":5},{"column":2,"row":0},{"column":2,"row":1},{"column":3,"row":2},{"column":4,"row":0},{"column":6,"row":1},{"column":6,"row":3},{"column":6,"row":2},{"column":1,"row":1},{"column":1,"row":2},{"column":1,"row":3},{"column":1,"row":4},{"column":1,"row":5},{"column":1,"row":6},{"column":2,"row":6},{"column":3,"row":6},{"column":4,"row":6},{"column":5,"row":4},{"column":4,"row":4},{"column":3,"row":4},{"column":4,"row":2},{"column":3,"row":3},{"column":4,"row":3}]};
+    let edit_data =
+      {
+        "blocks" : {
+          0: { "column" : 9, "row" : 0 },
+          1: { "column" : 9, "row" : 1 },
+          2: { "column" : 9, "row" : 2 },
+          3: { "column" : 9, "row" : 3 },
+          4: { "column" : 9, "row" : 4 },
+          5: { "column" : 9, "row" : 5 },
+          6: { "column" : 9, "row" : 6 },
+          7: { "column" : 9, "row" : 7 },
+          8: { "column" : 10, "row" : 7 },
+          9: { "column" : 10, "row" : 6 },
+          10: { "column" : 10, "row" : 5 },
+          11: { "column" : 10, "row" : 2 },
+          12: { "column" : 10, "row" : 1 },
+          13: { "column" : 10, "row" : 0 },
+          14: { "column" : 11, "row" : 0 },
+          15: { "column" : 13, "row" : 0 },
+          16: { "column" : 12, "row" : 0 },
+          17: { "column" : 17, "row" : 1 },
+          18: { "column" : 16, "row" : 1 },
+          19: { "column" : 14, "row" : 1 },
+          20: { "column" : 11, "row" : 6 },
+          21: { "column" : 11, "row" : 7 },
+          22: { "column" : 12, "row" : 7 },
+          23: { "column" : 12, "row" : 6 },
+          24: { "column" : 12, "row" : 4 },
+          25: { "column" : 12, "row" : 3 },
+          26: { "column" : 12, "row" : 2 },
+          27: { "column" : 13, "row" : 2 },
+          28: { "column" : 13, "row" : 3 },
+          29: { "column" : 13, "row" : 6 },
+          30: { "column" : 13, "row" : 7 },
+          31: { "column" : 14, "row" : 7 },
+          32: { "column" : 14, "row" : 6 },
+          33: { "column" : 14, "row" : 4 },
+          34: { "column" : 14, "row" : 3 },
+          35: { "column" : 14, "row" : 2 },
+          36: { "column" : 15, "row" : 2 },
+          37: { "column" : 15, "row" : 3 },
+          38: { "column" : 15, "row" : 4 },
+          39: { "column" : 15, "row" : 6 },
+          40: { "column" : 15, "row" : 7 },
+          41: { "column" : 16, "row" : 7 },
+          42: { "column" : 16, "row" : 6 },
+          43: { "column" : 16, "row" : 4 },
+          44: { "column" : 16, "row" : 2 },
+          45: { "column" : 17, "row" : 2 },
+          46: { "column" : 17, "row" : 3 },
+          47: { "column" : 17, "row" : 5 },
+          48: { "column" : 17, "row" : 6 },
+          49: { "column" : 17, "row" : 7 },
+          50: { "column" : 18, "row" : 7 },
+          51: { "column" : 18, "row" : 6 },
+          52: { "column" : 18, "row" : 5 },
+          53: { "column" : 19, "row" : 5 },
+          54: { "column" : 19, "row" : 6 },
+          55: { "column" : 19, "row" : 7 },
+          56: { "column" : 8, "row" : 3 },
+          57: { "column" : 8, "row" : 2 },
+          58: { "column" : 8, "row" : 1 },
+          59: { "column" : 8, "row" : 0 },
+          60: { "column" : 8, "row" : 5 },
+          61: { "column" : 8, "row" : 6 },
+          62: { "column" : 8, "row" : 7 },
+          63: { "column" : 18, "row" : 3 },
+          64: { "column" : 18, "row" : 2 },
+          65: { "column" : 18, "row" : 0 },
+          66: { "column" : 19, "row" : 3 },
+          67: { "column" : 19, "row" : 0 },
+          68: { "column" : 7, "row" : 6 },
+          69: { "column" : 6, "row" : 6 },
+          70: { "column" : 7, "row" : 4 },
+          71: { "column" : 6, "row" : 5 },
+          72: { "column" : 2, "row" : 0 },
+          73: { "column" : 2, "row" : 1 },
+          74: { "column" : 3, "row" : 2 },
+          75: { "column" : 4, "row" : 0 },
+          76: { "column" : 6, "row" : 1 },
+          77: { "column" : 6, "row" : 3 },
+          78: { "column" : 6, "row" : 2 },
+          79: { "column" : 1, "row" : 1 },
+          80: { "column" : 1, "row" : 2 },
+          81: { "column" : 1, "row" : 3 },
+          82: { "column" : 1, "row" : 4 },
+          83: { "column" : 1, "row" : 5 },
+          84: { "column" : 1, "row" : 6 },
+          85: { "column" : 2, "row" : 6 },
+          86: { "column" : 3, "row" : 6 },
+          87: { "column" : 4, "row" : 6 },
+          88: { "column" : 5, "row" : 4 },
+          89: { "column" : 4, "row" : 4 },
+          90: { "column" : 3, "row" : 4 },
+          91: { "column" : 4, "row" : 2 },
+          92: { "column" : 3, "row" : 3 },
+          93: { "column" : 4, "row" : 3 }
+        },
+        "player" : { "column" : 0, "row" : 0 }
+      };
 
     function add_block(column, row) {
-      blocks.push({ column: column, row: row });
+      let i = 0;
+      while (blocks[i]) {
+        i++;
+      }
+      blocks[i] = { column: column, row: row };
     }
 
     function add_big_block(column1, row1, column2, row2) {
@@ -50,15 +153,10 @@
       }
     }
 
-    add_big_block(10, 0, 11, 4);
-    add_big_block(10, 6, 12, 8);
-    add_big_block(13, 7, 20, 8);
-    add_big_block(12, 0, 20, 8);
-    add_block(10, 5);
-    add_block(14, 5);
-
-    function should_extend_history() {
-      return history.length < 5;
+    function reset_to_edit_data() {
+      const data = structuredClone(edit_data);
+      player = data.player;
+      blocks = data.blocks;
     }
 
     function add_current_state_to_history() {
@@ -68,6 +166,7 @@
       history.push(structuredClone({ player: player, blocks: blocks }));
     }
 
+    reset_to_edit_data();
     add_current_state_to_history();
 
     function in_bounds(column, row) {
@@ -118,7 +217,15 @@
     }
 
     document.addEventListener('keydown', ev => {
-      if (should_extend_history()) {
+      // Since there is plenty of opportunity to make unfixable mistakes, we
+      // want each key press to be intentional. Toward that end, if the key is
+      // being held down, we only do one move at a time (which allows the user to
+      // move smoothly by holding down a key). But if the key is not being
+      // held, then it was probably hit repeatedly on purpose, which means we can
+      // allow going ahead by more than one move (which allows the user to not
+      // have to wait for the animation to finish before pressing the key for
+      // the next move).
+      if (history.length < 5 && !ev.repeat || history.length < 2) {
         switch (mode) {
           case 'play':
             switch (ev.key) {
@@ -135,9 +242,7 @@
                 move_player(0, 1);
                 break;
               case 'm':
-                const data = structuredClone(edit_data);
-                player = data.player;
-                blocks = data.blocks;
+                reset_to_edit_data()
                 mode = 'edit';
                 break;
             }
@@ -175,7 +280,7 @@
                   }
                 }
                 if (!found_block) {
-                  blocks.push({ column: cursor.column, row: cursor.row });
+                  add_block(cursor.column, cursor.row);
                 }
                 break;
             }
