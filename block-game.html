@@ -30,8 +30,9 @@
     const canvas = document.getElementById('game');
     const ctx = canvas.getContext('2d');
     let player = { column: 0, row: 0 };
-    let blocks = [];
-    const history = [];
+    let blocks = {};
+    let checkpoint_columns = {};
+    let history = [];
     const cursor = { column: 0, row: 0 };
     let current_history_transition_started_at = 0;
     let mode = 'play';
@@ -142,7 +143,8 @@
         94: { column: 5, row: 0 },
         95: { column: 5, row: 3 }
       },
-      player: { column: 0, row: 0 }
+      player: { column: 0, row: 0 },
+      checkpoint_columns: { 20: true }
     };
 
     function add_block(column, row) {
@@ -157,6 +159,10 @@
       const data = structuredClone(edit_data);
       player = data.player;
       blocks = data.blocks;
+      checkpoint_columns = data.checkpoint_columns;
+      viewport_left = grid_square_size * player.column;
+      viewport_moving = false;
+      history = [ data ];
     }
 
     function add_current_state_to_history() {
@@ -358,16 +364,21 @@
         }
       }
 
+      ctx.fillStyle = '#4d7c0f';
+      for (const key in checkpoint_columns) {
+        ctx.fillRect(grid_square_size * key, 0, grid_square_size, grid_height * grid_square_size);
+      }
+
       ctx.fillStyle = '#f43f5e';
       ctx.fillRect(
         player_x,
         grid_square_size * lerp(from.player.row, to.player.row, lerp_remainder),
         grid_square_size, grid_square_size);
 
+      ctx.fillStyle = '#a8a29e';
       for (const key in to.blocks) {
         const from_block = from.blocks[key];
         const to_block = to.blocks[key];
-        ctx.fillStyle = '#a8a29e';
         let column = to_block.column;
         let row = to_block.row;
         if (from_block) {
