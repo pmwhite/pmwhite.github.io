@@ -40,6 +40,7 @@
     let viewport_moving_base = 0;
     let viewport_moving_target = 0;
     let viewport_moving_started_at = 0;
+    const viewport_left_min =  grid_width / 2 * grid_square_size;
     let viewport_left = 0;
 
     let edit_data = {
@@ -327,6 +328,9 @@
           viewport_moving_target = viewport_moving_base + 0.1;
           viewport_moving_started_at = now;
         }
+      }
+      if (viewport_left < viewport_left_min) {
+        viewport_left = viewport_left_min;
       }
       ctx.setTransform(1, 0, 0, 1, 0, 0);
       translate_x = Math.min(0, grid_width / 2 * grid_square_size - viewport_left);
