@@ -31,7 +31,7 @@
     const ctx = canvas.getContext('2d');
     let player = { column: 0, row: 0 };
     let blocks = {};
-    let checkpoint_columns = {};
+    let checkpoint_columns = new Set();
     let history = [];
     const cursor = { column: 0, row: 0 };
     let current_history_transition_started_at = 0;
@@ -41,7 +41,7 @@
     let viewport_moving_base = 0;
     let viewport_moving_target = 0;
     let viewport_moving_started_at = 0;
-    const viewport_left_min =  grid_width / 2 * grid_square_size;
+    const viewport_left_min = grid_width / 2 * grid_square_size;
     let viewport_left = 0;
 
     let edit_data = {
@@ -144,7 +144,7 @@
         95: { column: 5, row: 3 }
       },
       player: { column: 0, row: 0 },
-      checkpoint_columns: { 20: true }
+      checkpoint_columns: new Set([ 0, 20 ])
     };
 
     function add_block(column, row) {
@@ -155,14 +155,23 @@
       blocks[i] = { column: column, row: row };
     }
 
+    function get_viewport_left_target(player_x) {
+      return Math.max(0, player_x - viewport_left_min);
+    }
+
     function reset_to_edit_data() {
       const data = structuredClone(edit_data);
-      player = data.player;
+      let prev_checkpoint_column = 0;
+      for (const checkpoint_column of checkpoint_columns) {
+        if (checkpoint_column <= player.column && checkpoint_column > prev_checkpoint_column) {
+          prev_checkpoint_column = checkpoint_column;
+        }
+      }
+      player.column = prev_checkpoint_column;
       blocks = data.blocks;
       checkpoint_columns = data.checkpoint_columns;
-      viewport_left = grid_square_size * player.column;
-      viewport_moving = false;
-      history = [ data ];
+      start_viewport_left_moving(get_viewport_left_target(player.column * grid_square_size), 3.0, performance.now());
+      history = [];
     }
 
     function add_current_state_to_history() {
@@ -170,7 +179,7 @@
       if (history.length === 1) {
         current_history_transition_started_at = now;
       }
-      history.push(structuredClone({ player: player, blocks: blocks }));
+      history.push(structuredClone({ player: player, blocks: blocks, checkpoint_columns: checkpoint_columns }));
     }
 
     reset_to_edit_data();
@@ -224,83 +233,119 @@
     }
 
     document.addEventListener('keydown', ev => {
-      // Since there is plenty of opportunity to make unfixable mistakes, we
-      // want each key press to be intentional. Toward that end, if the key is
-      // being held down, we only do one move at a time (which allows the user to
-      // move smoothly by holding down a key). But if the key is not being
-      // held, then it was probably hit repeatedly on purpose, which means we can
-      // allow going ahead by more than one move (which allows the user to not
-      // have to wait for the animation to finish before pressing the key for
-      // the next move).
-      if (history.length < 5 && !ev.repeat || history.length < 2) {
-        switch (mode) {
-          case 'play':
-            switch (ev.key) {
-              case 'ArrowLeft':
-                move_player(-1, 0);
-                break;
-              case 'ArrowRight':
-                move_player(1, 0);
-                break;
-              case 'ArrowUp':
-                move_player(0, -1);
-                break;
-              case 'ArrowDown':
-                move_player(0, 1);
-                break;
-              case 'm':
-                reset_to_edit_data();
-                mode = 'edit';
-                break;
-              case 'r':
-                reset_to_edit_data();
-                break;
-            }
-            break;
-          case 'edit':
-            switch (ev.key) {
-              case 'ArrowLeft':
-                move_cursor(-1, 0);
-                break;
-              case 'ArrowRight':
-                move_cursor(1, 0);
-                break;
-              case 'ArrowUp':
-                move_cursor(0, -1);
-                break;
-              case 'ArrowDown':
-                move_cursor(0, 1);
-                break;
-              case 'm':
-                edit_data = structuredClone({ player: player, blocks: blocks });
-                const data = structuredClone(edit_data);
-                player = data.player;
-                blocks = data.blocks;
-                mode = 'play';
-                break;
-              case 'b':
-                let found_block = false;
-                for (let key in blocks) {
-                  let block = blocks[key];
-                  if (block.column === cursor.column && block.row === cursor.row) {
-                    found_block = true;
-                    delete blocks[key];
-                    break;
+      switch (mode) {
+        case 'play':
+          // Since there is plenty of opportunity to make unfixable mistakes, we
+          // want each key press to be intentional. Toward that end, if the key is
+          // being held down, we only do one move at a time (which allows the user to
+          // move smoothly by holding down a key). But if the key is not being
+          // held, then it was probably hit repeatedly on purpose, which means we can
+          // allow going ahead by more than one move (which allows the user to not
+          // have to wait for the animation to finish before pressing the key for
+          // the next move).
+          if (history.length < 5 && !ev.repeat || history.length < 2) {
+            if (ev.shiftKey) {
+              switch (ev.key) {
+                case 'ArrowLeft':
+                  let prev_checkpoint_column = 0;
+                  for (const checkpoint_column of checkpoint_columns) {
+                    if (checkpoint_column < player.column && checkpoint_column > prev_checkpoint_column) {
+                      prev_checkpoint_column = checkpoint_column;
+                    }
                   }
-                }
-                if (!found_block) {
-                  add_block(cursor.column, cursor.row);
-                }
-                break;
+                  player.column = prev_checkpoint_column;
+                  reset_to_edit_data();
+                  break;
+                case 'ArrowRight':
+                  let next_checkpoint_column = 0;
+                  for (const checkpoint_column of checkpoint_columns) {
+                    if ((checkpoint_column > player.column && checkpoint_column < next_checkpoint_column) || next_checkpoint_column === 0) {
+                      next_checkpoint_column = checkpoint_column;
+                    }
+                  }
+                  player.column = next_checkpoint_column;
+                  reset_to_edit_data();
+                  break;
+              }
+            } else {
+              switch (ev.key) {
+                case 'ArrowLeft':
+                  move_player(-1, 0);
+                  break;
+                case 'ArrowRight':
+                  move_player(1, 0);
+                  break;
+                case 'ArrowUp':
+                  move_player(0, -1);
+                  break;
+                case 'ArrowDown':
+                  move_player(0, 1);
+                  break;
+                case 'm':
+                  reset_to_edit_data();
+                  mode = 'edit';
+                  break;
+                case 'r':
+                  reset_to_edit_data();
+                  break;
+              }
             }
-            break;
-        }
-        add_current_state_to_history();
+            add_current_state_to_history();
+          }
+          break;
+        case 'edit':
+          switch (ev.key) {
+            case 'ArrowLeft':
+              move_cursor(-1, 0);
+              break;
+            case 'ArrowRight':
+              move_cursor(1, 0);
+              break;
+            case 'ArrowUp':
+              move_cursor(0, -1);
+              break;
+            case 'ArrowDown':
+              move_cursor(0, 1);
+              break;
+            case 'm':
+              reset_to_edit_data();
+              mode = 'play';
+              break;
+            case 'b':
+              let found_block = false;
+              for (let key in blocks) {
+                let block = blocks[key];
+                if (block.column === cursor.column && block.row === cursor.row) {
+                  found_block = true;
+                  delete blocks[key];
+                  break;
+                }
+              }
+              if (!found_block) {
+                add_block(cursor.column, cursor.row);
+              }
+              break;
+          }
+          break;
       }
     });
 
     function lerp(a, b, t) {
       return a + (b - a) * t;
+    }
+
+    function start_viewport_left_moving(target, rate, now) {
+      if (target < viewport_left) {
+        viewport_moving = true;
+        viewport_moving_base = viewport_left;
+        viewport_moving_target = viewport_moving_base - rate;
+        viewport_moving_started_at = now;
+      } else if (target > viewport_left) {
+        viewport_moving = true;
+        viewport_moving_base = viewport_left;
+        viewport_moving_target = viewport_moving_base + rate;
+        viewport_moving_started_at = now;
+      }
     }
 
     function loop() {
@@ -312,38 +357,25 @@
       const from = history[Math.min(history.length - 1, lerp_floor)];
       const to = history[Math.min(history.length - 1, lerp_floor + 1)]; 
 
-      const player_x = grid_square_size * lerp(from.player.column, to.player.column, lerp_remainder);
+      const player_x = Math.floor(grid_square_size * lerp(from.player.column, to.player.column, lerp_remainder));
+      const viewport_left_target = get_viewport_left_target(player_x);
       if (viewport_moving) {
         viewport_left = lerp(viewport_moving_base, viewport_moving_target, now - viewport_moving_started_at);
         viewport_left = Math.floor(viewport_left);
         if (
-          ((viewport_moving_target > viewport_moving_base) && viewport_left > player_x)
-        || ((viewport_moving_target < viewport_moving_base) && viewport_left < player_x)) {
-          viewport_left = player_x;
+          (viewport_moving_target > viewport_moving_base && viewport_left > viewport_left_target)
+        || (viewport_moving_target < viewport_moving_base && viewport_left < viewport_left_target)) {
+          viewport_left = viewport_left_target;
           viewport_moving = false;
         }
       } else {
-        if (player_x < viewport_left) {
-          viewport_moving = true;
-          viewport_moving_base = viewport_left;
-          viewport_moving_target = viewport_moving_base - 0.1;
-          viewport_moving_started_at = now;
-        } else if (player_x > viewport_left) {
-          viewport_moving = true;
-          viewport_moving_base = viewport_left;
-          viewport_moving_target = viewport_moving_base + 0.1;
-          viewport_moving_started_at = now;
-        }
-      }
-      if (viewport_left < viewport_left_min) {
-        viewport_left = viewport_left_min;
+        start_viewport_left_moving(viewport_left_target, 0.1, now);
       }
       ctx.setTransform(1, 0, 0, 1, 0, 0);
-      translate_x = Math.min(0, grid_width / 2 * grid_square_size - viewport_left);
-      ctx.translate(translate_x, 0);
+      ctx.translate(-viewport_left, 0);
 
       ctx.fillStyle = '#44403c';
-      ctx.fillRect(-translate_x, 0, canvas.width, canvas.height);
+      ctx.fillRect(viewport_left, 0, canvas.width, canvas.height);
 
       if (false) {
         ctx.strokeStyle = '#57534e';
@@ -365,15 +397,18 @@
       }
 
       ctx.fillStyle = '#4d7c0f';
-      for (const key in checkpoint_columns) {
+      for (const key of checkpoint_columns) {
         ctx.fillRect(grid_square_size * key, 0, grid_square_size, grid_height * grid_square_size);
       }
 
-      ctx.fillStyle = '#f43f5e';
-      ctx.fillRect(
-        player_x,
-        grid_square_size * lerp(from.player.row, to.player.row, lerp_remainder),
-        grid_square_size, grid_square_size);
+
+      if (mode === 'play') {
+        ctx.fillStyle = '#f43f5e';
+        ctx.fillRect(
+          player_x,
+          grid_square_size * lerp(from.player.row, to.player.row, lerp_remainder),
+          grid_square_size, grid_square_size);
+      }
 
       ctx.fillStyle = '#a8a29e';
       for (const key in to.blocks) {
@@ -388,17 +423,13 @@
         ctx.fillRect(grid_square_size * column, grid_square_size * row, grid_square_size, grid_square_size);
       }
 
-      switch (mode) {
-        case 'play':
-          break;
-        case 'edit':
-          ctx.strokeStyle = '#059669';
-          ctx.lineWidth = 2;
-          ctx.strokeRect(grid_square_size * cursor.column, grid_square_size * cursor.row, grid_square_size, grid_square_size);
-          ctx.font = '20px sans-serif';
-          ctx.fillStyle = '#e2e8f0';
-          ctx.fillText('Editor', 10, 30);
-          break;
+      if (mode === 'edit') {
+        ctx.strokeStyle = '#059669';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(grid_square_size * cursor.column, grid_square_size * cursor.row, grid_square_size, grid_square_size);
+        ctx.font = '20px sans-serif';
+        ctx.fillStyle = '#e2e8f0';
+        ctx.fillText('Editor', 10, 30);
       }
 
       if (history.length > 1 && lerp_t > 1) {
