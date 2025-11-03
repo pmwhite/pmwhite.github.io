@@ -1,4 +1,18 @@
 <!DOCTYPE html>
+<!--
+todo list:
+- When the player reaches a checkpoint column, the world should auto-reset. We
+currently reset whenever they explicitly switch from one level to the next, but
+there is the awkward case in which they are already at the beginning of the
+level and want to reset it. We could either have a key to reset it explicitly,
+or the user could switch forward and than backward again to reset it. Both of
+these seem silly to me, and I kinda like making it a principle of the game that
+the state of the world is ephemeral. That is, you shouldn't hold on tightly to
+how things are, but rather focus on how to solve the original puzzle. You
+shouldn't have to worry about long-lasting state. Each puzzle is small and
+self-contained with respect to state.
+
+-->
 <html>
 <head>
   <meta charset="utf-8">
@@ -208,6 +222,12 @@
                 break;
               }
             }
+            for (const checkpoint_column of checkpoint_columns) {
+              if (checkpoint_column === block_target_column) {
+                can_move_block = false;
+                break;
+              }
+            }
             if (can_move_block) {
               block.column = block_target_column;
               block.row = block_target_row;
@@ -284,9 +304,6 @@
                 case 'm':
                   reset_to_edit_data();
                   mode = 'edit';
-                  break;
-                case 'r':
-                  reset_to_edit_data();
                   break;
               }
             }
