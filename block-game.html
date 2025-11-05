@@ -187,9 +187,7 @@ self-contained with respect to state.
       while (blocks.get(i)) {
         i++;
       }
-      console.log('add block', i, column, row);
       blocks.set(i, { column: column, row: row });
-      console.log('blocks', blocks, blocks.get(96));
     }
 
     function add_current_state_to_history() {
@@ -286,9 +284,9 @@ self-contained with respect to state.
             if (ev.shiftKey) {
               switch (ev.key) {
                 case 'ArrowLeft':
-                  reset_to_edit_data();
                   history = [];
                   add_current_state_to_history();
+                  reset_to_edit_data();
                   let prev_checkpoint_column = 0;
                   for (const checkpoint_column of checkpoint_columns) {
                     if (checkpoint_column < player.column && checkpoint_column > prev_checkpoint_column) {
@@ -304,10 +302,13 @@ self-contained with respect to state.
                   player.column = prev_checkpoint_column;
                   break;
                 case 'ArrowRight':
-                  reset_to_edit_data();
                   history = [];
                   add_current_state_to_history();
+                  reset_to_edit_data();
                   let next_checkpoint_column = 0;
+                  for (const checkpoint_column of checkpoint_columns) {
+                    next_checkpoint_column = checkpoint_column;
+                  }
                   for (const checkpoint_column of checkpoint_columns) {
                     if ((checkpoint_column > player.column && checkpoint_column < next_checkpoint_column) || next_checkpoint_column === 0) {
                       next_checkpoint_column = checkpoint_column;
@@ -378,6 +379,22 @@ self-contained with respect to state.
                 add_block(cursor.column, cursor.row);
               }
               break;
+            case 'i':
+              for (const block of blocks.values()) {
+                if (block.column >= cursor.column) {
+                  block.column += 1;
+                }
+              }
+              const new_checkpoint_columns = new Set();
+              for (const checkpoint_column of checkpoint_columns) {
+                if (checkpoint_column >= cursor.column) {
+                  new_checkpoint_columns.add(checkpoint_column + 1);
+                } else {
+                  new_checkpoint_columns.add(checkpoint_column);
+                }
+              }
+              checkpoint_columns = new_checkpoint_columns;
+              break;
             case 's':
               await save_edit_data();
               break;
@@ -418,7 +435,6 @@ self-contained with respect to state.
           }
           break;
         case 'moving':
-          console.log('moving');
           viewport_left = Math.floor(lerp(viewport.base, viewport.target, (now - viewport.started_at) / 400.0));
           if ((viewport.target > viewport.base && viewport_left > viewport.target) || (viewport.target <= viewport.base && viewport_left < viewport.target)) {
             viewport_left = viewport.target;
