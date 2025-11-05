@@ -53,10 +53,7 @@ self-contained with respect to state.
     let current_history_transition_started_at = 0;
     let mode = 'play';
 
-    let viewport_moving = false;
-    let viewport_moving_base = 0;
-    let viewport_moving_target = 0;
-    let viewport_moving_started_at = 0;
+    let viewport = { state: 'idle' };
     const viewport_left_min = grid_width / 2 * grid_square_size;
     let viewport_left = 0;
 
@@ -195,11 +192,12 @@ self-contained with respect to state.
       console.log('blocks', blocks, blocks.get(96));
     }
 
-    function get_viewport_left_target(player_x) {
-      switch (mode) {
-        case 'play': return Math.max(0, player_x - viewport_left_min);
-        case 'edit': return Math.max(0, cursor.column * grid_square_size - viewport_left_min);
+    function add_current_state_to_history() {
+      const now = performance.now();
+      if (history.length === 1) {
+        current_history_transition_started_at = now;
       }
+      history.push(structuredClone({ player: player, blocks: blocks, checkpoint_columns: checkpoint_columns }));
     }
 
     function reset_to_edit_data() {
@@ -213,16 +211,6 @@ self-contained with respect to state.
       player.column = prev_checkpoint_column;
       blocks = data.blocks;
       checkpoint_columns = data.checkpoint_columns;
-      start_viewport_left_moving(get_viewport_left_target(player.column * grid_square_size), 3.0, performance.now());
-      history = [];
-    }
-
-    function add_current_state_to_history() {
-      const now = performance.now();
-      if (history.length === 1) {
-        current_history_transition_started_at = now;
-      }
-      history.push(structuredClone({ player: player, blocks: blocks, checkpoint_columns: checkpoint_columns }));
     }
 
     function update_edit_data() {
@@ -298,24 +286,40 @@ self-contained with respect to state.
             if (ev.shiftKey) {
               switch (ev.key) {
                 case 'ArrowLeft':
+                  reset_to_edit_data();
+                  history = [];
+                  add_current_state_to_history();
                   let prev_checkpoint_column = 0;
                   for (const checkpoint_column of checkpoint_columns) {
                     if (checkpoint_column < player.column && checkpoint_column > prev_checkpoint_column) {
                       prev_checkpoint_column = checkpoint_column;
                     }
                   }
+                  viewport = { 
+                    state: 'moving',
+                    base: viewport_left,
+                    target: Math.max(0, prev_checkpoint_column * grid_square_size - viewport_left_min),
+                    started_at: performance.now()
+                  };
                   player.column = prev_checkpoint_column;
-                  reset_to_edit_data();
                   break;
                 case 'ArrowRight':
+                  reset_to_edit_data();
+                  history = [];
+                  add_current_state_to_history();
                   let next_checkpoint_column = 0;
                   for (const checkpoint_column of checkpoint_columns) {
                     if ((checkpoint_column > player.column && checkpoint_column < next_checkpoint_column) || next_checkpoint_column === 0) {
                       next_checkpoint_column = checkpoint_column;
                     }
                   }
+                  viewport = {
+                    state: 'moving',
+                    base: viewport_left,
+                    target: Math.max(0, next_checkpoint_column * grid_square_size - viewport_left_min),
+                    started_at: performance.now()
+                  };
                   player.column = next_checkpoint_column;
-                  reset_to_edit_data();
                   break;
               }
             } else {
@@ -357,6 +361,8 @@ self-contained with respect to state.
               break;
             case 'm':
               reset_to_edit_data();
+              let history = [];
+              add_current_state_to_history();
               mode = 'play';
               break;
             case 'b':
@@ -377,8 +383,6 @@ self-contained with respect to state.
               break;
           }
           update_edit_data();
-          history = [];
-          add_current_state_to_history();
           break;
       }
     });
@@ -387,29 +391,7 @@ self-contained with respect to state.
       return a + (b - a) * t;
     }
 
-    function start_viewport_left_moving(target, rate, now) {
-      let rate_for_mode = rate;
-      if (mode === 'edit') {
-        rate_for_mode = 1.0;
-      }
-      if (target < viewport_left) {
-        viewport_moving = true;
-        viewport_moving_base = viewport_left;
-        viewport_moving_target = viewport_moving_base - rate;
-        viewport_moving_started_at = now;
-      } else if (target > viewport_left) {
-        viewport_moving = true;
-        viewport_moving_base = viewport_left;
-        viewport_moving_target = viewport_moving_base + rate;
-        viewport_moving_started_at = now;
-      }
-    }
-
-    function loop() {
-      ctx.setTransform(1, 0, 0, 1, 0, 0);
-      ctx.fillStyle = '#44403c';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-
+    function render_play() {
       let now = performance.now();
       const delta = now - current_history_transition_started_at;
       const lerp_t = delta / step_duration;
@@ -419,53 +401,44 @@ self-contained with respect to state.
       const to = history[Math.min(history.length - 1, lerp_floor + 1)]; 
 
       const player_x = Math.floor(grid_square_size * lerp(from.player.column, to.player.column, lerp_remainder));
-      const viewport_left_target = get_viewport_left_target(player_x);
-      if (viewport_moving) {
-        viewport_left = lerp(viewport_moving_base, viewport_moving_target, now - viewport_moving_started_at);
-        viewport_left = Math.floor(viewport_left);
-        if (
-          (viewport_moving_target > viewport_moving_base && viewport_left > viewport_left_target)
-        || (viewport_moving_target < viewport_moving_base && viewport_left < viewport_left_target)) {
-          viewport_left = viewport_left_target;
-          viewport_moving = false;
-        }
-      } else {
-        start_viewport_left_moving(viewport_left_target, 0.1, now);
+      const viewport_left_target = Math.max(0, player_x - viewport_left_min);
+      switch (viewport.state) {
+        case 'idle':
+          if (viewport_left_target < viewport_left) {
+            viewport = { state: 'tracking', base: viewport_left, vector: -0.1, started_at: now };
+          } else if (viewport_left_target > viewport_left) {
+            viewport = { state: 'tracking', base: viewport_left, vector: 0.1, started_at: now };
+          }
+          break;
+        case 'tracking':
+          viewport_left = Math.floor(lerp(viewport.base, viewport.base + viewport.vector, now - viewport.started_at));
+          if ((viewport.vector > 0 && viewport_left > viewport_left_target) || (viewport.vector < 0 && viewport_left < viewport_left_target)) {
+            viewport_left = viewport_left_target;
+            viewport = { state: 'idle' };
+          }
+          break;
+        case 'moving':
+          console.log('moving');
+          viewport_left = Math.floor(lerp(viewport.base, viewport.target, (now - viewport.started_at) / 400.0));
+          if ((viewport.target > viewport.base && viewport_left > viewport.target) || (viewport.target <= viewport.base && viewport_left < viewport.target)) {
+            viewport_left = viewport.target;
+            viewport = { state: 'idle' };
+          }
+          break;
       }
 
       ctx.translate(-viewport_left, 0);
-
-      if (false) {
-        ctx.strokeStyle = '#57534e';
-        for (let r = 1; r < grid_height; r++) {
-          ctx.beginPath();
-          const y = r * grid_square_size;
-          ctx.moveTo(0, y);
-          ctx.lineTo(grid_width * grid_square_size, y);
-          ctx.stroke();
-        }
-
-        for (let c = 1; c < grid_width; c++) {
-          ctx.beginPath();
-          const x = c * grid_square_size;
-          ctx.moveTo(x, 0);
-          ctx.lineTo(x, grid_height * grid_square_size);
-          ctx.stroke();
-        }
-      }
 
       ctx.fillStyle = '#4d7c0f';
       for (const key of checkpoint_columns) {
         ctx.fillRect(grid_square_size * key, 0, grid_square_size, grid_height * grid_square_size);
       }
 
-      if (mode === 'play') {
-        ctx.fillStyle = '#f43f5e';
-        ctx.fillRect(
-          player_x,
-          grid_square_size * lerp(from.player.row, to.player.row, lerp_remainder),
-          grid_square_size, grid_square_size);
-      }
+      ctx.fillStyle = '#f43f5e';
+      ctx.fillRect(
+        player_x,
+        grid_square_size * lerp(from.player.row, to.player.row, lerp_remainder),
+        grid_square_size, grid_square_size);
 
       ctx.fillStyle = '#a8a29e';
       for (const [key, to_block] of to.blocks) {
@@ -479,25 +452,53 @@ self-contained with respect to state.
         ctx.fillRect(grid_square_size * column, grid_square_size * row, grid_square_size, grid_square_size);
       }
 
-      if (mode === 'edit') {
-        ctx.strokeStyle = '#059669';
-        ctx.lineWidth = 2;
-        ctx.strokeRect(grid_square_size * cursor.column, grid_square_size * cursor.row, grid_square_size, grid_square_size);
-        ctx.setTransform(1, 0, 0, 1, 0, 0);
-        ctx.font = '20px sans-serif';
-        ctx.fillStyle = '#e2e8f0';
-        ctx.fillText(`Editing Level`, 10, 30);
-        ctx.fillText(`Cursor: column ${cursor.column}, row ${cursor.row}`, 10, 60);
-      }
-
       if (history.length > 1 && lerp_t > 1) {
         history.shift(Math.max(0, Math.min(history.length - 1, lerp_floor)));
         current_history_transition_started_at = now - lerp_remainder;
       }
-
-      requestAnimationFrame(loop);
     }
-    requestAnimationFrame(loop);
+
+    function render_edit() {
+      const translate_x = Math.max(0, Math.floor(cursor.column * grid_square_size - viewport_left_min));
+      ctx.translate(-translate_x, 0);
+
+      ctx.fillStyle = '#4d7c0f';
+      for (const key of checkpoint_columns) {
+        ctx.fillRect(grid_square_size * key, 0, grid_square_size, grid_height * grid_square_size);
+      }
+
+      ctx.fillStyle = '#a8a29e';
+      for (const block of blocks.values()) {
+        ctx.fillRect(grid_square_size * block.column, grid_square_size * block.row, grid_square_size, grid_square_size);
+      }
+
+      ctx.strokeStyle = '#059669';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(grid_square_size * cursor.column, grid_square_size * cursor.row, grid_square_size, grid_square_size);
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.font = '20px sans-serif';
+      ctx.fillStyle = '#e2e8f0';
+      ctx.fillText(`Editing Level`, 10, 30);
+      ctx.fillText(`Cursor: column ${cursor.column}, row ${cursor.row}`, 10, 60);
+    }
+
+    function render() {
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.fillStyle = '#44403c';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      switch (mode) {
+        case 'play':
+          render_play();
+          break;
+        case 'edit':
+          render_edit();
+          break;
+      }
+
+      requestAnimationFrame(render);
+    }
+    requestAnimationFrame(render);
 
   </script>
 </body>
