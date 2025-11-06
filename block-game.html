@@ -212,8 +212,8 @@ self-contained with respect to state.
                 case 'ArrowLeft':
                   history = [];
                   add_current_state_to_history();
-                  reset_to_edit_data();
                   const prev_checkpoint_column = find_prev_checkpoint_column(player.column);
+                  reset_to_edit_data();
                   viewport = { 
                     state: 'moving',
                     base: viewport_left,
