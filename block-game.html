@@ -221,7 +221,7 @@ self-contained with respect to state.
                   viewport = { 
                     state: 'moving',
                     base: viewport_left,
-                    target: Math.max(0, prev_checkpoint_column * grid_square_size - viewport_left_min),
+                    target: get_viewport_left_target(prev_checkpoint_column, prev_checkpoint_column, 1),
                     started_at: performance.now()
                   };
                   player.column = prev_checkpoint_column;
@@ -229,12 +229,12 @@ self-contained with respect to state.
                 case 'ArrowRight':
                   history = [];
                   add_current_state_to_history();
-                  reset_to_edit_data();
                   const next_checkpoint_column = find_next_checkpoint_column(player.column);
+                  reset_to_edit_data();
                   viewport = {
                     state: 'moving',
                     base: viewport_left,
-                    target: Math.max(0, next_checkpoint_column * grid_square_size - viewport_left_min),
+                    target: get_viewport_left_target(next_checkpoint_column, next_checkpoint_column, 1),
                     started_at: performance.now()
                   };
                   player.column = next_checkpoint_column;
@@ -369,6 +369,13 @@ self-contained with respect to state.
       return a + (b - a) * t;
     }
 
+    function get_viewport_left_target(from_column, to_column, lerp_remainder) {
+      const player_x = Math.floor(grid_square_size * lerp(from_column, to_column, lerp_remainder));
+      const viewport_left_start = Math.floor(grid_square_size * lerp(find_prev_or_same_checkpoint_column(from_column), find_prev_or_same_checkpoint_column(to_column), lerp_remainder));
+      const viewport_left_end = Math.floor(grid_square_size * lerp(find_next_checkpoint_column(from_column), find_next_checkpoint_column(to_column), lerp_remainder)) - (grid_width - 1) * grid_square_size;
+      return Math.max(viewport_left_start, Math.min(viewport_left_end, player_x - viewport_left_min));
+    }
+
     function render_play() {
       let now = performance.now();
       const delta = now - current_history_transition_started_at;
@@ -377,12 +384,8 @@ self-contained with respect to state.
       const lerp_remainder = lerp_t - lerp_floor;
       const from = history[Math.min(history.length - 1, lerp_floor)];
       const to = history[Math.min(history.length - 1, lerp_floor + 1)]; 
+      const viewport_left_target = get_viewport_left_target(from.player.column, to.player.column, lerp_remainder);
 
-      const player_x = Math.floor(grid_square_size * lerp(from.player.column, to.player.column, lerp_remainder));
-      const viewport_left_start = Math.floor(grid_square_size * lerp(find_prev_or_same_checkpoint_column(from.player.column), find_prev_or_same_checkpoint_column(to.player.column), lerp_remainder));
-      const viewport_left_end = Math.floor(grid_square_size * lerp(find_next_checkpoint_column(from.player.column), find_next_checkpoint_column(to.player.column), lerp_remainder)) - (grid_width - 1) * grid_square_size;
-      const viewport_left_target = Math.max(viewport_left_start, Math.min(viewport_left_end, player_x - viewport_left_min));
-      console.log(viewport.state);
       switch (viewport.state) {
         case 'idle':
           if (viewport_left_target < viewport_left) {
@@ -420,7 +423,7 @@ self-contained with respect to state.
 
       ctx.fillStyle = '#f43f5e';
       ctx.fillRect(
-        player_x,
+        Math.floor(grid_square_size * lerp(from.player.column, to.player.column, lerp_remainder)),
         grid_square_size * lerp(from.player.row, to.player.row, lerp_remainder),
         grid_square_size, grid_square_size);
 
