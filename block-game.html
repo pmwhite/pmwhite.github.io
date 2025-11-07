@@ -218,12 +218,6 @@ self-contained with respect to state.
                   add_current_state_to_history();
                   const prev_checkpoint_column = find_prev_checkpoint_column(player.column);
                   reset_to_edit_data();
-                  viewport = { 
-                    state: 'moving',
-                    base: viewport_left,
-                    target: get_viewport_left_target(prev_checkpoint_column, prev_checkpoint_column, 1),
-                    started_at: performance.now()
-                  };
                   player.column = prev_checkpoint_column;
                   break;
                 case 'ArrowRight':
@@ -231,12 +225,6 @@ self-contained with respect to state.
                   add_current_state_to_history();
                   const next_checkpoint_column = find_next_checkpoint_column(player.column);
                   reset_to_edit_data();
-                  viewport = {
-                    state: 'moving',
-                    base: viewport_left,
-                    target: get_viewport_left_target(next_checkpoint_column, next_checkpoint_column, 1),
-                    started_at: performance.now()
-                  };
                   player.column = next_checkpoint_column;
                   break;
               }
@@ -388,10 +376,16 @@ self-contained with respect to state.
 
       switch (viewport.state) {
         case 'idle':
+          const current_checkpoint_column = find_prev_or_same_checkpoint_column(from.player.column);
+          const new_checkpoint_column = find_prev_or_same_checkpoint_column(to.player.column);
+          let speed = 0.2;
+          if (current_checkpoint_column !== new_checkpoint_column) {
+            speed = 2;
+          }
           if (viewport_left_target < viewport_left) {
-            viewport = { state: 'tracking', base: viewport_left, vector: -0.2, started_at: now };
+            viewport = { state: 'tracking', base: viewport_left, vector: -1 * speed, started_at: now };
           } else if (viewport_left_target > viewport_left) {
-            viewport = { state: 'tracking', base: viewport_left, vector: 0.2, started_at: now };
+            viewport = { state: 'tracking', base: viewport_left, vector: speed, started_at: now };
           }
           break;
         case 'tracking':
@@ -403,13 +397,6 @@ self-contained with respect to state.
             viewport = { state: 'idle' };
           } else {
             viewport_left = new_viewport_left;
-          }
-          break;
-        case 'moving':
-          viewport_left = Math.floor(lerp(viewport.base, viewport.target, (now - viewport.started_at) / 400.0));
-          if ((viewport.target > viewport.base && viewport_left > viewport.target) || (viewport.target <= viewport.base && viewport_left < viewport.target)) {
-            viewport_left = viewport.target;
-            viewport = { state: 'idle' };
           }
           break;
       }
