@@ -127,38 +127,47 @@ self-contained with respect to state.
       return column >= 0 && row >= 0 && row < grid_height;
     }
 
-    function can_move_block(block, target_column, target_row) {
-      let can_move_block = in_bounds(target_column, target_row);
+    function can_move_block(block, column_diff, row_diff) {
+      const target_column = block.column + column_diff;
+      const target_row = block.row + row_diff;
+      let can_move = in_bounds(target_column, target_row);
       for (const other of blocks.values()) {
         if (other.column === target_column && other.row === target_row) {
-          can_move_block = false;
+          if (block.shape) {
+            can_move = other.shape === block.shape;
+          } else {
+            can_move = false;
+          }
           break;
         }
       }
       for (const checkpoint_column of checkpoint_columns) {
         if (checkpoint_column === target_column) {
-          can_move_block = false;
+          can_move = false;
           break;
         }
       }
-      return can_move_block;
+      console.log('can move block', block, column_diff, row_diff, can_move);
+      return can_move;
     }
 
     function move_player(column_diff, row_diff) {
       const target_column = player.column + column_diff;
       const target_row = player.row + row_diff;
+      const prev_checkpoint_column = find_prev_or_same_checkpoint_column(player.column);
+      const next_checkpoint_column = find_next_checkpoint_column(player.column);
       if (in_bounds(target_column, target_row)) {
         let can_move_to_space = true;
         for (const block of blocks.values()) {
           if (block.row === target_row && block.column === target_column) {
             can_move_to_space = false;
-            if (can_move_block(block, block.column + column_diff, block.row + row_diff)) {
+            if (can_move_block(block, column_diff, row_diff)) {
               let can_move_blocks = true;
               let blocks_to_move = [];
               if (block.shape) {
                 for (const block_with_shape of blocks.values()) {
-                  if (block_with_shape.shape === block.shape) {
-                    if (!can_move_block(block_with_shape, block_with_shape.column + column_diff, block_with_shape.row + row_diff)) {
+                  if (block_with_shape.column > prev_checkpoint_column && block_with_shape.column < next_checkpoint_column && block_with_shape.shape === block.shape) {
+                    if (!can_move_block(block_with_shape, column_diff, row_diff)) {
                       can_move_blocks = false;
                       break;
                     }
