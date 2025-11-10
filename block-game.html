@@ -62,7 +62,11 @@ self-contained with respect to state.
       contents += "let edit_data = {\n";
       contents += "  blocks: new Map([\n";
       for (const [key, value] of edit_data.blocks) {
-        contents += `    [ ${key}, { column: ${value.column}, row: ${value.row} } ],\n`;
+        contents += `    [ ${key}, { column: ${value.column}, row: ${value.row}`;
+        if (value.shape) {
+          contents += `, shape: ${value.shape}`;
+        }
+        contents += ` } ],\n`;
       }
       contents += "  ]),\n";
       contents += "  player: { column: 0, row: 0 },\n";
@@ -123,6 +127,23 @@ self-contained with respect to state.
       return column >= 0 && row >= 0 && row < grid_height;
     }
 
+    function can_move_block(block, target_column, target_row) {
+      let can_move_block = in_bounds(target_column, target_row);
+      for (const other of blocks.values()) {
+        if (other.column === target_column && other.row === target_row) {
+          can_move_block = false;
+          break;
+        }
+      }
+      for (const checkpoint_column of checkpoint_columns) {
+        if (checkpoint_column === target_column) {
+          can_move_block = false;
+          break;
+        }
+      }
+      return can_move_block;
+    }
+
     function move_player(column_diff, row_diff) {
       const target_column = player.column + column_diff;
       const target_row = player.row + row_diff;
@@ -130,28 +151,32 @@ self-contained with respect to state.
         let can_move_to_space = true;
         for (const block of blocks.values()) {
           if (block.row === target_row && block.column === target_column) {
-            const block_target_column = block.column + column_diff;
-            const block_target_row = block.row + row_diff;
-            let can_move_block = in_bounds(block_target_column, block_target_row);
             can_move_to_space = false;
-            for (const other of blocks.values()) {
-              if (other.column === block_target_column && other.row === block_target_row) {
-                can_move_block = false;
-                break;
+            if (can_move_block(block, block.column + column_diff, block.row + row_diff)) {
+              let can_move_blocks = true;
+              let blocks_to_move = [];
+              if (block.shape) {
+                for (const block_with_shape of blocks.values()) {
+                  if (block_with_shape.shape === block.shape) {
+                    if (!can_move_block(block_with_shape, block_with_shape.column + column_diff, block_with_shape.row + row_diff)) {
+                      can_move_blocks = false;
+                      break;
+                    }
+                    blocks_to_move.push(block_with_shape);
+                  }
+                }
+              } else {
+                blocks_to_move.push(block);
+              }
+              if (can_move_blocks) {
+                can_move_to_space = true;
+                for (const block_to_move of blocks_to_move) {
+                  block_to_move.column += column_diff;
+                  block_to_move.row += row_diff;
+                }
               }
             }
-            for (const checkpoint_column of checkpoint_columns) {
-              if (checkpoint_column === block_target_column) {
-                can_move_block = false;
-                break;
-              }
-            }
-            if (can_move_block) {
-              block.column = block_target_column;
-              block.row = block_target_row;
-              can_move_to_space = true;
-              break;
-            }
+            break;
           }
         }
         if (can_move_to_space) {
