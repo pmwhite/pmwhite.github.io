@@ -12,8 +12,6 @@ how things are, but rather focus on how to solve the original puzzle. You
 shouldn't have to worry about long-lasting state. Each puzzle is small and
 self-contained with respect to state.
 
-- Add ability to save level edits repeatedly.
-
 -->
 <html>
 <head>
@@ -89,6 +87,14 @@ self-contained with respect to state.
         i++;
       }
       blocks.set(i, { column: column, row: row });
+    }
+
+    function add_block_with_shape(column, row, shape) {
+      let i = 0;
+      while (blocks.get(i)) {
+        i++;
+      }
+      blocks.set(i, { column: column, row: row, shape: shape });
     }
 
     function add_current_state_to_history() {
@@ -199,6 +205,20 @@ self-contained with respect to state.
       return next_checkpoint_column;
     }
 
+    function toggle_shape_block(shape) {
+      let found_block = false;
+      for (const [key, block] of blocks) {
+        if (block.column === cursor.column && block.row === cursor.row) {
+          found_block = true;
+          blocks.delete(key);
+          break;
+        }
+      }
+      if (!found_block) {
+        add_block_with_shape(cursor.column, cursor.row, shape);
+      }
+    }
+
     document.addEventListener('keydown', async ev => {
       switch (mode) {
         case 'play':
@@ -294,6 +314,21 @@ self-contained with respect to state.
                   add_block(cursor.column, cursor.row);
                 }
                 break;
+              case '3':
+                toggle_shape_block(3);
+                break;
+              case '4':
+                toggle_shape_block(4);
+                break;
+              case '5':
+                toggle_shape_block(5);
+                break;
+              case '6':
+                toggle_shape_block(6);
+                break;
+              case '7':
+                toggle_shape_block(15);
+                break;
               case 'c':
                 if (checkpoint_columns.has(cursor.column)) {
                   checkpoint_columns.delete(cursor.column);
@@ -364,6 +399,25 @@ self-contained with respect to state.
       return Math.max(viewport_left_start, Math.min(viewport_left_end, player_x - viewport_left_min));
     }
 
+    const shape_radius = grid_square_size / 3;
+    function fill_shape(column, row, shape) {
+      const cx = grid_square_size * column + grid_square_size / 2;
+      const cy = grid_square_size * row + grid_square_size / 2;
+      ctx.beginPath();
+      for (let i = 0; i < shape; i += 1) {
+        const angle = 2 * Math.PI / shape * i - Math.PI / 2;
+        const x = cx + Math.cos(angle) * shape_radius;
+        const y = cy + Math.sin(angle) * shape_radius;
+        if (i === 0) {
+          ctx.moveTo(x, y);
+        } else {
+          ctx.lineTo(x, y);
+        }
+      }
+      ctx.closePath();
+      ctx.fill();
+    }
+
     function render_play() {
       let now = performance.now();
       const delta = now - current_history_transition_started_at;
@@ -426,6 +480,18 @@ self-contained with respect to state.
         ctx.fillRect(grid_square_size * column, grid_square_size * row, grid_square_size, grid_square_size);
       }
 
+      ctx.fillStyle = '#fcd34d';
+      for (const [key, to_block] of to.blocks) {
+        const from_block = from.blocks.get(key);
+        let column = to_block.column;
+        let row = to_block.row;
+        if (from_block) {
+          column = lerp(from_block.column, to_block.column, lerp_remainder);
+          row = lerp(from_block.row, to_block.row, lerp_remainder)
+        }
+        fill_shape(column, row, to_block.shape);
+      }
+
       if (history.length > 1 && lerp_t > 1) {
         history.shift(Math.max(0, Math.min(history.length - 1, lerp_floor)));
         current_history_transition_started_at = now - lerp_remainder;
@@ -444,6 +510,13 @@ self-contained with respect to state.
       ctx.fillStyle = '#a8a29e';
       for (const block of blocks.values()) {
         ctx.fillRect(grid_square_size * block.column, grid_square_size * block.row, grid_square_size, grid_square_size);
+      }
+
+      ctx.fillStyle = '#fcd34d';
+      for (const block of blocks.values()) {
+        if (block.shape) {
+          fill_shape(block.column, block.row, block.shape);
+        }
       }
 
       ctx.strokeStyle = '#059669';
