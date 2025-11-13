@@ -704,6 +704,10 @@ let edit_data = {
     [ 689, { column: 174, row: 3, shape: 3 } ],
     [ 701, { column: 174, row: 5, shape: 3 } ],
     [ 703, { column: 176, row: 4 } ],
+    [ 704, { column: 171, row: 0 } ],
+    [ 705, { column: 172, row: 0 } ],
+    [ 706, { column: 172, row: 8 } ],
+    [ 707, { column: 171, row: 8 } ],
   ]),
   player: { column: 0, row: 0 },
   checkpoint_columns: new Set([

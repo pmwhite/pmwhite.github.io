@@ -1,18 +1,4 @@
 <!DOCTYPE html>
-<!--
-todo list:
-- When the player reaches a checkpoint column, the world should auto-reset. We
-currently reset whenever they explicitly switch from one level to the next, but
-there is the awkward case in which they are already at the beginning of the
-level and want to reset it. We could either have a key to reset it explicitly,
-or the user could switch forward and than backward again to reset it. Both of
-these seem silly to me, and I kinda like making it a principle of the game that
-the state of the world is ephemeral. That is, you shouldn't hold on tightly to
-how things are, but rather focus on how to solve the original puzzle. You
-shouldn't have to worry about long-lasting state. Each puzzle is small and
-self-contained with respect to state.
-
--->
 <html>
 <head>
   <meta charset="utf-8">
@@ -23,18 +9,59 @@ self-contained with respect to state.
       padding: 0px;
     }
     body {
-      margin: 0px auto;
+      margin: auto;
+      width: 1200px;
     }
     #game {
       display: block;
       background: #fff;
       width: 1200px;
       height: 540px;
-      margin: 0px auto;
+      margin: auto;
+    }
+
+    kbd {
+      display: inline-block;
+      margin: 0 0.1em;
+      font-family: ui-monospace, "SF Mono", "Consolas", monospace;
+      font-size: 0.5em;
+      color: #333;
+      background-color: #f5f5f5;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      box-shadow: 0 1px 0 #ccc;
+      vertical-align: middle;
+      user-select: none;  /* not interactive */
+    }
+
+    p, li {
+      font-size: 1.5em;
     }
   </style>
 </head>
 <body>
+  <p>Below is a game in which you must navigate a red square from the start of
+  the world to the end through a labyrinth of blocks. The challenge is to
+  discover the rules of the world and solve the puzzle presented by each
+  level. The joy is in solving the puzzles, so you we do not force you to
+  unlock anything; you can skip between all the levels however much you
+  like.</p>
+
+  <p>Controls:</p>
+
+  <ul>
+    <li><kbd>Up</kbd>, <kbd>Down</kbd>, <kbd>Left</kbd>, <kbd>Right</kbd>: Move the red square in the specified direction.</li>
+    <li><kbd>Shift</kbd>+<kbd>Left</kbd>: Move the red square <em>backward</em> to
+      the nearest green column and reset the state of the world. This is useful
+      especially if you get make a mistake and need to start the level over.</li>
+    <li><kbd>Shift</kbd>+<kbd>Right</kbd>: Move the red square <em>forward</em> to
+      the nearest green column and reset the state of the world. This is useful
+      for skipping over levels that you can't figure out.</li>
+  </ul>
+
+  <p>As you might guess from the controls, this game is designed to be played
+  from a computer; it probably isn't playable from a mobile device.</p>
+
   <canvas id="game" width="1200" height="540"></canvas>
   <script src="level.js"></script>
   <script>
