@@ -34,9 +34,6 @@
       user-select: none;  /* not interactive */
     }
 
-    p, li {
-      font-size: 1.5em;
-    }
   </style>
 </head>
 <body>
@@ -47,7 +44,9 @@
   unlock anything; you can skip between all the levels however much you
   like.</p>
 
-  <p>Controls:</p>
+  <canvas id="game" width="1200" height="540"></canvas>
+
+  <h3>Controls</h3>
 
   <ul>
     <li><kbd>Up</kbd>, <kbd>Down</kbd>, <kbd>Left</kbd>, <kbd>Right</kbd>: Move the red square in the specified direction.</li>
@@ -62,7 +61,6 @@
   <p>As you might guess from the controls, this game is designed to be played
   from a computer; it probably isn't playable from a mobile device.</p>
 
-  <canvas id="game" width="1200" height="540"></canvas>
   <script src="level.js"></script>
   <script>
     const grid_square_size = 60;
