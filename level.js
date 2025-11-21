@@ -908,7 +908,7 @@ let edit_data = {
     [ 60, "Composition" ],
     [ 79, "Chain" ],
     [ 91, "Backtrack" ],
-    [ 99, "Color" ],
+    [ 99, "Shape" ],
     [ 118, "Knight's Move" ],
     [ 137, "Stuck" ],
     [ 156, "Reason" ],
