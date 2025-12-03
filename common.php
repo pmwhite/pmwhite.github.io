@@ -20,6 +20,11 @@ $parts_of_a_pl_implementation_page =
   , "id" => "parts-of-a-pl-implementation"
   , "date" => "Apr 14, 2025" ];
 
+$yet_wisdom_is_justified_by_her_deeds_page =
+  [ "title" => "Yet wisdom is justified by her deeds"
+  , "id" => "yet-wisdom-is-justified-by-her-deeds"
+  , "date" => "Dec 2, 2025" ];
+
 $pages = [
 
   $new_types_page,
