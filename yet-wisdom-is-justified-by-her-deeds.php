@@ -12,7 +12,7 @@ how it affects their behavior.</p>
 
 <p>Take, for instance, the (in)famous "sandwich debate". Some take an extreme
 view that anything between two other things counts as a sandwich. In this view,
-a board of would between two slabs of rocks would count as a sandwich; even
+a board of wood between two slabs of rocks would count as a sandwich; even
 three molecules in a row count as a sandwich, since one of them is between the
 other two. Some who oppose this view reject these examples because they are not
 food; a sandwich is for eating, they say. But even amongst this view there is
@@ -20,7 +20,7 @@ disagreement on how to address hot dogs and tacos.</p>
 
 <p>Which view is right? Of course, it depends on the context in which the word
 "sandwich" was used. If someone says, "go make me a sandwich," they'll be
-disappointed if you bring brack two rocks with wood in between. But if they
+disappointed if you bring back two rocks with wood in between. But if they
 instead say, "sandwich that wood between these rocks," it wouldn't be
 appropriate to complain that such a setup is not technically a sandwich because
 you can't eat it. The point is that context matters, so the sandwich debate is
@@ -83,7 +83,7 @@ matters. In other words, what behavior change does it call for?</b></p>
 
 <p>One of the debates that motivated this essay is the classic question of how
 God's sovereignty interacts with man's free will. Calvinists tend to emphasize
-God's sovereignty more than free will, and armenians tend to do the opposite;
+God's sovereignty more than free will, and arminians tend to do the opposite;
 compatibilism is the view that both coexist in a mystery that cannot be
 fully understood by our limited capacities.</p>
 
@@ -107,7 +107,7 @@ out brain with fun facts; it's about equipping for good works.</p>
 focus far more heavily on behavioral questions, and I expect to find a lot of
 common ground, and perhaps to discover the <em>actual</em> disagreements that
 exist. My experience is that many calvinists actually do believe in evangelism,
-and many armenians believe that God's plans cannot be thwarted and God will
+and many arminians believe that God's plans cannot be thwarted and God will
 sustain the believer to the end. But there are lot of nuanced behavior
 questions that perhaps they would have differing views on. How obnoxious should
 evangelism be? Should we be doing alter calls all the time, or take a more
@@ -135,4 +135,4 @@ that its okay to eat food offered to idols, it's still important to be
 considerate of those whose conscience keeps them from doing so. So our goal in
 seeking truth is not to merely find the correct facts and know the right
 things, but also to build up our own character and the character of those
-around, so that we can honor the Lord with what we <em>do.</em></p>
+around us, so that we can honor the Lord with what we <em>do.</em></p>
