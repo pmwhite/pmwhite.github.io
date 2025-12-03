@@ -23,7 +23,7 @@ $parts_of_a_pl_implementation_page =
 $yet_wisdom_is_justified_by_her_deeds_page =
   [ "title" => "Yet wisdom is justified by her deeds"
   , "id" => "yet-wisdom-is-justified-by-her-deeds"
-  , "date" => "Dec 2, 2025" ];
+  , "date" => "Dec 3, 2025" ];
 
 $pages = [
 
@@ -47,7 +47,8 @@ $pages = [
   , "id" => "cycling-log-2025"
   , "date" => "Apr 12, 2025" ],
 
-  $parts_of_a_pl_implementation_page
+  $parts_of_a_pl_implementation_page,
+  $yet_wisdom_is_justified_by_her_deeds_page
 
 ];
 
