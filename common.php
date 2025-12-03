@@ -16,12 +16,12 @@ $ocaml_gadts_page =
   , "date" => "May 9, 2023" ];
 
 $parts_of_a_pl_implementation_page =
-  [ "title" => "Parts of a programming language implementation"
+  [ "title" => "Parts of a programming language implementation."
   , "id" => "parts-of-a-pl-implementation"
   , "date" => "Apr 14, 2025" ];
 
 $yet_wisdom_is_justified_by_her_deeds_page =
-  [ "title" => "Yet wisdom is justified by her deeds"
+  [ "title" => "Yet wisdom is justified by her deeds."
   , "id" => "yet-wisdom-is-justified-by-her-deeds"
   , "date" => "Dec 3, 2025" ];
 
