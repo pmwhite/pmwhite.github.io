@@ -3,6 +3,12 @@ include "common.php";
 essay_begin($yet_wisdom_is_justified_by_her_deeds_page);
 ?>
 
+<p><i>Disclaimer: This essay didn't end up as clear as I had hoped, but I'm
+satisfied with it enough to post it. But I'm not a philosopher, and some the
+arguments here aren't totally airtight. Nevertheless, maybe you'll find this
+line of reasoning to be persuasive, or otherwise interesting in some other
+way.</i></p>
+
 <p>Sometimes people begin, either in debate or in their own thinking, first by
 settling beliefs and then by discovering the behavior produced by such
 beliefs. In my view, beliefs and behavior are not so easily disentangled,
