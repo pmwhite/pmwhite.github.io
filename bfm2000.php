@@ -1,136 +1,249 @@
 <!DOCTYPE>
 <html>
 <head>
-  <link rel="stylesheet" href="styles.css" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Baptist Faith and Message 2000</title>
   <style>
-    .verses {
-      padding: 1px 20px;
-      background: #f9f9f9;
-    }
+html, body {
+  margin-top: 3em;
+  margin-left: auto;
+  margin-right: auto;
+  padding: 20px;
+  font-family: sans-serif;
+  line-height: 1.5;
+  max-width: 700px;
+  min-width: 300px;
+}
+details {
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 10px;
+  margin: 10px 0;
+}
+
+summary {
+  cursor: pointer;
+  font-weight: bold;
+  padding: 5px;
+}
+
+summary:hover {
+  background-color: #f5f5f5;
+}
+
+details[open] summary {
+  margin-bottom: 10px;
+  border-bottom: 1px solid #ddd;
+}
+nav {
+  background-color: #f9f9f9;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 20px;
+  margin-bottom: 2em;
+}
+
+nav a {
+  display: block;
+  color: #0066cc;
+  text-decoration: none;
+  padding: 6px 12px;
+  margin: 4px;
+  border-radius: 3px;
+  transition: background-color 0.2s;
+}
+
+nav a:hover {
+  background-color: #e8e8e8;
+  text-decoration: none;
+}
   </style>
 </head>
 <body>
 
 <?php
-function kjv_span(string $reference, string $kjvFile = 'kjv.txt'): string {
-  static $verses = null;
-  static $chapterMax = null;
-  if ($verses === null) {
+
+function kjv_spans_from_scholarly_string($references) {
+    $kjv_file = 'kjv.txt';
+    
+    // Load and parse the KJV file into memory
     $verses = [];
-    $chapterMax = [];
-    foreach (file($kjvFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) as $line) {
-      if (preg_match('/^(.+?)\s+(\d+):(\d+)\s+(.*)$/', $line, $m)) {
-        $book    = $m[1];
-        $chapter = (int)$m[2];
-        $verse   = (int)$m[3];
-        $text    = $m[4];
-
-        $key = "$book $chapter:$verse";
-        $verses[$key] = $text;
-
-        $cKey = "$book $chapter";
-        if (!isset($chapterMax[$cKey]) || $verse > $chapterMax[$cKey]) {
-          $chapterMax[$cKey] = $verse;
+    $lines = file($kjv_file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+    
+    foreach ($lines as $line) {
+        // Skip header lines
+        if (strpos($line, "\t") === false) {
+            continue;
         }
-      }
+        
+        list($ref, $text) = explode("\t", $line, 2);
+        $verses[$ref] = $text;
     }
-  }
-  if (!preg_match('/^(.+?)\s+(\d+):(\d+)(?:-(\d+)|ff\.)?$/i', $reference, $m)) {
-    throw new InvalidArgumentException("Invalid reference: $reference");
-  }
-  $book    = $m[1];
-  $chapter = (int)$m[2];
-  $start   = (int)$m[3];
-  if (!empty($m[4])) {
-    $end = (int)$m[4];
-  } elseif (str_ends_with(strtolower($reference), 'ff.')) {
-    $cKey = "$book $chapter";
-    if (!isset($chapterMax[$cKey])) {
-      throw new RuntimeException("Unknown chapter: $book $chapter");
+    
+    $results = [];
+    
+    foreach ($references as $ref) {
+        $parsed = parse_reference($ref);
+        
+        foreach ($parsed as $single_ref) {
+            $book = $single_ref['book'];
+            $chapter_start = $single_ref['chapter_start'];
+            $verse_start = $single_ref['verse_start'];
+            $chapter_end = $single_ref['chapter_end'];
+            $verse_end = $single_ref['verse_end'];
+            
+            $text_parts = [];
+            
+            // Handle single chapter or chapter range
+            for ($ch = $chapter_start; $ch <= $chapter_end; $ch++) {
+                if ($verse_start === null && $verse_end === null) {
+                    // Entire chapter(s)
+                    $v = 1;
+                    while (isset($verses["$book $ch:$v"])) {
+                        $text_parts[] = $verses["$book $ch:$v"];
+                        $v++;
+                    }
+                } else {
+                    // Specific verses
+                    $start_v = ($ch == $chapter_start) ? $verse_start : 1;
+                    $end_v = ($ch == $chapter_end) ? $verse_end : PHP_INT_MAX;
+                    
+                    $v = $start_v;
+                    while ($v <= $end_v && isset($verses["$book $ch:$v"])) {
+                        $text_parts[] = $verses["$book $ch:$v"];
+                        $v++;
+                    }
+                }
+            }
+            
+            if (!empty($text_parts)) {
+                $results[] = [
+                    'original_reference' => $ref,
+                    'parsed_reference' => format_parsed_reference($single_ref),
+                    'text' => implode(' ', $text_parts)
+                ];
+            }
+        }
     }
-    $end = $chapterMax[$cKey];
-  } else {
-    $end = $start;
-  }
-  if ($end < $start) {
-    throw new InvalidArgumentException("Invalid verse range: $reference");
-  }
-  $texts = [];
-  for ($v = $start; $v <= $end; $v++) {
-    $key = "$book $chapter:$v";
-    if (isset($verses[$key])) {
-      $texts[] = $verses[$key];
+    
+    echo '<div class="verses">';
+    foreach ($results as $result) {
+        $ref = $result['original_reference'];
+        echo "<details class='verse'><summary>$ref</summary> <p>{$result['text']}</p></details>";
     }
-  }
-  if (empty($texts)) {
-    throw new RuntimeException("No verses found for: $reference");
-  }
-  $verseText = htmlspecialchars(implode(' ', $texts), ENT_QUOTES | ENT_HTML5);
-  return "<p><em>$reference:</em> $verseText</p>";
+    echo '</div>';
 }
 
-function kjv_spans($references) {
-?>
-<div class="verses">
-<?php
-  foreach ($references as $reference) {
-    echo kjv_span($reference);
-  }
-?>
-</div>
-<?php } 
-
-function normalize_book(string $book): string {
-    $book = trim(preg_replace('/\s+/', ' ', $book));
-    $map = [
-        'Psalms' => 'Psalm',
-    ];
-
-    return $map[$book] ?? $book;
+function parse_reference($ref) {
+    // Normalize "Psalms" to "Psalm"
+    $ref = preg_replace('/^Psalms\b/', 'Psalm', $ref);
+    
+    // Remove "ff." notation (meaning "and following")
+    $ref = preg_replace('/ff\..*$/', '', $ref);
+    $ref = trim($ref);
+    
+    $results = [];
+    
+    // Pattern: "Book Chapter:Verse-Verse" or "Book Chapter" or "Book Chapter-Chapter"
+    if (preg_match('/^([A-Za-z0-9\s]+?)\s+(\d+):(\d+)-(\d+)$/', $ref, $matches)) {
+        // Book Chapter:StartVerse-EndVerse
+        $results[] = [
+            'book' => trim($matches[1]),
+            'chapter_start' => (int)$matches[2],
+            'verse_start' => (int)$matches[3],
+            'chapter_end' => (int)$matches[2],
+            'verse_end' => (int)$matches[4]
+        ];
+    } elseif (preg_match('/^([A-Za-z0-9\s]+?)\s+(\d+):(\d+)$/', $ref, $matches)) {
+        // Book Chapter:Verse
+        $results[] = [
+            'book' => trim($matches[1]),
+            'chapter_start' => (int)$matches[2],
+            'verse_start' => (int)$matches[3],
+            'chapter_end' => (int)$matches[2],
+            'verse_end' => (int)$matches[3]
+        ];
+    } elseif (preg_match('/^([A-Za-z0-9\s]+?)\s+(\d+)-(\d+)$/', $ref, $matches)) {
+        // Book ChapterStart-ChapterEnd (entire chapters)
+        $results[] = [
+            'book' => trim($matches[1]),
+            'chapter_start' => (int)$matches[2],
+            'verse_start' => null,
+            'chapter_end' => (int)$matches[3],
+            'verse_end' => null
+        ];
+    } elseif (preg_match('/^([A-Za-z0-9\s]+?)\s+(\d+)$/', $ref, $matches)) {
+        // Book Chapter (entire chapter)
+        $results[] = [
+            'book' => trim($matches[1]),
+            'chapter_start' => (int)$matches[2],
+            'verse_start' => null,
+            'chapter_end' => (int)$matches[2],
+            'verse_end' => null
+        ];
+    }
+    
+    return $results;
 }
 
-function kjv_spans_from_scholarly_string(string $input) {
-  $parts = array_map('trim', explode(';', $input));
-  $currentBook = null;
-  $currentChapter = null;
-  $expanded = [];
-  foreach ($parts as $part) {
-    if ($part === '') {
-      continue;
+function format_parsed_reference($parsed) {
+    $book = $parsed['book'];
+    $ch_start = $parsed['chapter_start'];
+    $v_start = $parsed['verse_start'];
+    $ch_end = $parsed['chapter_end'];
+    $v_end = $parsed['verse_end'];
+    
+    if ($v_start === null && $v_end === null) {
+        // Entire chapter(s)
+        if ($ch_start == $ch_end) {
+            return "$book $ch_start";
+        } else {
+            return "$book $ch_start-$ch_end";
+        }
+    } else {
+        // Specific verses
+        if ($ch_start == $ch_end && $v_start == $v_end) {
+            return "$book $ch_start:$v_start";
+        } elseif ($ch_start == $ch_end) {
+            return "$book $ch_start:$v_start-$v_end";
+        } else {
+            return "$book $ch_start:$v_start-$ch_end:$v_end";
+        }
     }
-    if (preg_match('/^(.+?)\s+(\d+):(.+)$/', $part, $m)) {
-      $currentBook = normalize_book($m[1]);
-      $currentChapter = (int)$m[2];
-      $verseSpec = $m[3];
-    }
-    elseif (preg_match('/^(\d+):(.+)$/', $part, $m)) {
-      if ($currentBook === null) continue;
-      $currentChapter = (int)$m[1];
-      $verseSpec = $m[2];
-    }
-    else {
-      if ($currentBook === null || $currentChapter === null) continue;
-      $verseSpec = $part;
-    }
-    if (preg_match('/^(\d+)ff\.$/i', $verseSpec)) {
-      $expanded[] = "$currentBook $currentChapter:$verseSpec";
-      continue;
-    }
-    foreach (explode(',', $verseSpec) as $segment) {
-      $segment = trim($segment);
-      if ($segment === '') continue;
-      if (preg_match('/^\d+(?:-\d+)?$/', $segment)) {
-        $expanded[] = "$currentBook $currentChapter:$segment";
-      }
-    }
-  }
-  kjv_spans($expanded);
 }
+
+// Example usage:
+$references = [
+    "Exodus 24:4",
+    "Deuteronomy 4:1-2",
+    "Psalm 1",
+    "Revelation 2-3"
+];
+
 ?>
 
-  <h1>The Scriptures</h1>
+  <nav>
+    <a href="#scriptures">The Scriptures</a>
+    <a href="#god">God</a>
+    <a href="#man">Man</a></li>
+    <a href="#salvation">Salvation</a>
+    <a href="#grace">God's Purpose of Grace</a>
+    <a href="#church">The Church</a>
+    <a href="#baptism">Baptism and the Lord's Supper</a>
+    <a href="#lords-day">The Lord's Day</a>
+    <a href="#kingdom">The Kingdom</a>
+    <a href="#last-things">Last Things</a>
+    <a href="#evangelism">Evangelism and Missions</a>
+    <a href="#education">Education</a>
+    <a href="#stewardship">Stewardship</a>
+    <a href="#cooperation">Cooperation</a>
+    <a href="#social-order">The Christian and the Social Order</a>
+    <a href="#peace-war">Peace and War</a>
+    <a href="#religious-liberty">Religious Liberty</a>
+    <a href="#family">The Family</a>
+  </nav>
+
+  <h1 id="scriptures">The Scriptures</h1>
 
   <p>The Holy Bible was written by men divinely inspired and is God’s
   revelation of Himself to man. It is a perfect treasure of divine instruction.
@@ -142,9 +255,9 @@ function kjv_spans_from_scholarly_string(string $input) {
   and religious opinions should be tried. All Scripture is a testimony to
   Christ, who is Himself the focus of divine revelation. </p>
 
-<?php kjv_spans_from_scholarly_string("Exodus 24:4; Deuteronomy 4:1-2; 17:19; Joshua 8:34; Psalms 19:7-10; 119:11,89,105,140; Isaiah 34:16; 40:8; Jeremiah 15:16; 36:1-32; Matthew 5:17-18; 22:29; Luke 21:33; 24:44-46; John 5:39; 16:13-15; 17:17; Acts 2:16ff.; 17:11; Romans 15:4; 16:25-26; 2 Timothy 3:15-17; Hebrews 1:1-2; 4:12; 1 Peter 1:25; 2 Peter 1:19-21"); ?>
+<?php kjv_spans_from_scholarly_string(["Exodus 24:4","Deuteronomy 4:1-2","Deuteronomy 17:19","Joshua 8:34","Psalm 19:7-10","Psalm 119:11","Psalm 119:89","Psalm 119:105","Psalm 119:140","Isaiah 34:16","Isaiah 40:8","Jeremiah 15:16","Jeremiah 36:1-32","Matthew 5:17-18","Matthew 22:29","Luke 21:33","Luke 24:44-46","John 5:39","John 16:13-15","John 17:17","Acts 2:16ff.","Acts 17:11","Romans 15:4","Romans 16:25-26","2 Timothy 3:15-17","Hebrews 1:1-2","Hebrews 4:12","1 Peter 1:25","2 Peter 1:19-21"]); ?>
 
-  <h1>God</h1>
+  <h1 id="god">God</h1>
 
   <p>There is one and only one living and true God. He is an intelligent,
   spiritual, and personal Being, the Creator, Redeemer, Preserver, and Ruler of
@@ -164,7 +277,7 @@ function kjv_spans_from_scholarly_string(string $input) {
   wise. God is Father in truth to those who become children of God through
   faith in Jesus Christ. He is fatherly in His attitude toward all men.</p>
 
-<?php kjv_spans_from_scholarly_string("Genesis 1:1; 2:7; Exodus 3:14; 6:2-3; 15:11ff.; 20:1ff.; Leviticus 22:2; Deuteronomy 6:4; 32:6; 1 Chronicles 29:10; Psalm 19:1-3; Isaiah 43:3,15; 64:8; Jeremiah 10:10; 17:13; Matthew 6:9ff.; 7:11; 23:9; 28:19; Mark 1:9-11; John 4:24; 5:26; 14:6-13; 17:1-8; Acts 1:7; Romans 8:14-15; 1 Corinthians 8:6; Galatians 4:6; Ephesians 4:6; Colossians 1:15; 1 Timothy 1:17; Hebrews 11:6; 12:9; 1 Peter 1:17; 1 John 5:7."); ?>
+<?php kjv_spans_from_scholarly_string(["Genesis 1:1","Genesis 2:7","Exodus 3:14","Exodus 6:2-3","Exodus 15:11ff.","Exodus 20:1ff.","Leviticus 22:2","Deuteronomy 6:4","Deuteronomy 32:6","1 Chronicles 29:10","Psalm 19:1-3","Isaiah 43:3","Isaiah 3:15","Isaiah 64:8","Jeremiah 10:10","Jeremiah 17:13","Matthew 6:9ff.","Matthew 7:11","Matthew 23:9","Matthew 28:19","Mark 1:9-11","John 4:24","John 5:26","John 14:6-13","John 17:1-8","Acts 1:7","Romans 8:14-15","1 Corinthians 8:6","Galatians 4:6","Ephesians 4:6","Colossians 1:15","1 Timothy 1:17","Hebrews 11:6","Hebrews 12:9","1 Peter 1:17","1 John 5:7"]); ?>
 
   <h2>God the Son</h2>
 
@@ -182,7 +295,7 @@ function kjv_spans_from_scholarly_string(string $input) {
   judge the world and to consummate His redemptive mission. He now dwells in
   all believers as the living and ever present Lord.</p>
 
-<?php kjv_spans_from_scholarly_string("Genesis 18:1ff.; Psalms 2:7ff.; 110:1ff.; Isaiah 7:14; Isaiah 53:1-12; Matthew 1:18-23; 3:17; 8:29; 11:27; 14:33; 16:16,27; 17:5; 27; 28:1-6,19; Mark 1:1; 3:11; Luke 1:35; 4:41; 22:70; 24:46; John 1:1-18,29; 10:30,38; 11:25-27; 12:44-50; 14:7-11; 16:15-16,28; 17:1-5, 21-22; 20:1-20,28; Acts 1:9; 2:22-24; 7:55-56; 9:4-5,20; Romans 1:3-4; 3:23-26; 5:6-21; 8:1-3,34; 10:4; 1 Corinthians 1:30; 2:2; 8:6; 15:1-8,24-28; 2 Corinthians 5:19-21; 8:9; Galatians 4:4-5; Ephesians 1:20; 3:11; 4:7-10; Philippians 2:5-11; Colossians 1:13-22; 2:9; 1 Thessalonians 4:14-18; 1 Timothy 2:5-6; 3:16; Titus 2:13-14; Hebrews 1:1-3; 4:14-15; 7:14-28; 9:12-15,24-28; 12:2; 13:8; 1 Peter 2:21-25; 3:22; 1 John 1:7-9; 3:2; 4:14-15; 5:9; 2 John 7-9; Revelation 1:13-16; 5:9-14; 12:10-11; 13:8; 19:16"); ?>
+<?php kjv_spans_from_scholarly_string(["Genesis 18:1ff.","Psalm 2:7ff.","Psalm 110:1ff.","Isaiah 7:14","Isaiah 53:1-12","Matthew 1:18-23","Matthew 3:17","Matthew 8:29","Matthew 11:27","Matthew 14:33","Matthew 16:16","Matthew 16:27","Matthew 17:5","Matthew 17:27","Matthew 28:1-6","Matthew 28:19","Mark 1:1","Mark 3:11","Luke 1:35","Luke 4:41","Luke 22:70","Luke 24:46","John 1:1-18,29","John 10:30","John 10:38","John 11:25-27","John 12:44-50","John 14:7-11","John 16:15-16,28","John 17:1-5,21-22","John 20:1-20,28","Acts 1:9","Acts 2:22-24","Acts 7:55-56","Acts 9:4-5,20","Romans 1:3-4","Romans 3:23-26","Romans 5:6-21","Romans 8:1-3,34","Romans 10:4","1 Corinthians 1:30","1 Corinthians 2:2","1 Corinthians 8:6","1 Corinthians 15:1-8,24-28","2 Corinthians 5:19-21","2 Corinthians 8:9","Galatians 4:4-5","Ephesians 1:20","Ephesians 3:11","Ephesians 4:7-10","Philippians 2:5-11","Colossians 1:13-22","Colossians 2:9","1 Thessalonians 4:14-18","1 Timothy 2:5-6","1 Timothy 3:16","Titus 2:13-14","Hebrews 1:1-3","Hebrews 4:14-15","Hebrews 7:14-28","Hebrews 9:12-15,24-28","Hebrews 12:2","Hebrews 13:8","1 Peter 2:21-25","1 Peter 3:22","1 John 1:7-9","1 John 3:2","1 John 4:14-15","1 John 5:9","2 John 1:7-9","Revelation 1:13-16","Revelation 5:9-14","Revelation 12:10-11","Revelation 13:8","Revelation 19:16"]); ?>
 
   <h2>God the Holy Spirit</h2>
 
@@ -198,9 +311,9 @@ function kjv_spans_from_scholarly_string(string $input) {
   stature of Christ. He enlightens and empowers the believer and the church in
   worship, evangelism, and service.</p>
 
-<?php kjv_spans_from_scholarly_string("Genesis 1:2; Judges 14:6; Job 26:13; Psalms 51:11; 139:7ff.; Isaiah 61:1-3; Joel 2:28-32; Matthew 1:18; 3:16; 4:1; 12:28-32; 28:19; Mark 1:10,12; Luke 1:35; 4:1,18-19; 11:13; 12:12; 24:49; John 4:24; 14:16-17,26; 15:26; 16:7-14; Acts 1:8; 2:1-4,38; 4:31; 5:3; 6:3; 7:55; 8:17,39; 10:44; 13:2; 15:28; 16:6; 19:1-6; Romans 8:9-11,14-16,26-27; 1 Corinthians 2:10-14; 3:16; 12:3-11,13; Galatians 4:6; Ephesians 1:13-14; 4:30; 5:18; 1 Thessalonians 5:19; 1 Timothy 3:16; 4:1; 2 Timothy 1:14; 3:16; Hebrews 9:8,14; 2 Peter 1:21; 1 John 4:13; 5:6-7; Revelation 1:10; 22:17"); ?>
+<?php kjv_spans_from_scholarly_string(["Genesis 1:2","Judges 14:6","Job 26:13","Psalm 51:11","Psalm 139:7ff.","Isaiah 61:1-3","Joel 2:28-32","Matthew 1:18","Matthew 3:16","Matthew 4:1","Matthew 12:28-32","Matthew 28:19","Mark 1:10","Mark 1:12","Luke 1:35","Luke 4:1","Luke 4:18-19","Luke 11:13","Luke 12:12","Luke 24:49","John 4:24","John 14:16-17,26","John 15:26","John 16:7-14","Acts 1:8","Acts 2:1-4","Acts 2:38","Acts 4:31","Acts 5:3","Acts 6:3","Acts 7:55","Acts 8:17","Acts 8:39","Acts 10:44","Acts 13:2","Acts 15:28","Acts 16:6","Acts 19:1-6","Romans 8:9-11","Romans 8:14-16","Romans 8:26-27","1 Corinthians 2:10-14","1 Corinthians 3:16","1 Corinthians 12:3-11","1 Corinthians 12:13","Galatians 4:6","Ephesians 1:13-14","Ephesians 4:30","Ephesians 5:18","1 Thessalonians 5:19","1 Timothy 3:16","1 Timothy 4:1","2 Timothy 1:14","2 Timothy 3:16","Hebrews 9:8","Hebrews 9:14","2 Peter 1:21","1 John 4:13","1 John 5:6-7","Revelation 1:10","Revelation 22:17"]); ?>
 
-  <h1>Man</h1>
+  <h1 id="man">Man</h1>
 
   <p>Man is the special creation of God, made in His own image. He created them
   male and female as the crowning work of His creation. The gift of gender is
@@ -217,7 +330,9 @@ function kjv_spans_from_scholarly_string(string $input) {
   therefore, every person of every race possesses full dignity and is worthy of
   respect and Christian love.</p>
 
-  <h1>Salvation</h1>
+<?php kjv_spans_from_scholarly_string(["Genesis 1:26-30","Genesis 2:5","Genesis 2:7","Genesis 2:18-22","Genesis 3","Genesis 9:6","Psalm 1","Psalm 8:3-6","Psalm 32:1-5","Psalm 51:5","Isaiah 6:5","Jeremiah 17:5","Matthew 16:26","Acts 17:26-31","Romans 1:19-32","Romans 3:10-18","Romans 3:23","Romans 5:6","Romans 5:12","Romans 5:19","Romans 6:6","Romans 7:14-25","Romans 8:14-18","Romans 8:29","1 Corinthians 1:21-31","1 Corinthians 15:19","1 Corinthians 15:21-22","Ephesians 2:1-22","Colossians 1:21-22","Colossians 3:9-11"]); ?>
+
+  <h1 id="salvation">Salvation</h1>
 
   <p>Salvation involves the redemption of the whole man, and is offered freely
   to all who accept Jesus Christ as Lord and Saviour, who by His own blood
@@ -250,7 +365,9 @@ function kjv_spans_from_scholarly_string(string $input) {
       blessed and abiding state of the redeemed.</p></li>
   </ol>
 
-  <h1>God's Purpose of Grace</h1>
+<?php kjv_spans_from_scholarly_string(["Genesis 3:15","Exodus 3:14-17","Exodus 6:2-8","Matthew 1:21","Matthew 4:17","Matthew 16:21-26","Matthew 27:22-28:6","Luke 1:68-69","Luke 2:28-32","John 1:11-14,29","John 3:3-21,36","John 5:24","John 10:9,28-29","John 15:1-16","John 17:17","Acts 2:21","Acts 4:12","Acts 15:11","Acts 16:30-31","Acts 17:30-31","Acts 20:32","Romans 1:16-18","Romans 2:4","Romans 3:23-25","Romans 4:3ff.","Romans 5:8-10","Romans 6:1-23","Romans 8:1-18,29-39","Romans 10:9-10,13","Romans 13:11-14","1 Corinthians 1:18,30","1 Corinthians 6:19-20","1 Corinthians 15:10","2 Corinthians 5:17-20","Galatians 2:20","Galatians 3:13","Galatians 5:22-25","Galatians 6:15","Ephesians 1:7","Ephesians 2:8-22","Ephesians 4:11-16","Philippians 2:12-13","Colossians 1:9-22","Colossians 3:1ff.","1 Thessalonians 5:23-24","2 Timothy 1:12","Titus 2:11-14","Hebrews 2:1-3","Hebrews 5:8-9","Hebrews 9:24-28","Hebrews 11:1-12:8,14","James 2:14-26","1 Peter 1:2-23","1 John 1:6-2:11","Revelation 3:20","Revelation 21:1-22:5"]); ?>
+
+  <h1 id="grace">God's Purpose of Grace</h1>
 
   <p>Election is the gracious purpose of God, according to which He
   regenerates, justifies, sanctifies, and glorifies sinners. It is consistent
@@ -267,7 +384,9 @@ function kjv_spans_from_scholarly_string(string $input) {
   judgments on themselves; yet they shall be kept by the power of God through
   faith unto salvation.</p>
 
-  <h1>The Church</h1>
+<?php kjv_spans_from_scholarly_string(["Genesis 12:1-3","Exodus 19:5-8","1 Samuel 8:4-7,19-22","Isaiah 5:1-7","Jeremiah 31:31ff.","Matthew 16:18-19","Matthew 21:28-45","Matthew 24:22,31","Matthew 25:34","Luke 1:68-79","Luke 2:29-32","Luke 19:41-44","Luke 24:44-48","John 1:12-14","John 3:16","John 5:24","John 6:44-45,65","John 10:27-29","John 15:16","John 17:6,12,17-18","Acts 20:32","Romans 5:9-10","Romans 8:28-39","Romans 10:12-15","Romans 11:5-7,26-36","1 Corinthians 1:1-2","1 Corinthians 15:24-28","Ephesians 1:4-23","Ephesians 2:1-10","Ephesians 3:1-11","Colossians 1:12-14","2 Thessalonians 2:13-14","2 Timothy 1:12","2 Timothy 2:10,19","Hebrews 11:39–12:2","James 1:12","1 Peter 1:2-5,13","1 Peter 2:4-10","1 John 1:7-9","1 John 2:19","1 John 3:2"]); ?>
+
+  <h1 id="church">The Church</h1>
 
   <p>A New Testament church of the Lord Jesus Christ is an autonomous local
   congregation of baptized believers, associated by covenant in the faith and
@@ -285,9 +404,11 @@ function kjv_spans_from_scholarly_string(string $input) {
   includes all of the redeemed of all the ages, believers from every tribe, and
   tongue, and people, and nation.</p>
 
+<?php kjv_spans_from_scholarly_string(["Matthew 16:15-19","Matthew 18:15-20","Acts 2:41-42,47","Acts 5:11-14","Acts 6:3-6","Acts 13:1-3","Acts 14:23,27","Acts 15:1-30","Acts 16:5","Acts 20:28","Romans 1:7","1 Corinthians 1:2","1 Corinthians 3:16","1 Corinthians 5:4-5","1 Corinthians 7:17","1 Corinthians 9:13-14","1 Corinthians 12","Ephesians 1:22-23","Ephesians 2:19-22","Ephesians 3:8-11,21","Ephesians 5:22-32","Philippians 1:1","Colossians 1:18","1 Timothy 2:9-14","1 Timothy 3:1-15","1 Timothy 4:14","Hebrews 11:39-40","1 Peter 5:1-4","Revelation 2-3","Revelation 21:2-3"]); ?>
+
   <p><b>**Note: This article was amended June 14, 2023, by action of the 2023 Southern Baptist Convention**</b></p>
 
-  <h1>Baptism and the Lord's Supper</h1>
+  <h1 id="baptism">Baptism and the Lord's Supper</h1>
 
   <p>Christian baptism is the immersion of a believer in water in the name of
   the Father, the Son, and the Holy Spirit. It is an act of obedience
@@ -302,7 +423,9 @@ function kjv_spans_from_scholarly_string(string $input) {
   church, through partaking of the bread and the fruit of the vine, memorialize
   the death of the Redeemer and anticipate His second coming.</p>
 
-  <h1>The Lord's Day</h1>
+<?php kjv_spans_from_scholarly_string(["Matthew 3:13-17","Matthew 26:26-30","Matthew 28:19-20","Mark 1:9-11","Mark 14:22-26","Luke 3:21-22","Luke 22:19-20","John 3:23","Acts 2:41-42","Acts 8:35-39","Acts 16:30-33","Acts 20:7","Romans 6:3-5","1 Corinthians 10:16,21","1 Corinthians 11:23-29","Colossians 2:12"]); ?>
+
+  <h1 id="lords-day">The Lord's Day</h1>
 
   <p>The first day of the week is the Lord’s Day. It is a Christian institution
   for regular observance. It commemorates the resurrection of Christ from the
@@ -310,7 +433,9 @@ function kjv_spans_from_scholarly_string(string $input) {
   public and private. Activities on the Lord’s Day should be commensurate with
   the Christian’s conscience under the Lordship of Jesus Christ.</p>
 
-  <h1>The Kingdom</h1>
+<?php kjv_spans_from_scholarly_string(["Exodus 20:8-11","Matthew 12:1-12","Matthew 28:1ff.","Mark 2:27-28","Mark 16:1-7","Luke 24:1-3,33-36","John 4:21-24","John 20:1,19-28","Acts 20:7","Romans 14:5-10","1 Corinthians 16:1-2","Colossians 2:16","Colossians 3:16","Revelation 1:10"]); ?>
+
+  <h1 id="kingdom">The Kingdom</h1>
 
   <p>The Kingdom of God includes both His general sovereignty over the universe
   and His particular kingship over men who willfully acknowledge Him as King.
@@ -320,7 +445,9 @@ function kjv_spans_from_scholarly_string(string $input) {
   consummation of the Kingdom awaits the return of Jesus Christ and the end of
   this age.</p>
 
-  <h1>Last Things</h1>
+<?php kjv_spans_from_scholarly_string(["Genesis 1:1","Isaiah 9:6-7","Jeremiah 23:5-6","Matthew 3:2","Matthew 4:8-10,23","Matthew 12:25-28","Matthew 13:1-52","Matthew 25:31-46","Matthew 26:29","Mark 1:14-15","Mark 9:1","Luke 4:43","Luke 8:1","Luke 9:2","Luke 12:31-32","Luke 23:42","John 3:3","John 18:36","Acts 1:6-7","Acts 17:22-31","Romans 5:17","Romans 8:19","1 Corinthians 15:24-28","Colossians 1:13","Hebrews 11:10,16","Hebrews 12:28","1 Peter 2:4-10","1 Peter 4:13","Revelation 1:6,9","Revelation 5:10","Revelation 11:15","Revelation 21-22"]); ?>
+
+  <h1 id="last-things">Last Things</h1>
 
   <p>God, in His own time and in His own way, will bring the world to its
   appropriate end. According to His promise, Jesus Christ will return
@@ -330,7 +457,9 @@ function kjv_spans_from_scholarly_string(string $input) {
   resurrected and glorified bodies will receive their reward and will dwell
   forever in Heaven with the Lord.</p>
 
-  <h1>Evangelism and Missions</h1>
+<?php kjv_spans_from_scholarly_string(["Isaiah 2:4","Isaiah 11:9","Matthew 16:27","Matthew 18:8-9","Matthew 19:28","Matthew 24:27,30,36,44","Matthew 25:31-46","Matthew 26:64","Mark 8:38","Mark 9:43-48","Luke 12:40,48","Luke 16:19-26","Luke 17:22-37","Luke 21:27-28","John 14:1-3","Acts 1:11","Acts 17:31","Romans 14:10","1 Corinthians 4:5","1 Corinthians 15:24-28,35-58","2 Corinthians 5:10","Philippians 3:20-21","Colossians 1:5","Colossians 3:4","1 Thessalonians 4:14-18","1 Thessalonians 5:1ff.","2 Thessalonians 1:7ff.,2","1 Timothy 6:14","2 Timothy 4:1,8","Titus 2:13","Hebrews 9:27-28","James 5:8","2 Peter 3:7ff.","1 John 2:28","1 John 3:2","Jude 14","Revelation 1:18","Revelation 3:11","Revelation 20:1-22:13"]); ?>
+
+  <h1 id="evangelism">Evangelism and Missions</h1>
 
   <p>It is the duty and privilege of every follower of Christ and of every
   church of the Lord Jesus Christ to endeavor to make disciples of all nations.
@@ -343,7 +472,9 @@ function kjv_spans_from_scholarly_string(string $input) {
   Christian lifestyle, and by other methods in harmony with the gospel of
   Christ.</p>
 
-  <h1>Education</h1>
+<?php kjv_spans_from_scholarly_string(["Genesis 12:1-3","Exodus 19:5-6","Isaiah 6:1-8","Matthew 9:37-38","Matthew 10:5-15","Matthew 13:18-30,37-43","Matthew 16:19","Matthew 22:9-10","Matthew 24:14","Matthew 28:18-20","Luke 10:1-18","Luke 24:46-53","John 14:11-12","John 15:7-8,16","John 17:15","John 20:21","Acts 1:8","Acts 2","Acts 8:26-40","Acts 10:42-48","Acts 13:2-3","Romans 10:13-15","Ephesians 3:1-11","1 Thessalonians 1:8","2 Timothy 4:5","Hebrews 2:1-3","Hebrews 11:39-12:2","1 Peter 2:4-10","Revelation 22:17"]); ?>
+
+  <h1 id="education">Education</h1>
 
   <p>Christianity is the faith of enlightenment and intelligence. In Jesus
   Christ abide all the treasures of wisdom and knowledge. All sound learning
@@ -361,7 +492,9 @@ function kjv_spans_from_scholarly_string(string $input) {
   Jesus Christ, by the authoritative nature of the Scriptures, and by the
   distinct purpose for which the school exists.</p>
 
-  <h1>Stewardship</h1>
+<?php kjv_spans_from_scholarly_string(["Deuteronomy 4:1,5,9,14","Deuteronomy 6:1-10","Deuteronomy 31:12-13","Nehemiah 8:1-8","Job 28:28","Psalm 19:7ff.","Psalm 119:11","Proverbs 3:13ff.","Proverbs 4:1-10","Proverbs 8:1-7,11","Proverbs 15:14","Ecclesiastes 7:19","Matthew 5:2","Matthew 7:24ff.","Matthew 28:19-20","Luke 2:40","1 Corinthians 1:18-31","Ephesians 4:11-16","Philippians 4:8","Colossians 2:3,8-9","1 Timothy 1:3-7","2 Timothy 2:15","2 Timothy 3:14-17","Hebrews 5:12-6:3","James 1:5","James 3:17"]); ?>
+
+  <h1 id="stewardship">Stewardship</h1>
 
   <p>God is the source of all blessings, temporal and spiritual; all that we
   have and are we owe to Him. Christians have a spiritual debtorship to the
@@ -373,7 +506,9 @@ function kjv_spans_from_scholarly_string(string $input) {
   cheerfully, regularly, systematically, proportionately, and liberally for the
   advancement of the Redeemer’s cause on earth.</p>
 
-  <h1>Cooperation</h1>
+<?php kjv_spans_from_scholarly_string(["Genesis 14:20","Leviticus 27:30-32","Deuteronomy 8:18","Malachi 3:8-12","Matthew 6:1-4,19-21","Matthew 19:21","Matthew 23:23","Matthew 25:14-29","Luke 12:16-21,42","Luke 16:1-13","Acts 2:44-47","Acts 5:1-11","Acts 17:24-25","Acts 20:35","Romans 6:6-22","Romans 12:1-2","1 Corinthians 4:1-2","1 Corinthians 6:19-20","1 Corinthians 12","1 Corinthians 16:1-4","2 Corinthians 8-9","2 Corinthians 12:15","Philippians 4:10-19","1 Peter 1:18-19"]); ?>
+
+  <h1 id="cooperation">Cooperation</h1>
 
   <p>Christ’s people should, as occasion requires, organize such associations
   and conventions as may best secure cooperation for the great objects of the
@@ -389,7 +524,9 @@ function kjv_spans_from_scholarly_string(string $input) {
   when such cooperation involves no violation of conscience or compromise of
   loyalty to Christ and His Word as revealed in the New Testament.</p>
 
-  <h1>The Christian and the Social Order</h1>
+<?php kjv_spans_from_scholarly_string(["Exodus 17:12","Exodus 18:17ff.","Judges 7:21","Ezra 1:3-4","Ezra 2:68-69","Ezra 5:14-15","Nehemiah 4","Nehemiah 8:1-5","Matthew 10:5-15","Matthew 20:1-16","Matthew 22:1-10","Matthew 28:19-20","Mark 2:3","Luke 10:1ff.","Acts 1:13-14","Acts 2:1ff.","Acts 4:31-37","Acts 13:2-3","Acts 15:1-35","1 Corinthians 1:10-17","1 Corinthians 3:5-15","1 Corinthians 12","2 Corinthians 8-9","Galatians 1:6-10","Ephesians 4:1-16","Philippians 1:15-18"]); ?>
+
+  <h1 id="social-order">The Christian and the Social Order</h1>
 
   <p>All Christians are under obligation to seek to make the will of Christ
   supreme in our own lives and in human society. Means and methods used for the
@@ -408,7 +545,9 @@ function kjv_spans_from_scholarly_string(string $input) {
   any good cause, always being careful to act in the spirit of love without
   compromising their loyalty to Christ and His truth.</p>
 
-  <h1>Peace and War</h1>
+<?php kjv_spans_from_scholarly_string(["Exodus 20:3-17","Leviticus 6:2-5","Deuteronomy 10:12","Deuteronomy 27:17","Psalm 101:5","Micah 6:8","Zechariah 8:16","Matthew 5:13-16,43-48","Matthew 22:36-40","Matthew 25:35","Mark 1:29-34","Mark 2:3ff.","Mark 10:21","Luke 4:18-21","Luke 10:27-37","Luke 20:25","John 15:12","John 17:15","Romans 12-14","1 Corinthians 5:9-10","1 Corinthians 6:1-7","1 Corinthians 7:20-24","1 Corinthians 10:23-11:1","Galatians 3:26-28","Ephesians 6:5-9","Colossians 3:12-17","1 Thessalonians 3:12","Philemon","James 1:27","James 2:8"]); ?>
+
+  <h1 id="peace-war">Peace and War</h1>
 
   <p>It is the duty of Christians to seek peace with all men on principles of
   righteousness. In accordance with the spirit and teachings of Christ they
@@ -420,7 +559,9 @@ function kjv_spans_from_scholarly_string(string $input) {
   people throughout the world should pray for the reign of the Prince of
   Peace.</p>
 
-  <h1>Religious Liberty</h1>
+<?php kjv_spans_from_scholarly_string(["Isaiah 2:4","Matthew 5:9,38-48","Matthew 6:33","Matthew 26:52","Luke 22:36,38","Romans 12:18-19","Romans 13:1-7","Romans 14:19","Hebrews 12:14","James 4:1-2"]); ?>
+
+  <h1 id="religious-liberty">Religious Liberty</h1>
 
   <p>God alone is Lord of the conscience, and He has left it free from the
   doctrines and commandments of men which are contrary to His Word or not
@@ -439,7 +580,9 @@ function kjv_spans_from_scholarly_string(string $input) {
   propagate opinions in the sphere of religion without interference by the
   civil power.</p>
 
-  <h1>The Family</h1>
+<?php kjv_spans_from_scholarly_string(["Genesis 1:27","Genesis 2:7","Matthew 6:6-7,24","Matthew 16:26","Matthew 22:21","John 8:36","Acts 4:19-20","Romans 6:1-2","Romans 13:1-7","Galatians 5:1,13","Philippians 3:20","1 Timothy 2:1-2","James 4:12","1 Peter 2:12-17","1 Peter 3:11-17","1 Peter 4:12-19"]); ?>
+
+  <h1 id="family">The Family</h1>
 
   <p>God has ordained the family as the foundational institution of human
   society. It is composed of persons related to one another by marriage, blood,
@@ -468,6 +611,8 @@ function kjv_spans_from_scholarly_string(string $input) {
   to lead them, through consistent lifestyle example and loving discipline, to
   make choices based on biblical truth. Children are to honor and obey their
   parents.</p>
+
+<?php kjv_spans_from_scholarly_string(["Genesis 1:26-28","Genesis 2:15-25","Genesis 3:1-20","Exodus 20:12","Deuteronomy 6:4-9","Joshua 24:15","1 Samuel 1:26-28","Psalm 51:5","Psalm 78:1-8","Psalm 127","Psalm 128","Psalm 139:13-16","Proverbs 1:8","Proverbs 5:15-20","Proverbs 6:20-22","Proverbs 12:4","Proverbs 13:24","Proverbs 14:1","Proverbs 17:6","Proverbs 18:22","Proverbs 22:6","Proverbs 23:13-14","Proverbs 24:3","Proverbs 29:15,17","Proverbs 31:10-31","Ecclesiastes 4:9-12","Ecclesiastes 9:9","Malachi 2:14-16","Matthew 5:31-32","Matthew 18:2-5","Matthew 19:3-9","Mark 10:6-12","Romans 1:18-32","1 Corinthians 7:1-16","Ephesians 5:21-33","Ephesians 6:1-4","Colossians 3:18-21","1 Timothy 5:8,14","2 Timothy 1:3-5","Titus 2:3-5","Hebrews 13:4","1 Peter 3:1-7"]); ?>
 
 </body>
 </html>
