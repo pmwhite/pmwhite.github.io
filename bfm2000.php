@@ -64,161 +64,73 @@ nav a:hover {
 <?php
 
 function kjv_spans_from_scholarly_string($references) {
-    $kjv_file = 'kjv.txt';
-    
-    // Load and parse the KJV file into memory
-    $verses = [];
-    $lines = file($kjv_file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
-    
-    foreach ($lines as $line) {
-        // Skip header lines
-        if (strpos($line, "\t") === false) {
-            continue;
+  $kjv_file = 'kjv.txt';
+  $verses = [];
+  $lines = file($kjv_file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+  foreach ($lines as $line) {
+    if (strpos($line, "\t") === false) {
+      continue;
+    }
+    list($ref, $text) = explode("\t", $line, 2);
+    $verses[$ref] = $text;
+  }
+  echo '<div class="verses">';
+  foreach ($references as $ref) {
+    $has_ff = strpos($ref, 'ff.') !== false;
+    $normalized = preg_replace('/^Psalms\b/', 'Psalm', $ref);
+    $normalized = preg_replace('/ff\..*$/', '', $normalized);
+    $normalized = trim($normalized);
+    $book = null;
+    $chapter_start = null;
+    $verse_start = null;
+    $chapter_end = null;
+    $verse_end = null;
+    if (preg_match('/^([A-Za-z0-9\s]+?)\s+(\d+):(\d+)-(\d+)$/', $normalized, $m)) {
+      $book = trim($m[1]);
+      $chapter_start = $chapter_end = (int)$m[2];
+      $verse_start = (int)$m[3];
+      $verse_end = $has_ff ? PHP_INT_MAX : (int)$m[4];
+    } elseif (preg_match('/^([A-Za-z0-9\s]+?)\s+(\d+):(\d+)$/', $normalized, $m)) {
+      $book = trim($m[1]);
+      $chapter_start = $chapter_end = (int)$m[2];
+      $verse_start = (int)$m[3];
+      $verse_end = $has_ff ? PHP_INT_MAX : (int)$m[3];
+    } elseif (preg_match('/^([A-Za-z0-9\s]+?)\s+(\d+)-(\d+)$/', $normalized, $m)) {
+      $book = trim($m[1]);
+      $chapter_start = (int)$m[2];
+      $chapter_end = (int)$m[3];
+    } elseif (preg_match('/^([A-Za-z0-9\s]+?)\s+(\d+)$/', $normalized, $m)) {
+      $book = trim($m[1]);
+      $chapter_start = $chapter_end = (int)$m[2];
+    }
+    if ($book === null) {
+      continue;
+    }
+    $text_parts = [];
+    for ($ch = $chapter_start; $ch <= $chapter_end; $ch++) {
+      if ($verse_start === null && $verse_end === null) {
+        $v = 1;
+        while (isset($verses["$book $ch:$v"])) {
+          $text_parts[] = $verses["$book $ch:$v"];
+          $v++;
         }
-        
-        list($ref, $text) = explode("\t", $line, 2);
-        $verses[$ref] = $text;
-    }
-    
-    $results = [];
-    
-    foreach ($references as $ref) {
-        $parsed = parse_reference($ref);
-        
-        foreach ($parsed as $single_ref) {
-            $book = $single_ref['book'];
-            $chapter_start = $single_ref['chapter_start'];
-            $verse_start = $single_ref['verse_start'];
-            $chapter_end = $single_ref['chapter_end'];
-            $verse_end = $single_ref['verse_end'];
-            
-            $text_parts = [];
-            
-            // Handle single chapter or chapter range
-            for ($ch = $chapter_start; $ch <= $chapter_end; $ch++) {
-                if ($verse_start === null && $verse_end === null) {
-                    // Entire chapter(s)
-                    $v = 1;
-                    while (isset($verses["$book $ch:$v"])) {
-                        $text_parts[] = $verses["$book $ch:$v"];
-                        $v++;
-                    }
-                } else {
-                    // Specific verses
-                    $start_v = ($ch == $chapter_start) ? $verse_start : 1;
-                    $end_v = ($ch == $chapter_end) ? $verse_end : PHP_INT_MAX;
-                    
-                    $v = $start_v;
-                    while ($v <= $end_v && isset($verses["$book $ch:$v"])) {
-                        $text_parts[] = $verses["$book $ch:$v"];
-                        $v++;
-                    }
-                }
-            }
-            
-            if (!empty($text_parts)) {
-                $results[] = [
-                    'original_reference' => $ref,
-                    'parsed_reference' => format_parsed_reference($single_ref),
-                    'text' => implode(' ', $text_parts)
-                ];
-            }
+      } else {
+        $start_v = ($ch == $chapter_start) ? $verse_start : 1;
+        $end_v = ($ch == $chapter_end) ? $verse_end : PHP_INT_MAX;
+        $v = $start_v;
+        while ($v <= $end_v && isset($verses["$book $ch:$v"])) {
+          $text_parts[] = $verses["$book $ch:$v"];
+          $v++;
         }
+      }
     }
-    
-    echo '<div class="verses">';
-    foreach ($results as $result) {
-        $ref = $result['original_reference'];
-        echo "<details class='verse'><summary>$ref</summary> <p>{$result['text']}</p></details>";
+    if (!empty($text_parts)) {
+      $text = implode(' ', $text_parts);
+      echo "<details class='verse'><summary>$ref</summary> <p>$text</p></details>";
     }
-    echo '</div>';
+  }
+  echo '</div>';
 }
-
-function parse_reference($ref) {
-    // Normalize "Psalms" to "Psalm"
-    $ref = preg_replace('/^Psalms\b/', 'Psalm', $ref);
-    
-    // Remove "ff." notation (meaning "and following")
-    $ref = preg_replace('/ff\..*$/', '', $ref);
-    $ref = trim($ref);
-    
-    $results = [];
-    
-    // Pattern: "Book Chapter:Verse-Verse" or "Book Chapter" or "Book Chapter-Chapter"
-    if (preg_match('/^([A-Za-z0-9\s]+?)\s+(\d+):(\d+)-(\d+)$/', $ref, $matches)) {
-        // Book Chapter:StartVerse-EndVerse
-        $results[] = [
-            'book' => trim($matches[1]),
-            'chapter_start' => (int)$matches[2],
-            'verse_start' => (int)$matches[3],
-            'chapter_end' => (int)$matches[2],
-            'verse_end' => (int)$matches[4]
-        ];
-    } elseif (preg_match('/^([A-Za-z0-9\s]+?)\s+(\d+):(\d+)$/', $ref, $matches)) {
-        // Book Chapter:Verse
-        $results[] = [
-            'book' => trim($matches[1]),
-            'chapter_start' => (int)$matches[2],
-            'verse_start' => (int)$matches[3],
-            'chapter_end' => (int)$matches[2],
-            'verse_end' => (int)$matches[3]
-        ];
-    } elseif (preg_match('/^([A-Za-z0-9\s]+?)\s+(\d+)-(\d+)$/', $ref, $matches)) {
-        // Book ChapterStart-ChapterEnd (entire chapters)
-        $results[] = [
-            'book' => trim($matches[1]),
-            'chapter_start' => (int)$matches[2],
-            'verse_start' => null,
-            'chapter_end' => (int)$matches[3],
-            'verse_end' => null
-        ];
-    } elseif (preg_match('/^([A-Za-z0-9\s]+?)\s+(\d+)$/', $ref, $matches)) {
-        // Book Chapter (entire chapter)
-        $results[] = [
-            'book' => trim($matches[1]),
-            'chapter_start' => (int)$matches[2],
-            'verse_start' => null,
-            'chapter_end' => (int)$matches[2],
-            'verse_end' => null
-        ];
-    }
-    
-    return $results;
-}
-
-function format_parsed_reference($parsed) {
-    $book = $parsed['book'];
-    $ch_start = $parsed['chapter_start'];
-    $v_start = $parsed['verse_start'];
-    $ch_end = $parsed['chapter_end'];
-    $v_end = $parsed['verse_end'];
-    
-    if ($v_start === null && $v_end === null) {
-        // Entire chapter(s)
-        if ($ch_start == $ch_end) {
-            return "$book $ch_start";
-        } else {
-            return "$book $ch_start-$ch_end";
-        }
-    } else {
-        // Specific verses
-        if ($ch_start == $ch_end && $v_start == $v_end) {
-            return "$book $ch_start:$v_start";
-        } elseif ($ch_start == $ch_end) {
-            return "$book $ch_start:$v_start-$v_end";
-        } else {
-            return "$book $ch_start:$v_start-$ch_end:$v_end";
-        }
-    }
-}
-
-// Example usage:
-$references = [
-    "Exodus 24:4",
-    "Deuteronomy 4:1-2",
-    "Psalm 1",
-    "Revelation 2-3"
-];
 
 ?>
 
