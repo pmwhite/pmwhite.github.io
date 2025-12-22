@@ -222,6 +222,16 @@ $references = [
 
 ?>
 
+  <p>I was reading through the <a href="https://bfm.sbc.net/bfm2000/">Baptist
+Faith and Message 2000</a>, but all the scripture references were separate
+links (at least when I last looked at it), which made it pretty inconvenient to
+read all of them. I made this page to contain roughly the same content as that
+page (text is the same, but I made slight formatting modifications), but with
+the verse contents provided directly inline. The verses are provided from the
+KJV simply because it was easy to find a public domain text file that I could
+manipulate programmatically (in order to automatically insert all the verse
+contents into each section). Hope you find this useful!</p>
+
   <nav>
     <a href="#scriptures">The Scriptures</a>
     <a href="#god">God</a>
