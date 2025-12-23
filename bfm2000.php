@@ -16,15 +16,14 @@ html, body {
 }
 details {
   border: 1px solid #ddd;
-  border-radius: 4px;
-  padding: 10px;
+  padding: 5px 10px;
   margin: 10px 0;
 }
 
 summary {
   cursor: pointer;
   font-weight: bold;
-  padding: 5px;
+  padding: 3px;
 }
 
 summary:hover {
@@ -38,7 +37,6 @@ details[open] summary {
 nav {
   background-color: #f9f9f9;
   border: 1px solid #ddd;
-  border-radius: 4px;
   padding: 20px;
   margin-bottom: 2em;
 }
@@ -49,7 +47,6 @@ nav a {
   text-decoration: none;
   padding: 6px 12px;
   margin: 4px;
-  border-radius: 3px;
   transition: background-color 0.2s;
 }
 
@@ -170,8 +167,8 @@ function kjv_spans_from_scholarly_string($references) {
         }
         if (!empty($version_texts['kjv']) || !empty($version_texts['web'])) {
             echo "<details class='verse'><summary>$ref</summary>";
-            echo '<div class="tab-content" data-version="kjv"><p>' . htmlspecialchars($version_texts['kjv']) . ' (KJV)</p></div>';
-            echo '<div class="tab-content" data-version="web"><p>' . htmlspecialchars($version_texts['web']) . ' (WEB)</p></div>';
+            echo '<div class="tab-content" data-version="kjv">' . htmlspecialchars($version_texts['kjv']) . ' (KJV)</div>';
+            echo '<div class="tab-content" data-version="web">' . htmlspecialchars($version_texts['web']) . ' (WEB)</div>';
             echo '</details>';
         }
     }
