@@ -57,6 +57,39 @@ nav a:hover {
   background-color: #e8e8e8;
   text-decoration: none;
 }
+
+input[type="radio"] {
+  display: none;
+}
+
+label {
+  display: inline-block;
+  padding: 8px 16px;
+  background: white;
+  border: 1px solid white;
+  cursor: pointer;
+  color: #808080;
+}
+
+label:hover {
+  border-bottom: 1px solid #808080;
+}
+
+body:has(input[value="kjv"]:checked) label:has(input[value="kjv"]),
+body:has(input[value="web"]:checked) label:has(input[value="web"]) {
+  border-bottom: 1px solid black;
+  color: black;
+}
+
+.tab-content {
+  display: none;
+}
+
+body:has(input[value="kjv"]:checked) .tab-content[data-version="kjv"],
+body:has(input[value="web"]:checked) .tab-content[data-version="web"] {
+  display: block;
+}
+
   </style>
 </head>
 <body>
@@ -64,72 +97,85 @@ nav a:hover {
 <?php
 
 function kjv_spans_from_scholarly_string($references) {
-  $kjv_file = 'kjv.txt';
-  $verses = [];
-  $lines = file($kjv_file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
-  foreach ($lines as $line) {
-    if (strpos($line, "\t") === false) {
-      continue;
-    }
-    list($ref, $text) = explode("\t", $line, 2);
-    $verses[$ref] = $text;
-  }
-  echo '<div class="verses">';
-  foreach ($references as $ref) {
-    $has_ff = strpos($ref, 'ff.') !== false;
-    $normalized = preg_replace('/^Psalms\b/', 'Psalm', $ref);
-    $normalized = preg_replace('/ff\..*$/', '', $normalized);
-    $normalized = trim($normalized);
-    $book = null;
-    $chapter_start = null;
-    $verse_start = null;
-    $chapter_end = null;
-    $verse_end = null;
-    if (preg_match('/^([A-Za-z0-9\s]+?)\s+(\d+):(\d+)-(\d+)$/', $normalized, $m)) {
-      $book = trim($m[1]);
-      $chapter_start = $chapter_end = (int)$m[2];
-      $verse_start = (int)$m[3];
-      $verse_end = $has_ff ? PHP_INT_MAX : (int)$m[4];
-    } elseif (preg_match('/^([A-Za-z0-9\s]+?)\s+(\d+):(\d+)$/', $normalized, $m)) {
-      $book = trim($m[1]);
-      $chapter_start = $chapter_end = (int)$m[2];
-      $verse_start = (int)$m[3];
-      $verse_end = $has_ff ? PHP_INT_MAX : (int)$m[3];
-    } elseif (preg_match('/^([A-Za-z0-9\s]+?)\s+(\d+)-(\d+)$/', $normalized, $m)) {
-      $book = trim($m[1]);
-      $chapter_start = (int)$m[2];
-      $chapter_end = (int)$m[3];
-    } elseif (preg_match('/^([A-Za-z0-9\s]+?)\s+(\d+)$/', $normalized, $m)) {
-      $book = trim($m[1]);
-      $chapter_start = $chapter_end = (int)$m[2];
-    }
-    if ($book === null) {
-      continue;
-    }
-    $text_parts = [];
-    for ($ch = $chapter_start; $ch <= $chapter_end; $ch++) {
-      if ($verse_start === null && $verse_end === null) {
-        $v = 1;
-        while (isset($verses["$book $ch:$v"])) {
-          $text_parts[] = $verses["$book $ch:$v"];
-          $v++;
+    $versions = ['kjv' => 'kjv.txt', 'web' => 'web.txt'];
+    $all_verses = [];
+    foreach ($versions as $version => $file) {
+        $all_verses[$version] = [];
+        $lines = file($file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+        foreach ($lines as $line) {
+            if (strpos($line, "\t") === false) {
+                continue;
+            }
+            list($ref, $text) = explode("\t", $line, 2);
+            $all_verses[$version][$ref] = $text;
         }
-      } else {
-        $start_v = ($ch == $chapter_start) ? $verse_start : 1;
-        $end_v = ($ch == $chapter_end) ? $verse_end : PHP_INT_MAX;
-        $v = $start_v;
-        while ($v <= $end_v && isset($verses["$book $ch:$v"])) {
-          $text_parts[] = $verses["$book $ch:$v"];
-          $v++;
+    }
+    echo '<div class="version-selector">';
+    echo '<label><input type="radio" name="bible-version" value="kjv" checked>King James Version</label>';
+    echo '<label><input type="radio" name="bible-version" value="web">World English Bible</label>';
+    echo '</div>';
+    echo '<div class="verses">';
+    foreach ($references as $ref) {
+        $has_ff = strpos($ref, 'ff.') !== false;
+        $normalized = preg_replace('/^Psalms\b/', 'Psalm', $ref);
+        $normalized = preg_replace('/ff\..*$/', '', $normalized);
+        $normalized = trim($normalized);
+        $book = null;
+        $chapter_start = null;
+        $verse_start = null;
+        $chapter_end = null;
+        $verse_end = null;
+        if (preg_match('/^([A-Za-z0-9\s]+?)\s+(\d+):(\d+)-(\d+)$/', $normalized, $m)) {
+            $book = trim($m[1]);
+            $chapter_start = $chapter_end = (int)$m[2];
+            $verse_start = (int)$m[3];
+            $verse_end = $has_ff ? PHP_INT_MAX : (int)$m[4];
+        } elseif (preg_match('/^([A-Za-z0-9\s]+?)\s+(\d+):(\d+)$/', $normalized, $m)) {
+            $book = trim($m[1]);
+            $chapter_start = $chapter_end = (int)$m[2];
+            $verse_start = (int)$m[3];
+            $verse_end = $has_ff ? PHP_INT_MAX : (int)$m[3];
+        } elseif (preg_match('/^([A-Za-z0-9\s]+?)\s+(\d+)-(\d+)$/', $normalized, $m)) {
+            $book = trim($m[1]);
+            $chapter_start = (int)$m[2];
+            $chapter_end = (int)$m[3];
+        } elseif (preg_match('/^([A-Za-z0-9\s]+?)\s+(\d+)$/', $normalized, $m)) {
+            $book = trim($m[1]);
+            $chapter_start = $chapter_end = (int)$m[2];
         }
-      }
+        if ($book === null) {
+            continue;
+        }
+        $version_texts = [];
+        foreach ($versions as $version => $file) {
+            $text_parts = [];
+            for ($ch = $chapter_start; $ch <= $chapter_end; $ch++) {
+                if ($verse_start === null && $verse_end === null) {
+                    $v = 1;
+                    while (isset($all_verses[$version]["$book $ch:$v"])) {
+                        $text_parts[] = $all_verses[$version]["$book $ch:$v"];
+                        $v++;
+                    }
+                } else {
+                    $start_v = ($ch == $chapter_start) ? $verse_start : 1;
+                    $end_v = ($ch == $chapter_end) ? $verse_end : PHP_INT_MAX;
+                    $v = $start_v;
+                    while ($v <= $end_v && isset($all_verses[$version]["$book $ch:$v"])) {
+                        $text_parts[] = $all_verses[$version]["$book $ch:$v"];
+                        $v++;
+                    }
+                }
+            }
+            $version_texts[$version] = implode(' ', $text_parts);
+        }
+        if (!empty($version_texts['kjv']) || !empty($version_texts['web'])) {
+            echo "<details class='verse'><summary>$ref</summary>";
+            echo '<div class="tab-content" data-version="kjv"><p>' . htmlspecialchars($version_texts['kjv']) . ' (KJV)</p></div>';
+            echo '<div class="tab-content" data-version="web"><p>' . htmlspecialchars($version_texts['web']) . ' (WEB)</p></div>';
+            echo '</details>';
+        }
     }
-    if (!empty($text_parts)) {
-      $text = implode(' ', $text_parts);
-      echo "<details class='verse'><summary>$ref</summary> <p>$text</p></details>";
-    }
-  }
-  echo '</div>';
+    echo '</div>';
 }
 
 ?>
@@ -139,10 +185,11 @@ Faith and Message 2000</a>, but all the scripture references were separate
 links (at least when I last looked at it), which made it pretty inconvenient to
 read all of them. I made this page to contain roughly the same content as that
 page (text is the same, but I made slight formatting modifications), but with
-the verse contents provided directly inline. The verses are provided from the
-KJV simply because it was easy to find a public domain text file that I could
-manipulate programmatically (in order to automatically insert all the verse
-contents into each section). Hope you find this useful!</p>
+the verse contents provided directly inline. You can switch between the KJV and
+WEB versions of the Bible; I picked these two versions because they are both in
+the public domain, and because providing just one translation felt a little bit
+constraining. There are other public domain Bible translations, so I may add
+more options in the future. Hope you find this useful!</p>
 
   <nav>
     <a href="#scriptures">The Scriptures</a>

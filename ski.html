@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+
+<!--
+
+INTRODUCTION
+
+This is the contents of a single-file html app. You are a helpful AI assistant
+whose sole job is to understand the contents of this file and spit it back out
+in a slightly modified form. You should not produce any extra commentary or
+fluff whatsoever because the text you output will replace the contents of the
+html app.
+
+A few guidelines to keep in mind:
+
+- Each token of difference from these original file contents costs $1. So
+  although you should definitely be productive and make useful changes, you
+  should as much as possible avoid deviating from the input.
+- Every 1000 tokens in this file will cost $1 for each big change. So it is
+  worth prioritizing brevity. No need to write long explanatory comments, and
+  no need to make big general frameworks for things. That said, do not
+  compromise on actual behavior. The system should be correct, and the code
+  should be readable.
+- If you ever need to update this description comment, please be brief. Fight
+  any feelings you might have of being overly descriptive and explanatory.
+
+PROJECT DESCRIPTION
+
+This is a web app written in pure html, css, and javascript. It is a puzzle
+game; each puzzle is defined by a starting and finishing lambda calculus
+expression. The game displays, from top to bottom, the start expression, the
+current expression, and the finish expression. As the user interacts with the
+puzzle the current expression will slowly change from the start expression to
+the final expression; once the final expression is reached, the puzzle is
+considered solved. The user may press "S", "K", "I", "B", or "R". 
+
+- "B" undoes the last "S", "K", or "I" step.
+- "R" resets the state of the puzzle.
+
+Each of S, K, I control (corresponding to combinators in SKI calculus), the
+game should change the current expression with the following algorithm:
+
+- Convert the current expression to a ski-calculus term.
+- Apply the combinator to the term.
+- Convert it back to a lambda expression.
+
+CURRENT TASK
+
+Don't leave things in a half-working state. Each task should do something in an
+atomic way, so that the app progressively gets better and better incrementally.
+We don't want to ever regress. Also, remember to preserve this initial comment,
+since the new contents of the file will be passed to future iterations.
+
+Please implement the entire app.
+
+-->
+
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>SKI</title>
+  <style>
+    :root { color-scheme: light dark; }
+    body { font-family: system-ui, sans-serif; margin: 20px; line-height: 1.4; }
+    h1 { font-size: 20px; margin: 0 0 10px; }
+    .row { margin: 10px 0; }
+    .label { font-weight: 600; margin-bottom: 4px; }
+    .expr { padding: 10px; border: 1px solid #9993; border-radius: 6px; white-space: pre-wrap; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; }
+    .current.solved { border-color: #2ea043; background: #2ea04318; }
+    .controls { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+    button { padding: 6px 10px; border-radius: 6px; border: 1px solid #8886; background: #eee; cursor: pointer; }
+    button:hover { background: #ddd; }
+    select { padding: 6px; border-radius: 6px; }
+    .hint { opacity: 0.8; font-size: 12px; }
+    .status { font-weight: 700; color: #2ea043; margin-left: auto; }
+  </style>
+</head>
+<body>
+  <h1>SKI Puzzle</h1>
+
+  <div class="row controls">
+    <label for="puzzle">Puzzle:</label>
+    <select id="puzzle"></select>
+    <button id="btnPrev">Prev</button>
+    <button id="btnNext">Next</button>
+    <span class="hint">Keys: S, K, I to apply; B to undo; R to reset.</span>
+    <span id="status" class="status"></span>
+  </div>
+
+  <div class="row">
+    <div class="label">Start</div>
+    <div id="start" class="expr"></div>
+  </div>
+  <div class="row">
+    <div class="label">Current</div>
+    <div id="current" class="expr current"></div>
+  </div>
+  <div class="row">
+    <div class="label">Goal</div>
+    <div id="goal" class="expr"></div>
+  </div>
+
+  <div class="row controls">
+    <button data-comb="S">S</button>
+    <button data-comb="K">K</button>
+    <button data-comb="I">I</button>
+    <button id="btnUndo">B (Undo)</button>
+    <button id="btnReset">R (Reset)</button>
+  </div>
+
+  <script>
+    // AST shapes: {type:'Var', name}, {type:'Abs', param, body}, {type:'App', left, right}
+
+    // Tokenizer and Parser for lambda expressions
+    function tokenize(input) {
+      const tokens = [];
+      let i = 0;
+      const isIdentStart = c => /[A-Za-z_]/.test(c);
+      const isIdent = c => /[A-Za-z0-9_]/.test(c);
+      while (i < input.length) {
+        const c = input[i];
+        if (/\s/.test(c)) { i++; continue; }
+        if (c === 'λ' || c === '\\') { tokens.push({t:'lam'}); i++; continue; }
+        if (c === '.') { tokens.push({t:'dot'}); i++; continue; }
+        if (c === '(') { tokens.push({t:'lparen'}); i++; continue; }
+        if (c === ')') { tokens.push({t:'rparen'}); i++; continue; }
+        if (isIdentStart(c)) {
+          let j = i+1;
+          while (j < input.length && isIdent(input[j])) j++;
+          tokens.push({t:'ident', v: input.slice(i,j)});
+          i = j; continue;
+        }
+        throw new Error('Unexpected character: ' + c);
+      }
+      return tokens;
+    }
+
+    function parse(input) {
+      const tokens = tokenize(input);
+      let i = 0;
+
+      function peek() { return tokens[i]; }
+      function eat(t) {
+        const tok = tokens[i];
+        if (!tok || tok.t !== t) throw new Error('Expected ' + t + ' but got ' + (tok ? tok.t : 'EOF'));
+        i++; return tok;
+      }
+
+      function parseExpr() {
+        if (peek() && peek().t === 'lam') return parseLam();
+        return parseApp();
+      }
+
+      function parseLam() {
+        eat('lam');
+        const id = eat('ident').v;
+        eat('dot');
+        const body = parseExpr();
+        return {type:'Abs', param:id, body};
+      }
+
+      function parseApp() {
+        let left = parseAtom();
+        while (true) {
+          const tok = peek();
+          if (!tok) break;
+          if (tok.t === 'ident' || tok.t === 'lparen' || tok.t === 'lam') {
+            const right = parseAtom();
+            left = {type:'App', left, right};
+            continue;
+          }
+          break;
+        }
+        return left;
+      }
+
+      function parseAtom() {
+        const tok = peek();
+        if (!tok) throw new Error('Unexpected EOF');
+        if (tok.t === 'ident') { i++; return {type:'Var', name: tok.v}; }
+        if (tok.t === 'lparen') {
+          eat('lparen');
+          const e = parseExpr();
+          eat('rparen');
+          return e;
+        }
+        if (tok.t === 'lam') {
+          return parseLam();
+        }
+        throw new Error('Unexpected token: ' + tok.t);
+      }
+
+      const ast = parseExpr();
+      if (i !== tokens.length) throw new Error('Unexpected extra tokens');
+      return ast;
+    }
+
+    // Pretty printer
+    function print(ast) {
+      function isAbs(n){return n.type==='Abs';}
+      function isApp(n){return n.type==='App';}
+      function p(n){
+        switch(n.type){
+          case 'Var': return n.name;
+          case 'Abs': {
+            // chain lambdas
+            let params = [n.param];
+            let body = n.body;
+            while (body.type === 'Abs') { params.push(body.param); body = body.body; }
+            return 'λ' + params.join(' ') + '. ' + p(body);
+          }
+          case 'App': {
+            const L = n.left, R = n.right;
+            const lp = (isAbs(L) ? '(' + p(L) + ')' : p(L));
+            const rp = ((isAbs(R) || isApp(R)) ? '(' + p(R) + ')' : p(R));
+            return lp + ' ' + rp;
+          }
+        }
+      }
+      return p(ast);
+    }
+
+    // Free variables
+    function freeVars(ast) {
+      function walk(n, bound, acc) {
+        switch(n.type){
+          case 'Var':
+            if (!bound.has(n.name)) acc.add(n.name);
+            break;
+          case 'Abs':
+            bound.add(n.param);
+            walk(n.body, bound, acc);
+            bound.delete(n.param);
+            break;
+          case 'App':
+            walk(n.left, bound, acc);
+            walk(n.right, bound, acc);
+            break;
+        }
+      }
+      const acc = new Set();
+      walk(ast, new Set(), acc);
+      return acc;
+    }
+
+    // Lambda -> SKI (bracket abstraction)
+    function toSKI(ast) {
+      function bracket(x, t) {
+        if (t.type === 'Var' && t.name === x) return I();
+        const fv = freeVarsNoAbs(t);
+        if (!fv.has(x)) return app(K(), t);
+        if (t.type === 'App') return app(app(S(), bracket(x, t.left)), bracket(x, t.right));
+        // Fallback for variables equal to x already handled; otherwise K t would have applied, so remaining case is impossible here.
+        return app(K(), t);
+      }
+      function removeAbs(n){
+        switch(n.type){
+          case 'Var': return v(n.name);
+          case 'App': return app(removeAbs(n.left), removeAbs(n.right));
+          case 'Abs': {
+            const bodySki = removeAbs(n.body);
+            return bracket(n.param, bodySki);
+          }
+        }
+      }
+      // free vars for SKI terms (no Abs present)
+      function freeVarsNoAbs(n){
+        const acc = new Set();
+        (function walk(m){
+          if (m.type==='Var') acc.add(m.name);
+          else if (m.type==='App'){ walk(m.left); walk(m.right); }
+        })(n);
+        return acc;
+      }
+      const S = () => v('S');
+      const K = () => v('K');
+      const I = () => v('I');
+      const v = name => ({type:'Var', name});
+      const app = (l,r) => ({type:'App', left:l, right:r});
+      return removeAbs(ast);
+    }
+
+    // SKI -> Lambda (expand S,K,I)
+    function skiToLambda(ast) {
+      function Sdef(){ 
+        const x='x', y='y', z='z';
+        return Abs(x, Abs(y, Abs(z, App(App(Var(x), Var(z)), App(Var(y), Var(z))))));
+      }
+      function Kdef(){ 
+        const x='x', y='y';
+        return Abs(x, Abs(y, Var(x)));
+      }
+      function Idef(){
+        const x='x';
+        return Abs(x, Var(x));
+      }
+      function Var(name){ return {type:'Var', name}; }
+      function App(a,b){ return {type:'App', left:a, right:b}; }
+      function Abs(p,b){ return {type:'Abs', param:p, body:b}; }
+      function conv(n){
+        if (n.type==='Var'){
+          if (n.name==='S') return Sdef();
+          if (n.name==='K') return Kdef();
+          if (n.name==='I') return Idef();
+          return {type:'Var', name:n.name};
+        }
+        if (n.type==='App') return {type:'App', left:conv(n.left), right:conv(n.right)};
+        // no Abs expected in SKI term; return as-is if encountered
+        return n;
+      }
+      return conv(ast);
+    }
+
+    // Apply combinator: current -> SKI -> App(C, term) -> expand to lambda
+    function applyComb(ast, comb) {
+      const ski = toSKI(ast);
+      const applied = {type:'App', left:{type:'Var', name:comb}, right:ski};
+      return skiToLambda(applied);
+    }
+
+    // Alpha-equivalence
+    function alphaEq(a,b) {
+      function eq(n,m, mapAB, mapBA) {
+        if (n.type !== m.type) return false;
+        switch(n.type){
+          case 'Var': {
+            const an = n.name, bn = m.name;
+            const mapped = mapAB.get(an);
+            const mappedBack = mapBA.get(bn);
+            const aBound = mapped !== undefined;
+            const bBound = mappedBack !== undefined;
+            if (aBound || bBound) {
+              return mapped === bn && mappedBack === an;
+            } else {
+              return an === bn;
+            }
+          }
+          case 'App':
+            return eq(n.left, m.left, mapAB, mapBA) && eq(n.right, m.right, mapAB, mapBA);
+          case 'Abs': {
+            const newAB = new Map(mapAB);
+            const newBA = new Map(mapBA);
+            newAB.set(n.param, m.param);
+            newBA.set(m.param, n.param);
+            return eq(n.body, m.body, newAB, newBA);
+          }
+        }
+      }
+      return eq(a,b,new Map(), new Map());
+    }
+
+    // UI and game logic
+    const puzzles = [
+      { name: '1: Identity', start: 'x', goal: '(λa. a) x' },
+      { name: '2: Keep Left', start: 'x y', goal: '(λa. λb. a) (x y)' },
+      { name: '3: Double Identity', start: 'x', goal: '(λa. a) ((λb. b) x)' },
+    ];
+
+    let state = {
+      idx: 0,
+      startStr: '',
+      currentStr: '',
+      goalStr: '',
+      history: []
+    };
+
+    const elStart = document.getElementById('start');
+    const elCurrent = document.getElementById('current');
+    const elGoal = document.getElementById('goal');
+    const elStatus = document.getElementById('status');
+    const selPuzzle = document.getElementById('puzzle');
+
+    function loadPuzzleList() {
+      selPuzzle.innerHTML = '';
+      puzzles.forEach((p, i) => {
+        const opt = document.createElement('option');
+        opt.value = i;
+        opt.textContent = p.name;
+        selPuzzle.appendChild(opt);
+      });
+    }
+
+    function setPuzzle(idx) {
+      state.idx = Math.max(0, Math.min(puzzles.length - 1, idx));
+      const p = puzzles[state.idx];
+      state.startStr = p.start;
+      state.currentStr = p.start;
+      state.goalStr = p.goal;
+      state.history = [];
+      selPuzzle.value = String(state.idx);
+      render();
+    }
+
+    function render() {
+      elStart.textContent = state.startStr;
+      elCurrent.textContent = state.currentStr;
+      elGoal.textContent = state.goalStr;
+      const solved = checkSolved();
+      elCurrent.classList.toggle('solved', solved);
+      elStatus.textContent = solved ? 'Solved!' : '';
+    }
+
+    function checkSolved() {
+      try {
+        const cur = parse(state.currentStr);
+        const goal = parse(state.goalStr);
+        return alphaEq(cur, goal);
+      } catch {
+        return false;
+      }
+    }
+
+    function doComb(c) {
+      try {
+        const ast = parse(state.currentStr);
+        const nextAst = applyComb(ast, c);
+        const nextStr = print(nextAst);
+        state.history.push(state.currentStr);
+        state.currentStr = nextStr;
+        render();
+      } catch (e) {
+        alert('Error: ' + e.message);
+      }
+    }
+
+    function undo() {
+      if (state.history.length > 0) {
+        state.currentStr = state.history.pop();
+        render();
+      }
+    }
+
+    function reset() {
+      state.currentStr = state.startStr;
+      state.history = [];
+      render();
+    }
+
+    document.addEventListener('keydown', (e) => {
+      const k = e.key.toUpperCase();
+      if (['S','K','I','B','R'].includes(k)) e.preventDefault();
+      if (k === 'S' || k === 'K' || k === 'I') doComb(k);
+      else if (k === 'B') undo();
+      else if (k === 'R') reset();
+    });
+
+    document.querySelectorAll('button[data-comb]').forEach(btn => {
+      btn.addEventListener('click', () => doComb(btn.getAttribute('data-comb')));
+    });
+    document.getElementById('btnUndo').addEventListener('click', undo);
+    document.getElementById('btnReset').addEventListener('click', reset);
+    document.getElementById('btnPrev').addEventListener('click', () => setPuzzle(state.idx - 1));
+    document.getElementById('btnNext').addEventListener('click', () => setPuzzle(state.idx + 1));
+    selPuzzle.addEventListener('change', () => setPuzzle(parseInt(selPuzzle.value, 10)));
+
+    // Init
+    loadPuzzleList();
+    setPuzzle(0);
+  </script>
+</body>
+</html>
