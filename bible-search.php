@@ -14,6 +14,7 @@
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             height: 100vh;
+            height: 100dvh;
             overflow: hidden;
             background: #f5f5f5;
         }
@@ -21,6 +22,7 @@
         .container {
             display: flex;
             height: 100vh;
+            height: 100dvh;
             overflow-x: auto;
             scroll-snap-type: x mandatory;
             -webkit-overflow-scrolling: touch;
