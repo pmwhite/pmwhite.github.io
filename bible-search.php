@@ -56,6 +56,9 @@
         }
 
         .search-controls {
+            position: sticky;
+            top: 0;
+            z-index: 10;
             padding: 20px;
             border-bottom: 1px solid #ddd;
             background: #fafafa;
