@@ -630,12 +630,14 @@
                 const viewportCenter = scrollTop + clientHeight / 2;
                 const verses = panel.querySelectorAll('.verse');
                 let centerVerseId = displayedVerseRange.start;
+                let offsetFromVerseTop = 0;
                 
                 for (const verse of verses) {
                     const verseTop = verse.offsetTop;
                     const verseBottom = verseTop + verse.offsetHeight;
                     if (verseTop <= viewportCenter && viewportCenter <= verseBottom) {
                         centerVerseId = parseInt(verse.dataset.id);
+                        offsetFromVerseTop = viewportCenter - verseTop;
                         break;
                     }
                 }
@@ -649,14 +651,13 @@
                 
                 renderVersePanel('replace');
                 
-                // Scroll to keep the center verse in the viewport center
+                // Scroll to keep the center verse at the exact same position
                 requestAnimationFrame(() => {
                     const newVerses = panel.querySelectorAll('.verse');
                     for (const verse of newVerses) {
                         if (parseInt(verse.dataset.id) === centerVerseId) {
                             const verseTop = verse.offsetTop;
-                            const verseHeight = verse.offsetHeight;
-                            panel.scrollTop = verseTop + verseHeight / 2 - clientHeight / 2;
+                            panel.scrollTop = verseTop + offsetFromVerseTop - clientHeight / 2;
                             break;
                         }
                     }
@@ -669,12 +670,14 @@
                 const viewportCenter = scrollTop + clientHeight / 2;
                 const verses = panel.querySelectorAll('.verse');
                 let centerVerseId = displayedVerseRange.start;
+                let offsetFromVerseTop = 0;
                 
                 for (const verse of verses) {
                     const verseTop = verse.offsetTop;
                     const verseBottom = verseTop + verse.offsetHeight;
                     if (verseTop <= viewportCenter && viewportCenter <= verseBottom) {
                         centerVerseId = parseInt(verse.dataset.id);
+                        offsetFromVerseTop = viewportCenter - verseTop;
                         break;
                     }
                 }
@@ -688,14 +691,13 @@
                 
                 renderVersePanel('replace');
                 
-                // Scroll to keep the center verse in the viewport center
+                // Scroll to keep the center verse at the exact same position
                 requestAnimationFrame(() => {
                     const newVerses = panel.querySelectorAll('.verse');
                     for (const verse of newVerses) {
                         if (parseInt(verse.dataset.id) === centerVerseId) {
                             const verseTop = verse.offsetTop;
-                            const verseHeight = verse.offsetHeight;
-                            panel.scrollTop = verseTop + verseHeight / 2 - clientHeight / 2;
+                            panel.scrollTop = verseTop + offsetFromVerseTop - clientHeight / 2;
                             break;
                         }
                     }
