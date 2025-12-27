@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bible Concordance</title>
+    <title>Bible Search Tool</title>
     <style>
         * {
             margin: 0;
@@ -208,11 +208,15 @@
                 <div class="radio-group">
                     <label>
                         <input type="radio" name="source" value="kjv" checked>
-                        <span>King James Version</span>
+                        <span>KJV</span>
                     </label>
                     <label>
                         <input type="radio" name="source" value="web">
-                        <span>World English Bible</span>
+                        <span>WEB</span>
+                    </label>
+                    <label>
+                        <input type="radio" name="source" value="bsb">
+                        <span>BSB</span>
                     </label>
                 </div>
             </div>
@@ -226,9 +230,11 @@
         // Read the files and embed as JavaScript variables
         $kjvContent = file_exists('kjv.txt') ? file_get_contents('kjv.txt') : '';
         $webContent = file_exists('web.txt') ? file_get_contents('web.txt') : '';
+        $bsbContent = file_exists('bsb.txt') ? file_get_contents('bsb.txt') : '';
         
         echo "const kjvData = " . json_encode($kjvContent) . ";\n";
         echo "const webData = " . json_encode($webContent) . ";\n";
+        echo "const bsbData = " . json_encode($bsbContent) . ";\n";
         ?>
 
         // Parse the data into verses
@@ -242,6 +248,7 @@
 
         const kjvVerses = parseVerses(kjvData);
         const webVerses = parseVerses(webData);
+        const bsbVerses = parseVerses(bsbData);
 
         let currentSource = 'kjv';
         let currentVerses = kjvVerses;
@@ -615,13 +622,26 @@
             const maxScroll = scrollHeight - clientHeight;
             const scrollPercent = scrollTop / maxScroll;
             
-            // If within 20% of either end, reposition to center (50%)
+            // If within 20% of either end, reposition to maintain current viewport
             if (scrollPercent < 0.2 && displayedVerseRange.start > 0) {
                 isLoadingVerses = true;
                 
-                // Calculate how many verses to shift to get back to 50%
-                const currentVerseIndex = displayedVerseRange.start + Math.floor((displayedVerseRange.end - displayedVerseRange.start) * scrollPercent);
-                const targetStart = Math.max(0, currentVerseIndex - 200);
+                // Find the verse currently at the center of the viewport
+                const viewportCenter = scrollTop + clientHeight / 2;
+                const verses = panel.querySelectorAll('.verse');
+                let centerVerseId = displayedVerseRange.start;
+                
+                for (const verse of verses) {
+                    const verseTop = verse.offsetTop;
+                    const verseBottom = verseTop + verse.offsetHeight;
+                    if (verseTop <= viewportCenter && viewportCenter <= verseBottom) {
+                        centerVerseId = parseInt(verse.dataset.id);
+                        break;
+                    }
+                }
+                
+                // Reposition range centered around this verse
+                const targetStart = Math.max(0, centerVerseId - 200);
                 const targetEnd = Math.min(currentVerses.length, targetStart + 400);
                 
                 displayedVerseRange.start = targetStart;
@@ -629,18 +649,38 @@
                 
                 renderVersePanel('replace');
                 
-                // Position scroll at 50% of the new range
+                // Scroll to keep the center verse in the viewport center
                 requestAnimationFrame(() => {
-                    const newMaxScroll = panel.scrollHeight - panel.clientHeight;
-                    panel.scrollTop = newMaxScroll * 0.5;
+                    const newVerses = panel.querySelectorAll('.verse');
+                    for (const verse of newVerses) {
+                        if (parseInt(verse.dataset.id) === centerVerseId) {
+                            const verseTop = verse.offsetTop;
+                            const verseHeight = verse.offsetHeight;
+                            panel.scrollTop = verseTop + verseHeight / 2 - clientHeight / 2;
+                            break;
+                        }
+                    }
                     isLoadingVerses = false;
                 });
             } else if (scrollPercent > 0.8 && displayedVerseRange.end < currentVerses.length) {
                 isLoadingVerses = true;
                 
-                // Calculate how many verses to shift to get back to 50%
-                const currentVerseIndex = displayedVerseRange.start + Math.floor((displayedVerseRange.end - displayedVerseRange.start) * scrollPercent);
-                const targetStart = Math.max(0, currentVerseIndex - 200);
+                // Find the verse currently at the center of the viewport
+                const viewportCenter = scrollTop + clientHeight / 2;
+                const verses = panel.querySelectorAll('.verse');
+                let centerVerseId = displayedVerseRange.start;
+                
+                for (const verse of verses) {
+                    const verseTop = verse.offsetTop;
+                    const verseBottom = verseTop + verse.offsetHeight;
+                    if (verseTop <= viewportCenter && viewportCenter <= verseBottom) {
+                        centerVerseId = parseInt(verse.dataset.id);
+                        break;
+                    }
+                }
+                
+                // Reposition range centered around this verse
+                const targetStart = Math.max(0, centerVerseId - 200);
                 const targetEnd = Math.min(currentVerses.length, targetStart + 400);
                 
                 displayedVerseRange.start = targetStart;
@@ -648,10 +688,17 @@
                 
                 renderVersePanel('replace');
                 
-                // Position scroll at 50% of the new range
+                // Scroll to keep the center verse in the viewport center
                 requestAnimationFrame(() => {
-                    const newMaxScroll = panel.scrollHeight - panel.clientHeight;
-                    panel.scrollTop = newMaxScroll * 0.5;
+                    const newVerses = panel.querySelectorAll('.verse');
+                    for (const verse of newVerses) {
+                        if (parseInt(verse.dataset.id) === centerVerseId) {
+                            const verseTop = verse.offsetTop;
+                            const verseHeight = verse.offsetHeight;
+                            panel.scrollTop = verseTop + verseHeight / 2 - clientHeight / 2;
+                            break;
+                        }
+                    }
                     isLoadingVerses = false;
                 });
             }
@@ -663,7 +710,13 @@
         document.querySelectorAll('input[name="source"]').forEach(radio => {
             radio.addEventListener('change', (e) => {
                 currentSource = e.target.value;
-                currentVerses = currentSource === 'kjv' ? kjvVerses : webVerses;
+                if (currentSource === 'kjv') {
+                    currentVerses = kjvVerses;
+                } else if (currentSource === 'web') {
+                    currentVerses = webVerses;
+                } else if (currentSource === 'bsb') {
+                    currentVerses = bsbVerses;
+                }
                 displayedVerseRange = { start: 0, end: 400 };
                 focusedVerseId = null;
                 updateResults();
