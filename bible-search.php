@@ -260,63 +260,89 @@
         let isLoadingSearchResults = false;
         let isAutoScrolling = false;
 
-        // Fuzzy search with scoring (similar to fzf)
-        function fuzzyMatchWithScore(text, pattern) {
+        // Word-boundary search: match all words in any order
+        function searchWithScore(text, pattern) {
             if (!pattern) return { match: true, indices: [], score: 0 };
             
-            text = text.toLowerCase();
-            pattern = pattern.toLowerCase();
+            const lowerText = text.toLowerCase();
+            const lowerPattern = pattern.toLowerCase();
             
-            let patternIdx = 0;
-            let indices = [];
-            let score = 0;
-            let consecutiveMatches = 0;
-            let firstMatchIdx = -1;
+            // Split pattern into words
+            const patternWords = lowerPattern.split(/\s+/).filter(w => w.length > 0);
+            if (patternWords.length === 0) return { match: true, indices: [], score: 0 };
             
-            for (let i = 0; i < text.length && patternIdx < pattern.length; i++) {
-                if (text[i] === pattern[patternIdx]) {
-                    if (firstMatchIdx === -1) firstMatchIdx = i;
-                    indices.push(i);
-                    
-                    // Bonus for consecutive matches
-                    if (indices.length > 1 && indices[indices.length - 1] === indices[indices.length - 2] + 1) {
-                        consecutiveMatches++;
-                        score += 10 + consecutiveMatches * 2; // Increasing bonus for longer sequences
-                    } else {
-                        consecutiveMatches = 0;
-                        score += 5;
+            const textWords = lowerText.split(/\s+/);
+            
+            let allWordsFound = true;
+            let wordIndices = [];
+            let wordPositions = [];
+            
+            for (const patternWord of patternWords) {
+                let found = false;
+                for (let i = 0; i < textWords.length; i++) {
+                    if (textWords[i].includes(patternWord)) {
+                        found = true;
+                        wordPositions.push(i);
+                        // Find character indices for this word
+                        let charPos = 0;
+                        for (let j = 0; j < i; j++) {
+                            charPos += textWords[j].length + 1; // +1 for space
+                        }
+                        const wordStart = textWords[i].indexOf(patternWord);
+                        for (let k = 0; k < patternWord.length; k++) {
+                            wordIndices.push(charPos + wordStart + k);
+                        }
+                        break;
                     }
-                    
-                    // Bonus for matching at word boundaries
-                    if (i === 0 || text[i - 1] === ' ') {
-                        score += 15;
-                    }
-                    
-                    // Bonus for matching early in the string
-                    score += Math.max(0, 10 - i / 10);
-                    
-                    patternIdx++;
+                }
+                if (!found) {
+                    allWordsFound = false;
+                    break;
                 }
             }
             
-            if (patternIdx !== pattern.length) {
+            if (!allWordsFound) {
                 return { match: false, indices: [], score: 0 };
             }
             
-            // Penalty for gaps between matches
-            if (indices.length > 1) {
-                let totalGap = indices[indices.length - 1] - indices[0] - (indices.length - 1);
-                score -= totalGap;
+            // Sort and deduplicate indices
+            wordIndices.sort((a, b) => a - b);
+            wordIndices = [...new Set(wordIndices)];
+            
+            let score = 500; // Base score
+            
+            // Bonus for exact substring match
+            if (lowerText.includes(lowerPattern)) {
+                score += 500;
+                // Extra bonus if at start
+                if (lowerText.indexOf(lowerPattern) === 0) {
+                    score += 200;
+                }
             }
             
-            // Bonus for shorter text (more focused match)
-            score += Math.max(0, 50 - text.length / 10);
+            // Bonus for words being close together
+            if (wordPositions.length > 1) {
+                const spread = Math.max(...wordPositions) - Math.min(...wordPositions);
+                score += Math.max(0, 200 - spread * 20);
+            }
             
-            return {
-                match: true,
-                indices: indices,
-                score: score
-            };
+            // Bonus for words in order
+            let inOrder = true;
+            for (let i = 1; i < wordPositions.length; i++) {
+                if (wordPositions[i] < wordPositions[i - 1]) {
+                    inOrder = false;
+                    break;
+                }
+            }
+            if (inOrder) score += 150;
+            
+            // Bonus for matching at start of verse
+            if (wordPositions[0] === 0) score += 100;
+            
+            // Bonus for shorter text (more focused match)
+            score += Math.max(0, 100 - lowerText.length / 10);
+            
+            return { match: true, indices: wordIndices, score };
         }
 
         function highlightText(text, indices) {
@@ -360,7 +386,7 @@
                 }
                 
                 const verse = verses[i];
-                const result = fuzzyMatchWithScore(verse.text, searchTerm);
+                const result = searchWithScore(verse.text, searchTerm);
                 if (result.match) {
                     results.push({ ...verse, ...result });
                 }
