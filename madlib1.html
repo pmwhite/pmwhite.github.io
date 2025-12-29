@@ -13,18 +13,23 @@
 
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-      height: 100vh;
+      min-height: 100vh;
+      min-height: 100dvh;
       display: flex;
       align-items: center;
       justify-content: center;
       padding: 2rem;
       background: #fafafa;
+      overflow: hidden;
     }
 
     .container {
       max-width: 500px;
       width: 100%;
       text-align: center;
+      max-height: 100vh;
+      max-height: 100dvh;
+      overflow-y: auto;
     }
 
     .prompt {
@@ -119,9 +124,7 @@
 </head>
 <body>
 
-  <!-- EASILY EDITABLE MAD LIB DATA -->
   <script>
-    //const story = "I woke up in a cold sweat, wondering whether I had remembered to lock all the doors in the house. I thought for sure that I had, but a doubt gnawed persistently on my mind until I acquiesced to its demand. Grabbing an extra blanket, I peeled myself out of bed and walked down the hall toward the living area where all the doors in the house were. I began making my rounds, but clumsily, since I was by now only half awake; the first three doors were locked as I expected. But when I reached the fourth door, I saw it's latch was undone, and the doorknob was unlocked. In my stupor, I moved to address both issues when I two things happened at once. First, I comprehended that the door was, in fact, not even closed, which consequently allowed the second thing to happen. The door flew open, shoving me into the wall, as a large reindeer barreled in, snorting wildly. All I could think to do at the moment was to jump on top of it and wrestle it out the door if possible. The struggle felt very intense, but every movement felt difficult. Suddenly, as I strained to subdue it by pinning its arms behind its back, the room went dark, and I perceived that I had managed to pull the case off my pillow. The pounding of my heart slowed as I realized it was all a dream. But was I certain the doors were locked? Better go check, just to be sure...
     const story = "I woke up in a {Adjective} sweat, wondering whether I had remembered to lock all the doors in the house. I thought for sure that I had, but a doubt {Past Tense Verb} persistently on my mind until I acquiesced to its demand. Grabbing an extra {Noun} for warmth, I peeled myself out of bed and walked down the hall toward the living area where all the doors in the house were. I began making my rounds, but {Adverb}, since I was by now only {Fraction} awake; the first {Number} doors were locked as I expected. But when I reached the last door, I saw it's latch was undone, and the doorknob was unlocked. In my stupor, I moved to address both issues when two things happened at once. First, I comprehended that the door was, in fact, not even closed, which consequently allowed the second thing to happen. The door {Past Tense Verb} open, {Gerund} me into the wall, as a {Adjective} {Animal} {Past Tense Verb} in, {Gerund} {Adverb}. All I could think to do at the moment was to {Verb} on top of it and {Verb} it out the door if possible. The struggle felt very intense, and every movement felt {Adjective}. Suddenly, as I strained to the animal by pinning its {Body Part} behind its back, the room went dark, and I perceived that I had managed to pull the case off my pillow. The pounding of my heart slowed as I realized it was all a dream. But was I certain the doors were locked? Better go check, just to be sure...";
   </script>
 
