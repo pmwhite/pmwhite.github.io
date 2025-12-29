@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mad Lib</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+      background: #fafafa;
+    }
+
+    .container {
+      max-width: 500px;
+      width: 100%;
+      text-align: center;
+    }
+
+    .prompt {
+      font-size: 1.5rem;
+      margin-bottom: 2rem;
+      color: #333;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      padding: 1rem;
+      font-size: 1.2rem;
+      border: 2px solid #ddd;
+      border-radius: 8px;
+      text-align: center;
+      transition: border-color 0.2s;
+      margin-bottom: 2rem;
+    }
+
+    input[type="text"]:focus {
+      outline: none;
+      border-color: #666;
+    }
+
+    .nav-buttons {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    button {
+      background: none;
+      border: none;
+      color: #999;
+      font-size: 2rem;
+      cursor: pointer;
+      padding: 0.5rem 1rem;
+      transition: color 0.2s;
+    }
+
+    button:hover:not(:disabled) {
+      color: #333;
+    }
+
+    button:disabled {
+      color: #ddd;
+      cursor: not-allowed;
+    }
+
+    .hidden {
+      visibility: hidden;
+      pointer-events: none;
+    }
+    
+    button.placeholder {
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    .result {
+      max-width: 700px;
+      font-size: 1.2rem;
+      line-height: 1.8;
+      color: #333;
+      text-align: left;
+    }
+
+    .filled-word {
+      text-decoration: underline;
+      font-weight: 500;
+      color: #000;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    @media (max-width: 600px) {
+      .prompt {
+        font-size: 1.2rem;
+      }
+
+      input[type="text"] {
+        font-size: 1rem;
+      }
+
+      .result {
+        font-size: 1rem;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- EASILY EDITABLE MAD LIB DATA -->
+  <script>
+    //const story = "I woke up in a cold sweat, wondering whether I had remembered to lock all the doors in the house. I thought for sure that I had, but a doubt gnawed persistently on my mind until I acquiesced to its demand. Grabbing an extra blanket, I peeled myself out of bed and walked down the hall toward the living area where all the doors in the house were. I began making my rounds, but clumsily, since I was by now only half awake; the first three doors were locked as I expected. But when I reached the fourth door, I saw it's latch was undone, and the doorknob was unlocked. In my stupor, I moved to address both issues when I two things happened at once. First, I comprehended that the door was, in fact, not even closed, which consequently allowed the second thing to happen. The door flew open, shoving me into the wall, as a large reindeer barreled in, snorting wildly. All I could think to do at the moment was to jump on top of it and wrestle it out the door if possible. The struggle felt very intense, but every movement felt difficult. Suddenly, as I strained to subdue it by pinning its arms behind its back, the room went dark, and I perceived that I had managed to pull the case off my pillow. The pounding of my heart slowed as I realized it was all a dream. But was I certain the doors were locked? Better go check, just to be sure...
+    const story = "I woke up in a {Adjective} sweat, wondering whether I had remembered to lock all the doors in the house. I thought for sure that I had, but a doubt {Past Tense Verb} persistently on my mind until I acquiesced to its demand. Grabbing an extra {Noun} for warmth, I peeled myself out of bed and walked down the hall toward the living area where all the doors in the house were. I began making my rounds, but {Adverb}, since I was by now only {Fraction} awake; the first {Number} doors were locked as I expected. But when I reached the last door, I saw it's latch was undone, and the doorknob was unlocked. In my stupor, I moved to address both issues when two things happened at once. First, I comprehended that the door was, in fact, not even closed, which consequently allowed the second thing to happen. The door {Past Tense Verb} open, {Gerund} me into the wall, as a {Adjective} {Animal} {Past Tense Verb} in, {Gerund} {Adverb}. All I could think to do at the moment was to {Verb} on top of it and {Verb} it out the door if possible. The struggle felt very intense, and every movement felt {Adjective}. Suddenly, as I strained to the animal by pinning its {Body Part} behind its back, the room went dark, and I perceived that I had managed to pull the case off my pillow. The pounding of my heart slowed as I realized it was all a dream. But was I certain the doors were locked? Better go check, just to be sure...";
+  </script>
+
+  <div class="container">
+    <div id="input-screen">
+      <div class="prompt" id="prompt-text"></div>
+      <input type="text" id="input-field" autocomplete="off">
+      <div class="nav-buttons">
+        <button id="back-btn">←</button>
+        <button id="forward-btn">→</button>
+      </div>
+    </div>
+
+    <div id="result-screen" class="hidden">
+      <div class="result" id="result-text"></div>
+      <div class="nav-buttons" style="margin-top: 2rem;">
+        <button id="back-to-edit-btn">←</button>
+        <div></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Extract prompts from story
+    const prompts = [];
+    const promptRegex = /\{([^}]+)\}/g;
+    let match;
+    while ((match = promptRegex.exec(story)) !== null) {
+      prompts.push(match[1]);
+    }
+
+    let currentIndex = 0;
+    const answers = [];
+
+    const inputScreen = document.getElementById('input-screen');
+    const resultScreen = document.getElementById('result-screen');
+    const promptText = document.getElementById('prompt-text');
+    const inputField = document.getElementById('input-field');
+    const backBtn = document.getElementById('back-btn');
+    const forwardBtn = document.getElementById('forward-btn');
+    const backToEditBtn = document.getElementById('back-to-edit-btn');
+
+    function updateScreen() {
+      if (currentIndex >= prompts.length) {
+        showResult();
+        return;
+      }
+
+      promptText.textContent = prompts[currentIndex];
+      inputField.value = answers[currentIndex] || '';
+      
+      // Keep button in layout but make it invisible on first page
+      backBtn.style.visibility = currentIndex === 0 ? 'hidden' : 'visible';
+      
+      updateForwardButton();
+      
+      inputField.focus();
+    }
+
+    function updateForwardButton() {
+      forwardBtn.disabled = inputField.value.trim() === '';
+    }
+
+    function goForward() {
+      if (inputField.value.trim() === '') return;
+      
+      answers[currentIndex] = inputField.value;
+      currentIndex++;
+      updateScreen();
+    }
+
+    function goBack() {
+      if (currentIndex > 0) {
+        currentIndex--;
+        updateScreen();
+      }
+    }
+
+    function showResult() {
+      inputScreen.classList.add('hidden');
+      resultScreen.classList.remove('hidden');
+      
+      let result = story;
+      let answerIndex = 0;
+      
+      result = result.replace(promptRegex, () => {
+        const value = answers[answerIndex] || '';
+        answerIndex++;
+        return `<span class="filled-word">${value}</span>`;
+      });
+
+      document.getElementById('result-text').innerHTML = result;
+    }
+
+    // Event listeners
+    inputField.addEventListener('input', updateForwardButton);
+    
+    inputField.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        goForward();
+      }
+    });
+
+    forwardBtn.addEventListener('click', goForward);
+    backBtn.addEventListener('click', goBack);
+    
+    backToEditBtn.addEventListener('click', () => {
+      currentIndex = madlibData.prompts.length - 1;
+      resultScreen.classList.add('hidden');
+      inputScreen.classList.remove('hidden');
+      updateScreen();
+    });
+
+    // Initialize
+    updateScreen();
+  </script>
+
+</body>
+</html>
