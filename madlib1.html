@@ -67,10 +67,10 @@
       background: none;
       border: none;
       color: #999;
-      font-size: 2rem;
       cursor: pointer;
       padding: 0.5rem 1rem;
       transition: color 0.2s;
+      font-size: 2rem;
     }
 
     button:hover:not(:disabled) {
@@ -80,6 +80,11 @@
     button:disabled {
       color: #ddd;
       cursor: not-allowed;
+    }
+
+    button svg {
+      width: 24px;
+      height: 24px;
     }
 
     .hidden {
@@ -136,15 +141,15 @@
       <div class="prompt" id="prompt-text"></div>
       <input type="text" id="input-field" autocomplete="off">
       <div class="nav-buttons">
-        <button id="back-btn">←</button>
-        <button id="forward-btn">→</button>
+        <button id="back-btn">‹</button>
+        <button id="forward-btn">›</button>
       </div>
     </div>
 
     <div id="result-screen" class="hidden">
       <div class="result" id="result-text"></div>
       <div class="nav-buttons" style="margin-top: 2rem;">
-        <button id="back-to-edit-btn">←</button>
+        <button id="back-to-edit-btn">‹</button>
         <div></div>
       </div>
     </div>
