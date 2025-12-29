@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, interactive-widget: resize-content">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Mad Lib</title>
   <style>
     * {
@@ -14,11 +14,11 @@
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
       min-height: 100vh;
-      min-height: 100dvh;
+      min-height: 100svh;
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 2rem;
+      padding: 1rem;
       background: #fafafa;
       overflow: hidden;
     }
@@ -28,13 +28,16 @@
       width: 100%;
       text-align: center;
       max-height: 100vh;
-      max-height: 100dvh;
+      max-height: 100svh;
       overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
     }
 
     .prompt {
       font-size: 1.5rem;
-      margin-bottom: 2rem;
+      margin-bottom: 1.5rem;
       color: #333;
     }
 
@@ -46,7 +49,7 @@
       border-radius: 8px;
       text-align: center;
       transition: border-color 0.2s;
-      margin-bottom: 2rem;
+      margin-bottom: 1.5rem;
     }
 
     input[type="text"]:focus {
