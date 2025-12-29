@@ -240,7 +240,7 @@
     backBtn.addEventListener('click', goBack);
     
     backToEditBtn.addEventListener('click', () => {
-      currentIndex = madlibData.prompts.length - 1;
+      currentIndex = prompts.length - 1;
       resultScreen.classList.add('hidden');
       inputScreen.classList.remove('hidden');
       updateScreen();
