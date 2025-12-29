@@ -63,6 +63,12 @@
       align-items: center;
     }
 
+    .progress {
+      color: #999;
+      font-size: 0.9rem;
+      user-select: none;
+    }
+
     button {
       background: none;
       border: none;
@@ -142,6 +148,7 @@
       <input type="text" id="input-field" autocomplete="off">
       <div class="nav-buttons">
         <button id="back-btn">‹</button>
+        <div class="progress" id="progress-indicator"></div>
         <button id="forward-btn">›</button>
       </div>
     </div>
@@ -174,6 +181,7 @@
     const backBtn = document.getElementById('back-btn');
     const forwardBtn = document.getElementById('forward-btn');
     const backToEditBtn = document.getElementById('back-to-edit-btn');
+    const progressIndicator = document.getElementById('progress-indicator');
 
     function updateScreen() {
       if (currentIndex >= prompts.length) {
@@ -183,6 +191,9 @@
 
       promptText.textContent = prompts[currentIndex];
       inputField.value = answers[currentIndex] || '';
+      
+      // Update progress indicator
+      progressIndicator.textContent = `${currentIndex + 1}/${prompts.length}`;
       
       // Keep button in layout but make it invisible on first page
       backBtn.style.visibility = currentIndex === 0 ? 'hidden' : 'visible';
