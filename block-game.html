@@ -2,6 +2,7 @@
 <html>
 <head>
   <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Block Game</title>
   <style>
     :root, html, body {
@@ -10,64 +11,29 @@
     }
     body {
       margin: auto;
-      width: 1200px;
+      width: 100%;
     }
     #game {
       display: block;
       background: #fff;
-      width: 1200px;
-      height: 540px;
+      width: 100%;
+      height: 100dvh;
       margin: auto;
     }
-
-    kbd {
-      display: inline-block;
-      margin: 0 0.1em;
-      font-family: ui-monospace, "SF Mono", "Consolas", monospace;
-      color: #333;
-      background-color: #f5f5f5;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      box-shadow: 0 1px 0 #ccc;
-      vertical-align: middle;
-      user-select: none;  /* not interactive */
-    }
-
   </style>
 </head>
 <body>
-  <p>Below is a game in which you must navigate a red square from the start of
-  the world to the end through a labyrinth of blocks. The challenge is to
-  discover the rules of the world and solve the puzzle presented by each
-  level. The joy is in solving the puzzles, so we do not force you to
-  unlock anything; you can skip between all the levels however much you
-  like.</p>
-
   <canvas id="game" width="1200" height="540"></canvas>
-
-  <h3>Controls</h3>
-
-  <ul>
-    <li><kbd>Up</kbd>, <kbd>Down</kbd>, <kbd>Left</kbd>, <kbd>Right</kbd>: Move the red square in the specified direction.</li>
-    <li><kbd>Shift</kbd>+<kbd>Left</kbd>: Move the red square <em>backward</em> to
-      the nearest green column and reset the state of the world. This is useful
-      especially if you get make a mistake and need to start the level over.</li>
-    <li><kbd>Shift</kbd>+<kbd>Right</kbd>: Move the red square <em>forward</em> to
-      the nearest green column and reset the state of the world. This is useful
-      for skipping over levels that you can't figure out.</li>
-  </ul>
-
-  <p>As you might guess from the controls, this game is designed to be played
-  from a computer; it probably isn't playable from a mobile device.</p>
 
   <script src="level.js"></script>
   <script>
-    const grid_square_size = 60;
+    let grid_square_size = 60;
     const grid_height = 9;
     const grid_width = 20;
     const step_duration = 200;
     const canvas = document.getElementById('game');
     const ctx = canvas.getContext('2d');
+
     let player = { column: 0, row: 0 };
     let blocks = new Map();
     let checkpoint_columns = new Map();
@@ -77,8 +43,21 @@
     let mode = 'play';
 
     let viewport = { state: 'idle' };
-    const viewport_left_min = grid_width / 2 * grid_square_size;
     let viewport_left = 0;
+
+    function resize() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      const grid_square_size_from_width = Math.floor(window.innerWidth / grid_width);
+      const grid_square_size_from_height = Math.floor(window.innerHeight / grid_height);
+      grid_square_size = Math.min(grid_square_size_from_width, grid_square_size_from_height);
+      viewport_left = get_viewport_left_target(player.column, player.column, 0);
+      viewport = { state: 'idle' };
+    }
+
+    window.addEventListener('resize', resize);
+    resize();
+
 
     let handle;
 
@@ -172,51 +151,53 @@
           break;
         }
       }
-      console.log('can move block', block, column_diff, row_diff, can_move);
       return can_move;
     }
 
-    function move_player(column_diff, row_diff) {
-      const target_column = player.column + column_diff;
-      const target_row = player.row + row_diff;
-      const prev_checkpoint_column = find_prev_or_same_checkpoint_column(player.column);
-      const next_checkpoint_column = find_next_checkpoint_column(player.column);
-      if (in_bounds(target_column, target_row)) {
-        let can_move_to_space = true;
-        for (const block of blocks.values()) {
-          if (block.row === target_row && block.column === target_column) {
-            can_move_to_space = false;
-            if (can_move_block(block, column_diff, row_diff)) {
-              let can_move_blocks = true;
-              let blocks_to_move = [];
-              if (block.shape) {
-                for (const block_with_shape of blocks.values()) {
-                  if (block_with_shape.column > prev_checkpoint_column && block_with_shape.column < next_checkpoint_column && block_with_shape.shape === block.shape) {
-                    if (!can_move_block(block_with_shape, column_diff, row_diff)) {
-                      can_move_blocks = false;
-                      break;
+    function move_player(is_repeat, column_diff, row_diff) {
+      if (history.length < 5 && !is_repeat || history.length < 2) {
+        const target_column = player.column + column_diff;
+        const target_row = player.row + row_diff;
+        const prev_checkpoint_column = find_prev_or_same_checkpoint_column(player.column);
+        const next_checkpoint_column = find_next_checkpoint_column(player.column);
+        if (in_bounds(target_column, target_row)) {
+          let can_move_to_space = true;
+          for (const block of blocks.values()) {
+            if (block.row === target_row && block.column === target_column) {
+              can_move_to_space = false;
+              if (can_move_block(block, column_diff, row_diff)) {
+                let can_move_blocks = true;
+                let blocks_to_move = [];
+                if (block.shape) {
+                  for (const block_with_shape of blocks.values()) {
+                    if (block_with_shape.column > prev_checkpoint_column && block_with_shape.column < next_checkpoint_column && block_with_shape.shape === block.shape) {
+                      if (!can_move_block(block_with_shape, column_diff, row_diff)) {
+                        can_move_blocks = false;
+                        break;
+                      }
+                      blocks_to_move.push(block_with_shape);
                     }
-                    blocks_to_move.push(block_with_shape);
+                  }
+                } else {
+                  blocks_to_move.push(block);
+                }
+                if (can_move_blocks) {
+                  can_move_to_space = true;
+                  for (const block_to_move of blocks_to_move) {
+                    block_to_move.column += column_diff;
+                    block_to_move.row += row_diff;
                   }
                 }
-              } else {
-                blocks_to_move.push(block);
               }
-              if (can_move_blocks) {
-                can_move_to_space = true;
-                for (const block_to_move of blocks_to_move) {
-                  block_to_move.column += column_diff;
-                  block_to_move.row += row_diff;
-                }
-              }
+              break;
             }
-            break;
+          }
+          if (can_move_to_space) {
+            player.column = target_column;
+            player.row = target_row;
           }
         }
-        if (can_move_to_space) {
-          player.column = target_column;
-          player.row = target_row;
-        }
+        add_current_state_to_history();
       }
     }
 
@@ -278,6 +259,24 @@
       }
     }
 
+    function go_to_prev_level() {
+      history = [];
+      add_current_state_to_history();
+      const prev_checkpoint_column = find_prev_checkpoint_column(player.column);
+      reset_to_edit_data();
+      player.column = prev_checkpoint_column;
+      add_current_state_to_history();
+    }
+
+    function go_to_next_level() {
+      history = [];
+      add_current_state_to_history();
+      const next_checkpoint_column = find_next_checkpoint_column(player.column);
+      reset_to_edit_data();
+      player.column = next_checkpoint_column;
+      add_current_state_to_history();
+    }
+
     document.addEventListener('keydown', async ev => {
       switch (mode) {
         case 'play':
@@ -289,46 +288,37 @@
           // allow going ahead by more than one move (which allows the user to not
           // have to wait for the animation to finish before pressing the key for
           // the next move).
-          if (history.length < 5 && !ev.repeat || history.length < 2) {
-            if (ev.shiftKey) {
-              switch (ev.key) {
-                case 'ArrowLeft':
-                  history = [];
-                  add_current_state_to_history();
-                  const prev_checkpoint_column = find_prev_checkpoint_column(player.column);
-                  reset_to_edit_data();
-                  player.column = prev_checkpoint_column;
-                  break;
-                case 'ArrowRight':
-                  history = [];
-                  add_current_state_to_history();
-                  const next_checkpoint_column = find_next_checkpoint_column(player.column);
-                  reset_to_edit_data();
-                  player.column = next_checkpoint_column;
-                  break;
-              }
-            } else {
-              switch (ev.key) {
-                case 'ArrowLeft':
-                  move_player(-1, 0);
-                  break;
-                case 'ArrowRight':
-                  move_player(1, 0);
-                  break;
-                case 'ArrowUp':
-                  move_player(0, -1);
-                  break;
-                case 'ArrowDown':
-                  move_player(0, 1);
-                  break;
-                case 'm':
-                  reset_to_edit_data();
-                  mode = 'edit';
-                  break;
-              }
+          if (ev.shiftKey) {
+            switch (ev.key) {
+              case 'ArrowLeft':
+                go_to_prev_level();
+                break;
+              case 'ArrowRight':
+                go_to_next_level();
+                break;
             }
-            add_current_state_to_history();
+          } else {
+            switch (ev.key) {
+              case 'ArrowLeft':
+                move_player(ev.repeat, -1, 0);
+                break;
+              case 'ArrowRight':
+                move_player(ev.repeat, 1, 0);
+                break;
+              case 'ArrowUp':
+                move_player(ev.repeat, 0, -1);
+                break;
+              case 'ArrowDown':
+                move_player(ev.repeat, 0, 1);
+                break;
+              case 'm':
+                reset_to_edit_data();
+                mode = 'edit';
+                break;
+            }
           }
+
+
           break;
         case 'edit':
           if (ev.shiftKey) {
@@ -452,14 +442,15 @@
     }
 
     function get_viewport_left_target(from_column, to_column, lerp_remainder) {
+      const viewport_left_min = grid_width / 2 * grid_square_size;
       const player_x = Math.floor(grid_square_size * lerp(from_column, to_column, lerp_remainder));
       const viewport_left_start = Math.floor(grid_square_size * lerp(find_prev_or_same_checkpoint_column(from_column), find_prev_or_same_checkpoint_column(to_column), lerp_remainder));
       const viewport_left_end = Math.floor(grid_square_size * lerp(find_next_checkpoint_column(from_column), find_next_checkpoint_column(to_column), lerp_remainder)) - (grid_width - 1) * grid_square_size;
       return Math.max(viewport_left_start, Math.min(viewport_left_end, player_x - viewport_left_min));
     }
 
-    const shape_radius = grid_square_size / 3;
     function fill_shape(column, row, shape) {
+      const shape_radius = grid_square_size / 3;
       const cx = grid_square_size * column + grid_square_size / 2;
       const cy = grid_square_size * row + grid_square_size / 2;
       ctx.beginPath();
@@ -515,7 +506,9 @@
           break;
       }
 
-      ctx.translate(-viewport_left, 0);
+      const left_margin = Math.floor((window.innerWidth - grid_width * grid_square_size) / 2);
+      const top_margin = Math.floor((window.innerHeight - grid_height * grid_square_size) / 2);
+      ctx.translate(left_margin - viewport_left, top_margin);
 
       ctx.fillStyle = '#4d7c0f';
       for (const column of checkpoint_columns.keys()) {
@@ -558,6 +551,7 @@
       }
 
       ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.translate(left_margin, top_margin);
 
       ctx.font = `bold 50px sans-serif`;
       ctx.fillStyle = '#a5b4fc';
@@ -575,10 +569,22 @@
         ctx.fillText(to_title, title_x, title_y);
       }
       ctx.globalAlpha = 1;
+
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.fillStyle = 'black';
+      ctx.fillRect(0, 0, left_margin, window.innerHeight);
+      ctx.fillRect(0, 0, window.innerWidth, top_margin);
+      const grid_right = left_margin + grid_square_size * grid_width;
+      ctx.fillRect(grid_right, top_margin, window.innerWidth - grid_right, window.innerHeight);
+      const grid_bottom = top_margin + grid_square_size * grid_height;
+      ctx.fillRect(left_margin, grid_bottom, window.innerWidth, window.innerHeight - grid_bottom);
     }
 
     function render_edit() {
+      const viewport_left_min = grid_width / 2 * grid_square_size;
       const translate_x = Math.max(0, Math.floor(cursor.column * grid_square_size - viewport_left_min));
+      const left_margin = Math.floor((window.innerWidth - grid_width * grid_square_size) / 2);
+      const top_margin = Math.floor((window.innerHeight - grid_height * grid_square_size) / 2);
       ctx.translate(-translate_x, 0);
 
       ctx.fillStyle = '#4d7c0f';
