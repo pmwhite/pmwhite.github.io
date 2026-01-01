@@ -32,6 +32,10 @@
     const grid_width = 20;
     const step_duration = 200;
     const canvas = document.getElementById('game');
+
+    canvas.addEventListener('dblclick', () => {
+    });
+
     const ctx = canvas.getContext('2d');
 
     let player = { column: 0, row: 0 };
@@ -155,6 +159,14 @@
     }
 
     function move_player(is_repeat, column_diff, row_diff) {
+      // Since there is plenty of opportunity to make unfixable mistakes, we
+      // want each key press to be intentional. Toward that end, if the key is
+      // being held down, we only do one move at a time (which allows the user to
+      // move smoothly by holding down a key). But if the key is not being
+      // held, then it was probably hit repeatedly on purpose, which means we can
+      // allow going ahead by more than one move (which allows the user to not
+      // have to wait for the animation to finish before pressing the key for
+      // the next move).
       if (history.length < 5 && !is_repeat || history.length < 2) {
         const target_column = player.column + column_diff;
         const target_row = player.row + row_diff;
@@ -277,45 +289,98 @@
       add_current_state_to_history();
     }
 
+    function get_top_margin() {
+      return Math.floor((window.innerHeight - grid_height * grid_square_size) / 2);
+    }
+
+    function get_left_margin() {
+      return Math.floor((window.innerWidth - grid_width * grid_square_size) / 2);
+    }
+
+    let control_mode = 'keyboard';
+    let pointer_start_x = 0;
+    let pointer_start_time = 0;
+    canvas.addEventListener('pointerdown', ev => {
+      pointer_start_x = ev.clientX;
+      pointer_start_time = performance.now();
+    });
+
+    canvas.addEventListener('pointerup', ev => {
+      if (!document.fullscreenElement) {
+        canvas.requestFullscreen();
+      }
+      switch (control_mode) {
+        case 'pointer':
+          if (Math.abs(ev.clientX - pointer_start_x) > 50 && performance.now() - pointer_start_time < 300)  {
+            if (ev.clientX > pointer_start_x) {
+              go_to_next_level();
+            } else {
+              go_to_prev_level();
+            }
+          } else {
+            const x = ev.clientX - get_left_margin();
+            const y = ev.clientY - get_top_margin();
+            const diag1_y = x * grid_height / grid_width;
+            const diag2_y = grid_height * grid_square_size - diag1_y;
+            if (y > diag1_y) {
+              if (y > diag2_y) {
+                move_player(ev.repeat, 0, 1);
+              } else {
+                move_player(ev.repeat, -1, 0);
+              }
+            } else {
+              if (y > diag2_y) {
+                move_player(ev.repeat, 1, 0);
+              } else {
+                move_player(ev.repeat, 0, -1);
+              }
+            }
+          }
+          break;
+        case 'keyboard':
+          control_mode = 'pointer';
+          break;
+      }
+    });
+
     document.addEventListener('keydown', async ev => {
       switch (mode) {
         case 'play':
-          // Since there is plenty of opportunity to make unfixable mistakes, we
-          // want each key press to be intentional. Toward that end, if the key is
-          // being held down, we only do one move at a time (which allows the user to
-          // move smoothly by holding down a key). But if the key is not being
-          // held, then it was probably hit repeatedly on purpose, which means we can
-          // allow going ahead by more than one move (which allows the user to not
-          // have to wait for the animation to finish before pressing the key for
-          // the next move).
-          if (ev.shiftKey) {
-            switch (ev.key) {
-              case 'ArrowLeft':
-                go_to_prev_level();
-                break;
-              case 'ArrowRight':
-                go_to_next_level();
-                break;
-            }
-          } else {
-            switch (ev.key) {
-              case 'ArrowLeft':
-                move_player(ev.repeat, -1, 0);
-                break;
-              case 'ArrowRight':
-                move_player(ev.repeat, 1, 0);
-                break;
-              case 'ArrowUp':
-                move_player(ev.repeat, 0, -1);
-                break;
-              case 'ArrowDown':
-                move_player(ev.repeat, 0, 1);
-                break;
-              case 'm':
-                reset_to_edit_data();
-                mode = 'edit';
-                break;
-            }
+          switch (control_mode) {
+            case 'pointer':
+              control_mode = 'keyboard';
+              break;
+            case 'keyboard':
+              if (ev.shiftKey) {
+                switch (ev.key) {
+                  case 'ArrowLeft':
+                    go_to_prev_level();
+                    break;
+                  case 'ArrowRight':
+                    go_to_next_level();
+                    break;
+                }
+              } else {
+                switch (ev.key) {
+                  case 'ArrowLeft':
+                    move_player(ev.repeat, -1, 0);
+                    break;
+                  case 'ArrowRight':
+                    move_player(ev.repeat, 1, 0);
+                    break;
+                  case 'ArrowUp':
+                    move_player(ev.repeat, 0, -1);
+                    break;
+                  case 'ArrowDown':
+                    move_player(ev.repeat, 0, 1);
+                    break;
+                  case 'm':
+                    reset_to_edit_data();
+                    mode = 'edit';
+                    break;
+                }
+              }
+              break;
           }
 
 
@@ -506,8 +571,8 @@
           break;
       }
 
-      const left_margin = Math.floor((window.innerWidth - grid_width * grid_square_size) / 2);
-      const top_margin = Math.floor((window.innerHeight - grid_height * grid_square_size) / 2);
+      const left_margin = get_left_margin();
+      const top_margin = get_top_margin();
       ctx.translate(left_margin - viewport_left, top_margin);
 
       ctx.fillStyle = '#4d7c0f';
@@ -570,7 +635,37 @@
       }
       ctx.globalAlpha = 1;
 
+      switch (control_mode) {
+        case 'pointer':
+          ctx.lineWidth = 5;
+
+          const gradient1 = ctx.createLinearGradient(0, 0, grid_square_size * grid_width, grid_square_size * grid_height);
+          gradient1.addColorStop(0.3, '#ffffff00');
+          gradient1.addColorStop(0.5, '#ffffff77');
+          gradient1.addColorStop(0.7, '#ffffff00');
+          ctx.strokeStyle = gradient1;
+          ctx.beginPath();
+          ctx.moveTo(0, 0);
+          ctx.lineTo(grid_square_size * grid_width, grid_square_size * grid_height);
+          ctx.stroke();
+
+          const gradient2 = ctx.createLinearGradient(grid_square_size * grid_width, 0, 0, grid_square_size * grid_height);
+          gradient2.addColorStop(0.3, '#ffffff00');
+          gradient2.addColorStop(0.5, '#ffffff77');
+          gradient2.addColorStop(0.7, '#ffffff00');
+          ctx.strokeStyle = gradient2;
+          ctx.beginPath();
+          ctx.moveTo(grid_square_size * grid_width, 0);
+          ctx.lineTo(0, grid_square_size * grid_height);
+          ctx.stroke();
+
+          break;
+        case 'keyboard':
+          break;
+      }
+
       ctx.setTransform(1, 0, 0, 1, 0, 0);
+
       ctx.fillStyle = 'black';
       ctx.fillRect(0, 0, left_margin, window.innerHeight);
       ctx.fillRect(0, 0, window.innerWidth, top_margin);
