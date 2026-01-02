@@ -298,41 +298,48 @@
     }
 
     let control_mode = 'keyboard';
-    let pointer_start_x = 0;
-    let pointer_start_time = 0;
-    canvas.addEventListener('pointerdown', ev => {
-      pointer_start_x = ev.clientX;
-      pointer_start_time = performance.now();
+    let touch_start_x = 0;
+    let touch_start_time = 0;
+
+    canvas.addEventListener('touchstart', ev => {
+      ev.preventDefault(); // Prevent default touch behavior like scrolling
+      const touch = ev.touches[0];
+      touch_start_x = touch.clientX;
+      touch_start_time = performance.now();
     });
 
-    canvas.addEventListener('pointerup', ev => {
+    canvas.addEventListener('touchend', ev => {
+      ev.preventDefault();
+      const touch = ev.changedTouches[0];
+
       if (!document.fullscreenElement) {
         canvas.requestFullscreen();
       }
+
       switch (control_mode) {
         case 'pointer':
-          if (Math.abs(ev.clientX - pointer_start_x) > 50 && performance.now() - pointer_start_time < 300)  {
-            if (ev.clientX > pointer_start_x) {
+          if (Math.abs(touch.clientX - touch_start_x) > 50 && performance.now() - touch_start_time < 300) {
+            if (touch.clientX > touch_start_x) {
               go_to_next_level();
             } else {
               go_to_prev_level();
             }
           } else {
-            const x = ev.clientX - get_left_margin();
-            const y = ev.clientY - get_top_margin();
+            const x = touch.clientX - get_left_margin();
+            const y = touch.clientY - get_top_margin();
             const diag1_y = x * grid_height / grid_width;
             const diag2_y = grid_height * grid_square_size - diag1_y;
             if (y > diag1_y) {
               if (y > diag2_y) {
-                move_player(ev.repeat, 0, 1);
+                move_player(false, 0, 1);
               } else {
-                move_player(ev.repeat, -1, 0);
+                move_player(false, -1, 0);
               }
             } else {
               if (y > diag2_y) {
-                move_player(ev.repeat, 1, 0);
+                move_player(false, 1, 0);
               } else {
-                move_player(ev.repeat, 0, -1);
+                move_player(false, 0, -1);
               }
             }
           }
