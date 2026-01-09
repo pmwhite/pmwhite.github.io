@@ -312,10 +312,6 @@
       ev.preventDefault();
       const touch = ev.changedTouches[0];
 
-      if (!document.fullscreenElement) {
-        canvas.requestFullscreen();
-      }
-
       switch (control_mode) {
         case 'pointer':
           if (Math.abs(touch.clientX - touch_start_x) > 50 && performance.now() - touch_start_time < 300) {

@@ -21,7 +21,7 @@ view that anything between two other things counts as a sandwich. In this view,
 a board of wood between two slabs of rock would count as a sandwich; even
 three molecules in a row counts as a sandwich, since one of them is between the
 other two. Some who oppose this view reject these examples because they are not
-food; a sandwich is for eating, they say. But even amongst adherents of this
+food; a sandwich is for eating, they say. But even in the ranks of this second
 view there is disagreement on how to address hot dogs and tacos.</p>
 
 <p>Which view is correct? It depends on the context in which the word
@@ -49,7 +49,7 @@ with the question, since it makes no difference to me. It's not that I'm
 uncurious; it's that the answer has no effect on anyone, so "yes" and "no" are
 equally valid answers. The question is <em>moot</em>. (Maybe you'll argue that
 the sound may shatter some nearby glass so it does actually matter; fine, but
-that's just the point: what the question only matters if the answer
+that's just the point: the question only matters if the answer
 matters)</p>
 
 <p>The view I have just expressed may sound post-modern and relativistic, and
