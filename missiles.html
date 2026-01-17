@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Block Game</title>
+  <style>
+    :root, html, body {
+      margin: 0px;
+      padding: 0px;
+    }
+    body {
+      margin: auto;
+      width: 100%;
+    }
+    #game {
+      display: block;
+      background: #fff;
+      width: 100%;
+      height: 100dvh;
+      margin: auto;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="game" width="1000" height="500"></canvas>
+
+  <script>
+    const canvas = document.getElementById('game');
+    const ctx = canvas.getContext('2d');
+
+    function resize() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+
+    window.addEventListener('resize', resize);
+    resize();
+
+    let missiles = new Map();
+    let missile_spawn_period = 2000;
+    let missile_duration = 15000;
+    let missiles_spawned = 0;
+    const game_start_time = performance.now();
+
+    function lerp(a, b, t) {
+      return a + (b - a) * t;
+    }
+
+    function frame() {
+      const now = performance.now();
+      const new_missiles_to_spawn = Math.floor((now - game_start_time) / missile_spawn_period) - missiles_spawned;
+      for (let i = 0; i < new_missiles_to_spawn; i++) {
+        missiles.set(missiles_spawned, { spawn_time: now, start: Math.random(), end: Math.random() });
+        missiles_spawned++;
+      }
+
+      ctx.fillStyle = 'black';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = 'yellow';
+      ctx.beginPath();
+      for (const missile of missiles.values()) {
+        const x1 = missile.start * canvas.width;
+        const x2 = missile.end * canvas.width;
+        const t = Math.max(0, (now - missile.spawn_time) / missile_duration);
+        ctx.moveTo(x1, 0);
+        ctx.lineTo(lerp(x1, x2, t), lerp(0, canvas.height, t));
+      }
+      ctx.stroke();
+
+      requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+
+  </script>
+</body>
+</html>
