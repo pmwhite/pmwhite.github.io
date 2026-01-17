@@ -38,18 +38,18 @@
     resize();
 
     let missiles = new Map();
-    let missile_spawn_period = 2000;
-    let missile_velocity = 4 / 10000;
+    let missile_spawn_period = 50;
+    let missile_velocity = 1 / 10000;
     let missiles_spawned = 0;
 
     let interceptors = new Map();
-    let interceptor_velocity = 3 / 10000;
+    let interceptor_velocity = 6 / 10000;
     let interceptors_spawned = 0;
 
     let explosions = new Map();
     let explosions_spawned = 0;
-    let explosion_radius = 40 / 1000;
-    let explosion_duration = 2000;
+    let explosion_radius = 60 / 1000;
+    let explosion_duration = 5000;
 
     const game_start_time = performance.now();
 
@@ -73,6 +73,18 @@
         missiles_spawned++;
       }
 
+      for (const [ id, explosion ] of explosions) {
+        const t = (now - explosion.spawn_time) / explosion_duration + 0.1;
+        const radius = Math.sin(t * Math.PI) * explosion_radius * canvas.height;
+
+        if (t > 1) {
+          explosions.delete(id);
+        }
+
+        explosion.radius = radius;
+      }
+
+
       for (const [ id, missile ] of missiles) {
         const x1 = missile.start * canvas.width;
         const x2 = missile.end * canvas.width;
@@ -81,7 +93,20 @@
         const x = lerp(x1, x2, t);
         const y = lerp(0, canvas.height, t);
 
-        if (t > 1) {
+        let should_explode = t > 1;
+        if (!should_explode) {
+          for (const explosion of explosions.values()) {
+            const x_diff = explosion.x * canvas.width - x;
+            const y_diff = explosion.y * canvas.height - y;
+            const dist = Math.sqrt(x_diff * x_diff + y_diff * y_diff);
+            if (dist < explosion.radius) {
+              should_explode = true;
+              break;
+            }
+          }
+        }
+
+        if (should_explode) {
           missiles.delete(id);
           explosions.set(explosions_spawned, { spawn_time: now, x: x / canvas.width, y: y / canvas.height });
           explosions_spawned++;
@@ -90,6 +115,28 @@
         missile.x1 = x1;
         missile.x = x;
         missile.y = y;
+      }
+
+      for (const [ id, interceptor ] of interceptors) {
+        const x1 = canvas.width / 2;
+        const x2 = interceptor.target_x * canvas.width;
+        const y1 = canvas.height;
+        const y2 = interceptor.target_y * canvas.height;
+        const length = Math.sqrt((y2 - y1) * (y2 - y1) + (x2 - x1) * (x2 - x1));
+        const t = (now - interceptor.spawn_time) / length * canvas.height * interceptor_velocity;
+        const x = lerp(x1, x2, t);
+        const y = lerp(y1, y2, t);
+
+        if (t > 1) {
+          interceptors.delete(id);
+          explosions.set(explosions_spawned, { spawn_time: now, x: x / canvas.width, y: y / canvas.height });
+          explosions_spawned++;
+        }
+
+        interceptor.x1 = x1;
+        interceptor.y1 = y1;
+        interceptor.x = x;
+        interceptor.y = y;
       }
 
       ctx.fillStyle = 'black';
@@ -108,14 +155,8 @@
       ctx.strokeStyle = 'blue';
       ctx.beginPath();
       for (const interceptor of interceptors.values()) {
-        const x1 = canvas.width / 2;
-        const x2 = interceptor.target_x * canvas.width;
-        const y1 = canvas.height;
-        const y2 = interceptor.target_y * canvas.height;
-        const length = Math.sqrt((y2 - y1) * (y2 - y1) + (x2 - x1) * (x2 - x1));
-        const t = Math.min(1, (now - interceptor.spawn_time) / length * canvas.height * interceptor_velocity);
-        ctx.moveTo(x1, y1);
-        ctx.lineTo(lerp(x1, x2, t), lerp(y1, y2, t));
+        ctx.moveTo(interceptor.x1, interceptor.y1);
+        ctx.lineTo(interceptor.x, interceptor.y);
       }
       ctx.stroke();
 
@@ -123,10 +164,8 @@
       for (const explosion of explosions.values()) {
         const x = explosion.x * canvas.width;
         const y = explosion.y * canvas.height;
-        const t = Math.min(1, (now - explosion.spawn_time) / explosion_duration + 0.1);
-        const radius = Math.sin(t * Math.PI) * explosion_radius * canvas.height;
         ctx.beginPath();
-        ctx.arc(x, y, radius, 0, 2 * Math.PI);
+        ctx.arc(x, y, explosion.radius, 0, 2 * Math.PI);
         ctx.fill();
       }
 
