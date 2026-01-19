@@ -19,6 +19,7 @@
       width: 100%;
       height: 100dvh;
       margin: auto;
+      user-select: none;
     }
   </style>
 </head>
@@ -28,10 +29,16 @@
   <script>
     const canvas = document.getElementById('game');
     const ctx = canvas.getContext('2d');
+    let size = 500;
+    let x_offset = 0;
+    let y_offset = 0;
 
     function resize() {
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
+      size = Math.min(canvas.width, canvas.height);
+      x_offset = (canvas.width - size) / 2;
+      y_offset = (canvas.height - size) / 2;
     }
 
     window.addEventListener('resize', resize);
@@ -39,16 +46,17 @@
 
     let missiles = new Map();
     let missile_spawn_period = 500;
-    let missile_velocity = 1 / 10000;
+    let missile_velocity = 1 / 20000;
     let missiles_spawned = 0;
 
     let interceptors = new Map();
-    let interceptor_velocity = 6 / 10000;
+    let interceptor_spawn_period = 50;
+    let interceptor_velocity = 6 / 20000;
     let interceptors_spawned = 0;
 
     let explosions = new Map();
     let explosions_spawned = 0;
-    let explosion_radius = 60 / 1000;
+    let explosion_radius = 30 / 1000;
     let explosion_duration = 5000;
 
     const game_start_time = performance.now();
@@ -57,25 +65,54 @@
       return a + (b - a) * t;
     }
 
-    canvas.addEventListener('click', ev => {
-      const now = performance.now();
-      const x = ev.clientX / canvas.width;
-      const y = ev.clientY / canvas.height;
-      interceptors.set(interceptors_spawned, { spawn_time: now, target_x: x, target_y: y });
-      interceptors_spawned++;
+    let mouse_down_time = 0;
+    let mouse_is_down = false;
+    let mouse_x = 0;
+    let mouse_y = 0;
+    let interceptors_spawned_during_strafe = 0;
+
+    document.addEventListener('contextmenu', event => event.preventDefault());
+
+    canvas.addEventListener('pointerdown', ev => {
+      mouse_is_down = true;
+      mouse_down_time = performance.now();
+      mouse_x = (ev.clientX - x_offset) / size;
+      mouse_y = (ev.clientY - y_offset) / size;
+      interceptors_spawned_during_strafe = 0;
+      ev.preventDefault();
+    });
+
+    canvas.addEventListener('pointermove', ev => {
+      mouse_x = (ev.clientX - x_offset) / size;
+      mouse_y = (ev.clientY - y_offset) / size;
+      ev.preventDefault();
+    });
+
+    canvas.addEventListener('pointerup', ev => {
+      mouse_is_down = false;
+      ev.preventDefault();
     });
 
     function frame() {
       const now = performance.now();
-      const new_missiles_to_spawn = Math.floor((now - game_start_time) / missile_spawn_period) - missiles_spawned;
+      const new_missiles_to_spawn = Math.floor((now - game_start_time) / missile_spawn_period) - missiles_spawned + 1;
       for (let i = 0; i < new_missiles_to_spawn; i++) {
         missiles.set(missiles_spawned, { spawn_time: now, start: Math.random(), end: Math.random() });
         missiles_spawned++;
       }
 
+      if (mouse_is_down) {
+        const new_interceptors_to_spawn = Math.floor((now - mouse_down_time) / interceptor_spawn_period) - interceptors_spawned_during_strafe + 1;
+        for (let i = 0; i < new_interceptors_to_spawn; i++) {
+          interceptors.set(interceptors_spawned, { spawn_time: now, target_x: mouse_x, target_y: mouse_y });
+          interceptors_spawned++;
+          interceptors_spawned_during_strafe++;
+        }
+      }
+
       for (const [ id, explosion ] of explosions) {
         const t = (now - explosion.spawn_time) / explosion_duration + 0.1;
-        const radius = Math.sin(t * Math.PI) * explosion_radius * canvas.height;
+        const radius = Math.sin(t * Math.PI) * explosion_radius;
 
         if (t > 1) {
           explosions.delete(id);
@@ -86,18 +123,17 @@
 
 
       for (const [ id, missile ] of missiles) {
-        const x1 = missile.start * canvas.width;
-        const x2 = missile.end * canvas.width;
-        const length = Math.sqrt(canvas.height * canvas.height + (x2 - x1) * (x2 - x1));
-        const t = (now - missile.spawn_time) / length * canvas.height * missile_velocity;
-        const x = lerp(x1, x2, t);
-        const y = lerp(0, canvas.height, t);
+        const end_start_diff = missile.end - missile.start;
+        const length = Math.sqrt(1 + end_start_diff * end_start_diff);
+        const t = (now - missile.spawn_time) / length * missile_velocity;
+        const x = lerp(missile.start, missile.end, t);
+        const y = lerp(0, 1, t);
 
         let should_explode = t > 1;
         if (!should_explode) {
           for (const explosion of explosions.values()) {
-            const x_diff = explosion.x * canvas.width - x;
-            const y_diff = explosion.y * canvas.height - y;
+            const x_diff = explosion.x - x;
+            const y_diff = explosion.y - y;
             const dist = Math.sqrt(x_diff * x_diff + y_diff * y_diff);
             if (dist < explosion.radius) {
               should_explode = true;
@@ -108,64 +144,77 @@
 
         if (should_explode) {
           missiles.delete(id);
-          explosions.set(explosions_spawned, { spawn_time: now, x: x / canvas.width, y: y / canvas.height });
+          explosions.set(explosions_spawned, { spawn_time: now, x: x, y: y });
           explosions_spawned++;
         }
 
-        missile.x1 = x1;
         missile.x = x;
         missile.y = y;
       }
 
       for (const [ id, interceptor ] of interceptors) {
-        const x1 = canvas.width / 2;
-        const x2 = interceptor.target_x * canvas.width;
-        const y1 = canvas.height;
-        const y2 = interceptor.target_y * canvas.height;
-        const length = Math.sqrt((y2 - y1) * (y2 - y1) + (x2 - x1) * (x2 - x1));
-        const t = (now - interceptor.spawn_time) / length * canvas.height * interceptor_velocity;
+        const x1 = 0.5;
+        const y1 = 1;
+        const x2 = interceptor.target_x;
+        const y2 = interceptor.target_y;
+        const x_diff = x1 - x2;
+        const y_diff = y1 - y2;
+        const length = Math.sqrt(y_diff * y_diff + x_diff * x_diff);
+        const t = (now - interceptor.spawn_time) / length * interceptor_velocity;
         const x = lerp(x1, x2, t);
         const y = lerp(y1, y2, t);
 
         if (t > 1) {
           interceptors.delete(id);
-          explosions.set(explosions_spawned, { spawn_time: now, x: x / canvas.width, y: y / canvas.height });
+          explosions.set(explosions_spawned, { spawn_time: now, x: x, y: y });
           explosions_spawned++;
         }
 
-        interceptor.x1 = x1;
-        interceptor.y1 = y1;
         interceptor.x = x;
         interceptor.y = y;
       }
 
-      ctx.fillStyle = 'black';
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+
+      ctx.fillStyle = 'gray';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      ctx.translate(x_offset, y_offset);
+
+      ctx.fillStyle = 'black';
+      ctx.fillRect(0, 0, size, size);
 
       ctx.lineWidth = 2;
 
       ctx.strokeStyle = 'yellow';
       ctx.beginPath();
       for (const missile of missiles.values()) {
-        ctx.moveTo(missile.x1, 0);
-        ctx.lineTo(missile.x, missile.y);
+        ctx.moveTo(missile.start * size, 0);
+        ctx.lineTo(missile.x * size, missile.y * size);
       }
       ctx.stroke();
+
+      ctx.fillStyle = 'blue';
+      for (const interceptor of interceptors.values()) {
+        ctx.beginPath();
+        ctx.arc(interceptor.target_x * size, interceptor.target_y * size, 5, 0, 2 * Math.PI);
+        ctx.fill();
+      }
 
       ctx.strokeStyle = 'blue';
       ctx.beginPath();
       for (const interceptor of interceptors.values()) {
-        ctx.moveTo(interceptor.x1, interceptor.y1);
-        ctx.lineTo(interceptor.x, interceptor.y);
+        ctx.moveTo(0.5 * size, size);
+        ctx.lineTo(interceptor.x * size, interceptor.y * size);
       }
       ctx.stroke();
 
       ctx.fillStyle = 'white';
       for (const explosion of explosions.values()) {
-        const x = explosion.x * canvas.width;
-        const y = explosion.y * canvas.height;
+        const x = explosion.x * size;
+        const y = explosion.y * size;
         ctx.beginPath();
-        ctx.arc(x, y, explosion.radius, 0, 2 * Math.PI);
+        ctx.arc(x, y, explosion.radius * size, 0, 2 * Math.PI);
         ctx.fill();
       }
 
