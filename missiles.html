@@ -45,7 +45,7 @@
     resize();
 
     let missiles = new Map();
-    let missile_spawn_period = 500;
+    let missile_spawn_period = 3000;
     let missile_velocity = 1 / 20000;
     let missiles_spawned = 0;
 
@@ -70,6 +70,11 @@
     let mouse_x = 0;
     let mouse_y = 0;
     let interceptors_spawned_during_strafe = 0;
+    
+    let waves = [
+      { start_at: 2000, count: 10, period: 1000 },
+      { start_at: 20000, count: 15, period: 500 },
+    ];
 
     document.addEventListener('contextmenu', event => event.preventDefault());
 
@@ -95,7 +100,12 @@
 
     function frame() {
       const now = performance.now();
-      const new_missiles_to_spawn = Math.floor((now - game_start_time) / missile_spawn_period) - missiles_spawned + 1;
+      const missile_spawn_t = now - game_start_time;
+      let expected_missiles = 0;
+      for (const wave of waves) {
+        expected_missiles += Math.max(0, Math.min(wave.count, Math.ceil((missile_spawn_t - wave.start_at) / wave.period)));
+      };
+      const new_missiles_to_spawn = expected_missiles - missiles_spawned;
       for (let i = 0; i < new_missiles_to_spawn; i++) {
         missiles.set(missiles_spawned, { spawn_time: now, start: Math.random(), end: Math.random() });
         missiles_spawned++;
