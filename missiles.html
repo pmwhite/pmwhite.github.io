@@ -50,14 +50,18 @@
     let missiles_spawned = 0;
 
     let interceptors = new Map();
-    let interceptor_slot_reload_period = 2000;
+    let interceptor_slot_reload_period = 3000;
     let interceptor_velocity = 6 / 20000;
     let interceptors_spawned = 0;
     let interceptor_slot_count = 6;
-    let interceptor_spawn_period = interceptor_slot_reload_period / interceptor_slot_count;
     let interceptor_slots = [];
     for (let i = 0; i < interceptor_slot_count; i++) {
-      interceptor_slots.push({ x: (i + 0.5) / (interceptor_slot_count), last_used_at: -interceptor_slot_reload_period });
+      interceptor_slots.push({
+        x: (i + 0.5) / (interceptor_slot_count),
+        last_used_at: -interceptor_slot_reload_period,
+        alive: true,
+        destroyed_at: 0
+      });
     }
 
     let explosions = new Map();
@@ -82,6 +86,7 @@
     let waves = [
       { start_at: 2000, count: 10, period: 1000 },
       { start_at: 20000, count: 15, period: 500 },
+      { start_at: 35000, count: 50, period: 200 },
     ];
 
     document.addEventListener('contextmenu', event => event.preventDefault());
@@ -120,19 +125,25 @@
       }
 
       if (mouse_is_down) {
+        let alive_interceptor_slot_count = 0;
+        for (const interceptor_slot of interceptor_slots) {
+          if (interceptor_slot.alive) {
+            alive_interceptor_slot_count++;
+          }
+        }
+        let interceptor_spawn_period = interceptor_slot_reload_period / alive_interceptor_slot_count;
         const new_interceptors_to_spawn = Math.floor((now - mouse_down_time) / interceptor_spawn_period) - interceptors_spawned_during_strafe + 1;
         for (let i = 0; i < new_interceptors_to_spawn; i++) {
           let closest_interceptor_slot = interceptor_slots[0];
-          for (let slot_index = 0; slot_index < interceptor_slot_count; slot_index++) {
-            let next_interceptor_slot = interceptor_slots[slot_index];
-            let slot_x = (slot_index + 0.5) / interceptor_slot_count;
-            if (now - next_interceptor_slot.last_used_at > interceptor_slot_reload_period
+          for (const next_interceptor_slot of interceptor_slots) {
+            if (next_interceptor_slot.alive
+              && now - next_interceptor_slot.last_used_at > interceptor_slot_reload_period
               && (now - closest_interceptor_slot.last_used_at <= interceptor_slot_reload_period
                  || Math.abs(next_interceptor_slot.x - mouse_x) < Math.abs(closest_interceptor_slot.x - mouse_x))) {
               closest_interceptor_slot = next_interceptor_slot;
             }
           }
-          if (now - closest_interceptor_slot.last_used_at > interceptor_slot_reload_period) {
+          if (closest_interceptor_slot.alive && now - closest_interceptor_slot.last_used_at > interceptor_slot_reload_period) {
             closest_interceptor_slot.last_used_at = now;
             interceptors.set(interceptors_spawned, { spawn_time: now, target_x: mouse_x, target_y: mouse_y, start_x: closest_interceptor_slot.x });
             interceptors_spawned++;
@@ -205,6 +216,25 @@
         interceptor.y = y;
       }
 
+      for (const interceptor_slot of interceptor_slots) {
+        if (interceptor_slot.alive) {
+          const x = interceptor_slot.x;
+          const y = 1 - ground_height;
+          for (const explosion of explosions.values()) {
+            const x_diff = explosion.x - x;
+            const y_diff = explosion.y - y;
+            const dist = Math.sqrt(x_diff * x_diff + y_diff * y_diff);
+            if (dist < explosion.radius) {
+              explosions.set(explosions_spawned, { spawn_time: now, x: x, y: y });
+              explosions_spawned++;
+              interceptor_slot.alive = false;
+              interceptor_slot.destroyed_at = now;
+              break;
+            }
+          }
+        }
+      }
+
       ctx.setTransform(1, 0, 0, 1, 0, 0);
 
       ctx.fillStyle = 'gray';
@@ -214,6 +244,9 @@
 
       ctx.fillStyle = 'black';
       ctx.fillRect(0, 0, size, size);
+
+      ctx.fillStyle = 'maroon';
+      ctx.fillRect(0, (1 - ground_height) * size, size, ground_height * size);
 
       ctx.lineWidth = 2;
 
@@ -232,19 +265,23 @@
         ctx.fill();
       }
 
-      ctx.fillStyle = 'gray';
+      ctx.fillStyle = 'orange';
       for (const interceptor_slot of interceptor_slots) {
-        ctx.beginPath();
-        ctx.fillRect(interceptor_slot.x * size - marker_radius * size, (1 - ground_height) * size, marker_radius * size * 2, ground_height * size);
-        ctx.fill();
+        if (interceptor_slot.alive || now - interceptor_slot.destroyed_at < explosion_duration / 2) {
+          ctx.beginPath();
+          ctx.fillRect(interceptor_slot.x * size - marker_radius * size, (1 - ground_height) * size, marker_radius * size * 2, ground_height * size);
+          ctx.fill();
+        }
       }
 
       ctx.fillStyle = 'blue';
       for (const interceptor_slot of interceptor_slots) {
-        let offset = Math.max(0, (interceptor_slot_reload_period - now + interceptor_slot.last_used_at) / interceptor_slot_reload_period * ground_height);
-        ctx.beginPath();
-        ctx.arc(interceptor_slot.x * size, ((1 - ground_height) + offset) * size, marker_radius * size, 0, 2 * Math.PI);
-        ctx.fill();
+        if (interceptor_slot.alive) {
+          let offset = Math.max(0, (interceptor_slot_reload_period - now + interceptor_slot.last_used_at) / interceptor_slot_reload_period * ground_height);
+          ctx.beginPath();
+          ctx.arc(interceptor_slot.x * size, ((1 - ground_height) + offset) * size, marker_radius * size, 0, 2 * Math.PI);
+          ctx.fill();
+        }
       }
 
       ctx.fillStyle = 'white';
