@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Block Game</title>
+  <title>Missiles</title>
   <style>
     :root, html, body {
       margin: 0px;
@@ -44,15 +44,34 @@
     window.addEventListener('resize', resize);
     resize();
 
+    let score = 0;
+    const interceptor_cost = 1;
+    const missile_intercept_gain = 5;
+    const interceptor_slot_alive_at_wave_end_gain = 20;
+    const level_summary_duration = 10000;
+
     let missiles = new Map();
     let missile_spawn_period = 3000;
     let missile_velocity = 1 / 20000;
     let missiles_spawned = 0;
+    let missiles_spawned_at_wave_start = 0;
+    let waves = [
+      { count: 10, period: 1000 },
+      { count: 15, period: 500 },
+      { count: 50, period: 200 },
+    ];
+    let current_wave = 0;
+    let current_wave_started_at = 0;
+    let current_wave_finished = false;
+    let current_wave_finished_at = 0;
+    let current_wave_missiles_intercepted = 0;
+    let current_wave_interceptor_slots_alive_at_end = 0;
 
     let interceptors = new Map();
     let interceptor_slot_reload_period = 3000;
     let interceptor_velocity = 6 / 20000;
     let interceptors_spawned = 0;
+    let interceptors_spawned_at_wave_start = 0;
     let interceptor_slot_count = 6;
     let interceptor_slots = [];
     for (let i = 0; i < interceptor_slot_count; i++) {
@@ -83,12 +102,6 @@
     let mouse_x = 0;
     let mouse_y = 0;
 
-    let waves = [
-      { start_at: 2000, count: 10, period: 1000 },
-      { start_at: 20000, count: 15, period: 500 },
-      { start_at: 35000, count: 50, period: 200 },
-    ];
-
     document.addEventListener('contextmenu', event => event.preventDefault());
 
     canvas.addEventListener('pointerdown', ev => {
@@ -114,14 +127,34 @@
     function frame() {
       const now = performance.now();
       const missile_spawn_t = now - game_start_time;
-      let expected_missiles = 0;
-      for (const wave of waves) {
-        expected_missiles += Math.max(0, Math.min(wave.count, Math.ceil((missile_spawn_t - wave.start_at) / wave.period)));
-      };
-      const new_missiles_to_spawn = expected_missiles - missiles_spawned;
-      for (let i = 0; i < new_missiles_to_spawn; i++) {
-        missiles.set(missiles_spawned, { spawn_time: now, start: Math.random(), end: Math.random() });
-        missiles_spawned++;
+      if (!current_wave_finished && current_wave < waves.length) {
+        const wave = waves[current_wave];
+        const missiles_spawned_during_wave = missiles_spawned - missiles_spawned_at_wave_start;
+        const expected_missiles = Math.max(0, Math.min(wave.count, Math.ceil((missile_spawn_t - current_wave_started_at) / wave.period)));
+        const new_missiles_to_spawn = expected_missiles - missiles_spawned_during_wave;
+        for (let i = 0; i < new_missiles_to_spawn; i++) {
+          missiles.set(missiles_spawned, { spawn_time: now, start: Math.random(), end: Math.random() });
+          missiles_spawned++;
+        }
+        if (missiles_spawned_during_wave === wave.count && missiles.size === 0 && explosions.size === 0) {
+          current_wave_finished = true;
+          current_wave_finished_at = now;
+          current_wave_interceptor_slots_alive_at_end = 0;
+          for (const interceptor_slot of interceptor_slots) {
+            if (interceptor_slot.alive) {
+              current_wave_interceptor_slots_alive_at_end++;
+            }
+          }
+          score += current_wave_interceptor_slots_alive_at_end * interceptor_slot_alive_at_wave_end_gain;
+        }
+      }
+
+      if (current_wave_finished && now - current_wave_finished_at > level_summary_duration) {
+        current_wave++;
+        current_wave_finished = false;
+        missiles_spawned_at_wave_start = missiles_spawned;
+        interceptors_spawned_at_wave_start = interceptors_spawned;
+        current_wave_missiles_intercepted = 0;
       }
 
       if (mouse_is_down) {
@@ -146,6 +179,7 @@
           if (closest_interceptor_slot.alive && now - closest_interceptor_slot.last_used_at > interceptor_slot_reload_period) {
             closest_interceptor_slot.last_used_at = now;
             interceptors.set(interceptors_spawned, { spawn_time: now, target_x: mouse_x, target_y: mouse_y, start_x: closest_interceptor_slot.x });
+            score -= interceptor_cost;
             interceptors_spawned++;
             interceptors_spawned_during_strafe++;
           }
@@ -179,6 +213,8 @@
             const dist = Math.sqrt(x_diff * x_diff + y_diff * y_diff);
             if (dist < explosion.radius) {
               should_explode = true;
+              score += missile_intercept_gain;
+              current_wave_missiles_intercepted += 1;
               break;
             }
           }
@@ -298,6 +334,47 @@
         ctx.beginPath();
         ctx.arc(interceptor.target_x * size, interceptor.target_y * size, 5, 0, 2 * Math.PI);
         ctx.fill();
+      }
+
+      ctx.fillStyle = 'white';
+      ctx.font = `bold 15px monospace`;
+      ctx.globalAlpha = 0.5;
+      ctx.fillText(` wave: ${current_wave + 1}`, 5, 15);
+      ctx.fillText(`score: ${score}`, 5, 30);
+      ctx.globalAlpha = 1;
+
+      if (current_wave_finished && now - current_wave_finished_at < level_summary_duration) {
+        const fired = interceptors_spawned - interceptors_spawned_at_wave_start;
+        const level_score = fired * -interceptor_cost +
+          current_wave_missiles_intercepted * missile_intercept_gain +
+          current_wave_interceptor_slots_alive_at_end * interceptor_slot_alive_at_wave_end_gain;
+        const lines = [
+          `wave ${current_wave + 1} finished`,
+          `====================`,
+          `fired:       ${fired} x -${interceptor_cost} each`,
+          `blocked:     ${current_wave_missiles_intercepted} x ${missile_intercept_gain} each`,
+          `towers left: ${current_wave_interceptor_slots_alive_at_end} x ${interceptor_slot_alive_at_wave_end_gain} each`,
+          `level score: ${score}`,
+          `--------------------`,
+          `total score: ${score}`
+        ];
+
+        ctx.font = `bold 30px monospace`;
+        let width = 0;
+        for (const line of lines) {
+          const candidate_width = ctx.measureText(line).width;
+          if (candidate_width > width) {
+            width = candidate_width
+          }
+        }
+
+        const x = 0.5 * size - width / 2;
+        for (let i = 0; i < lines.length; i++) {
+          ctx.fillText(lines[i], x, 0.5 * size + i * 30 - (lines.length * 15));
+        }
+
+        const loading_bar_width = Math.max(0, (level_summary_duration - (now - current_wave_finished_at)) / level_summary_duration) * width;
+        ctx.fillRect(x, 0.5 * size + lines.length * 15, loading_bar_width, 30);
       }
 
       requestAnimationFrame(frame);
