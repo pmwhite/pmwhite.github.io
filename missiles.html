@@ -46,6 +46,7 @@
     const color__missile = yellow500;
     const color__text = neutral300;
     const color__explosion = [ lime200, teal200, blue200, indigo200 ];
+
     function random_explosion_color() {
       return color__explosion[Math.floor(Math.random() * color__explosion.length)];
     }
@@ -91,6 +92,7 @@
     let current_wave_finished_at = 0;
     let current_wave_missiles_intercepted = 0;
     let current_wave_interceptor_slots_alive_at_end = 0;
+    let game_lost = false;
 
     let interceptors = new Map();
     let interceptor_slot_reload_period = 3000;
@@ -150,7 +152,18 @@
     function frame() {
       const now = performance.now();
       const missile_spawn_t = now - current_wave_started_at;
-      if (!current_wave_finished) {
+
+      let interceptor_slots_alive = 0;
+      for (const interceptor_slot of interceptor_slots) {
+        if (interceptor_slot.alive) {
+          interceptor_slots_alive++;
+        }
+      }
+      if (interceptor_slots_alive === 0) {
+        game_lost = true;
+      }
+
+      if (!current_wave_finished && !game_lost) {
         const wave = waves[current_wave];
         const missiles_spawned_during_wave = missiles_spawned - missiles_spawned_at_wave_start;
         const expected_missiles = Math.max(0, Math.min(wave.count, Math.ceil(missile_spawn_t / wave.period)));
@@ -238,8 +251,10 @@
             const dist = Math.sqrt(x_diff * x_diff + y_diff * y_diff);
             if (dist < explosion.radius) {
               should_explode = true;
-              score += missile_intercept_gain;
-              current_wave_missiles_intercepted += 1;
+              if (!game_lost) {
+                score += missile_intercept_gain;
+                current_wave_missiles_intercepted += 1;
+              }
               break;
             }
           }
@@ -376,13 +391,15 @@
       ctx.fillText(`score: ${score}`, 5, 30);
       ctx.globalAlpha = 1;
 
-      if (current_wave_finished) {
+      if (current_wave_finished || game_lost) {
         const fired = interceptors_spawned - interceptors_spawned_at_wave_start;
         const level_score = fired * -interceptor_cost +
           current_wave_missiles_intercepted * missile_intercept_gain +
           current_wave_interceptor_slots_alive_at_end * interceptor_slot_alive_at_wave_end_gain;
         let line1 = `wave ${current_wave + 1} finished`;
-        if (current_wave === waves.length - 1) {
+        if (game_lost) {
+          line1 = `wave ${current_wave + 1} failed. game over!`;
+        } else if (current_wave === waves.length - 1) {
           line1 += '. game over!';
         }
         let line3 = `fired:       ${fired} x -${interceptor_cost} each`;
