@@ -27,6 +27,29 @@
   <canvas id="game" width="1000" height="500"></canvas>
 
   <script>
+    const stone800 = '#292524';
+    const stone700 = '#44403c';
+    const red950 = '#450a0a';
+    const red400 = '#f87171';
+    const red700 = '#b91c1c';
+    const yellow500 = '#eab308';
+    const neutral300 = '#d4d4d4';
+    const lime200 = '#d9f99d';
+    const teal200 = '#99f6e4';
+    const blue200 = '#bfdbfe';
+    const indigo200 = '#c7d2fe';
+    const color__background = stone800;
+    const color__ground = stone700;
+    const color__interceptor_slot = red950;
+    const color__interceptor_target = red400;
+    const color__interceptor = red700;
+    const color__missile = yellow500;
+    const color__text = neutral300;
+    const color__explosion = [ lime200, teal200, blue200, indigo200 ];
+    function random_explosion_color() {
+      return color__explosion[Math.floor(Math.random() * color__explosion.length)];
+    }
+
     const canvas = document.getElementById('game');
     const ctx = canvas.getContext('2d');
     let size = 500;
@@ -58,7 +81,9 @@
     let waves = [
       { count: 10, period: 1000 },
       { count: 15, period: 500 },
+      { count: 50, period: 450 },
       { count: 50, period: 200 },
+      { count: 50, period: 500 },
     ];
     let current_wave = 0;
     let current_wave_started_at = 0;
@@ -90,8 +115,6 @@
 
     let marker_radius = 5 / 1000;
     let ground_height = 0.03;
-
-    const game_start_time = performance.now();
 
     function lerp(a, b, t) {
       return a + (b - a) * t;
@@ -126,11 +149,11 @@
 
     function frame() {
       const now = performance.now();
-      const missile_spawn_t = now - game_start_time;
+      const missile_spawn_t = now - current_wave_started_at;
       if (!current_wave_finished && current_wave < waves.length) {
         const wave = waves[current_wave];
         const missiles_spawned_during_wave = missiles_spawned - missiles_spawned_at_wave_start;
-        const expected_missiles = Math.max(0, Math.min(wave.count, Math.ceil((missile_spawn_t - current_wave_started_at) / wave.period)));
+        const expected_missiles = Math.max(0, Math.min(wave.count, Math.ceil(missile_spawn_t / wave.period)));
         const new_missiles_to_spawn = expected_missiles - missiles_spawned_during_wave;
         for (let i = 0; i < new_missiles_to_spawn; i++) {
           missiles.set(missiles_spawned, { spawn_time: now, start: Math.random(), end: Math.random() });
@@ -152,6 +175,7 @@
       if (current_wave_finished && now - current_wave_finished_at > level_summary_duration) {
         current_wave++;
         current_wave_finished = false;
+        current_wave_started_at = now;
         missiles_spawned_at_wave_start = missiles_spawned;
         interceptors_spawned_at_wave_start = interceptors_spawned;
         current_wave_missiles_intercepted = 0;
@@ -171,7 +195,8 @@
           for (const next_interceptor_slot of interceptor_slots) {
             if (next_interceptor_slot.alive
               && now - next_interceptor_slot.last_used_at > interceptor_slot_reload_period
-              && (now - closest_interceptor_slot.last_used_at <= interceptor_slot_reload_period
+              && (!closest_interceptor_slot.alive
+                 || now - closest_interceptor_slot.last_used_at <= interceptor_slot_reload_period
                  || Math.abs(next_interceptor_slot.x - mouse_x) < Math.abs(closest_interceptor_slot.x - mouse_x))) {
               closest_interceptor_slot = next_interceptor_slot;
             }
@@ -222,7 +247,7 @@
 
         if (should_explode) {
           missiles.delete(id);
-          explosions.set(explosions_spawned, { spawn_time: now, x: x, y: y });
+          explosions.set(explosions_spawned, { spawn_time: now, x: x, y: y, color: random_explosion_color() });
           explosions_spawned++;
         }
 
@@ -244,7 +269,7 @@
 
         if (t > 1) {
           interceptors.delete(id);
-          explosions.set(explosions_spawned, { spawn_time: now, x: x, y: y });
+          explosions.set(explosions_spawned, { spawn_time: now, x: x, y: y, color: random_explosion_color() });
           explosions_spawned++;
         }
 
@@ -261,7 +286,7 @@
             const y_diff = explosion.y - y;
             const dist = Math.sqrt(x_diff * x_diff + y_diff * y_diff);
             if (dist < explosion.radius) {
-              explosions.set(explosions_spawned, { spawn_time: now, x: x, y: y });
+              explosions.set(explosions_spawned, { spawn_time: now, x: x, y: y, color: random_explosion_color() });
               explosions_spawned++;
               interceptor_slot.alive = false;
               interceptor_slot.destroyed_at = now;
@@ -278,15 +303,15 @@
 
       ctx.translate(x_offset, y_offset);
 
-      ctx.fillStyle = 'black';
+      ctx.fillStyle = color__background;
       ctx.fillRect(0, 0, size, size);
 
-      ctx.fillStyle = 'maroon';
+      ctx.fillStyle = color__ground;
       ctx.fillRect(0, (1 - ground_height) * size, size, ground_height * size);
 
       ctx.lineWidth = 2;
 
-      ctx.strokeStyle = 'yellow';
+      ctx.strokeStyle = color__missile;
       ctx.beginPath();
       for (const missile of missiles.values()) {
         ctx.moveTo(missile.start * size, 0);
@@ -294,14 +319,14 @@
       }
       ctx.stroke();
 
-      ctx.fillStyle = 'blue';
+      ctx.fillStyle = color__interceptor;
       for (const interceptor of interceptors.values()) {
         ctx.beginPath();
         ctx.arc(interceptor.x * size, interceptor.y * size, marker_radius * size, 0, 2 * Math.PI);
         ctx.fill();
       }
 
-      ctx.fillStyle = 'orange';
+      ctx.fillStyle = color__interceptor_slot;
       for (const interceptor_slot of interceptor_slots) {
         if (interceptor_slot.alive || now - interceptor_slot.destroyed_at < explosion_duration / 2) {
           ctx.beginPath();
@@ -310,7 +335,7 @@
         }
       }
 
-      ctx.fillStyle = 'blue';
+      ctx.fillStyle = color__interceptor;
       for (const interceptor_slot of interceptor_slots) {
         if (interceptor_slot.alive) {
           let offset = Math.max(0, (interceptor_slot_reload_period - now + interceptor_slot.last_used_at) / interceptor_slot_reload_period * ground_height);
@@ -320,23 +345,31 @@
         }
       }
 
-      ctx.fillStyle = 'white';
+      ctx.globalAlpha = 0.5;
       for (const explosion of explosions.values()) {
+        ctx.fillStyle = explosion.color;
         const x = explosion.x * size;
         const y = explosion.y * size;
         ctx.beginPath();
         ctx.arc(x, y, explosion.radius * size, 0, 2 * Math.PI);
         ctx.fill();
       }
+      ctx.globalAlpha = 1;
 
-      ctx.fillStyle = 'red';
+      ctx.strokeStyle = color__interceptor_target;
       for (const interceptor of interceptors.values()) {
         ctx.beginPath();
-        ctx.arc(interceptor.target_x * size, interceptor.target_y * size, 5, 0, 2 * Math.PI);
-        ctx.fill();
+        const x = interceptor.target_x * size;
+        const y = interceptor.target_y * size;
+        const diff = size * 0.01;
+        ctx.moveTo(x - diff, y - diff);
+        ctx.lineTo(x + diff, y + diff);
+        ctx.moveTo(x + diff, y - diff);
+        ctx.lineTo(x - diff, y + diff);
+        ctx.stroke();
       }
 
-      ctx.fillStyle = 'white';
+      ctx.fillStyle = color__text;
       ctx.font = `bold 15px monospace`;
       ctx.globalAlpha = 0.5;
       ctx.fillText(` wave: ${current_wave + 1}`, 5, 15);
@@ -348,33 +381,47 @@
         const level_score = fired * -interceptor_cost +
           current_wave_missiles_intercepted * missile_intercept_gain +
           current_wave_interceptor_slots_alive_at_end * interceptor_slot_alive_at_wave_end_gain;
-        const lines = [
-          `wave ${current_wave + 1} finished`,
-          `====================`,
-          `fired:       ${fired} x -${interceptor_cost} each`,
-          `blocked:     ${current_wave_missiles_intercepted} x ${missile_intercept_gain} each`,
-          `towers left: ${current_wave_interceptor_slots_alive_at_end} x ${interceptor_slot_alive_at_wave_end_gain} each`,
-          `level score: ${score}`,
-          `--------------------`,
-          `total score: ${score}`
-        ];
+        let line1 = `wave ${current_wave + 1} finished`;
+        let line3 = `fired:       ${fired} x -${interceptor_cost} each`;
+        let line4 = `blocked:     ${current_wave_missiles_intercepted} x ${missile_intercept_gain} each`;
+        let line5 = `towers left: ${current_wave_interceptor_slots_alive_at_end} x ${interceptor_slot_alive_at_wave_end_gain} each`;
+        let line7 = `level score: ${level_score}`;
+        let line8 = `total score: ${score}`;
+        let content_lines = [ line1, line3, line4, line5, line7, line8 ];
 
-        ctx.font = `bold 20px monospace`;
-        let width = 0;
-        for (const line of lines) {
-          const candidate_width = ctx.measureText(line).width;
-          if (candidate_width > width) {
-            width = candidate_width
+        let width = size;
+        let characters = 0;
+        let font_size_px = 30;
+        for (; width > 0.8 * size; font_size_px--) {
+          ctx.font = `${font_size_px}px monospace`;
+          width = 0;
+          for (const line of content_lines) {
+            const candidate_width = ctx.measureText(line).width;
+            if (candidate_width > width) {
+              width = candidate_width;
+              characters = line.length;
+            }
           }
         }
 
+        const lines = [
+          line1,
+          '='.repeat(characters),
+          line3,
+          line4,
+          line5,
+          '-'.repeat(characters),
+          line7,
+          line8
+        ];
+
         const x = 0.5 * size - width / 2;
         for (let i = 0; i < lines.length; i++) {
-          ctx.fillText(lines[i], x, 0.5 * size + i * 20 - (lines.length * 10));
+          ctx.fillText(lines[i], x, 0.5 * size + i * font_size_px - (lines.length * (font_size_px / 2)));
         }
 
         const loading_bar_width = Math.max(0, (level_summary_duration - (now - current_wave_finished_at)) / level_summary_duration) * width;
-        ctx.fillRect(x, 0.5 * size + lines.length * 10, loading_bar_width, 20);
+        ctx.fillRect(x, 0.5 * size + lines.length * (font_size_px / 2) - font_size_px / 2, loading_bar_width, font_size_px);
       }
 
       requestAnimationFrame(frame);
