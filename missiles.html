@@ -359,7 +359,7 @@
           `total score: ${score}`
         ];
 
-        ctx.font = `bold 30px monospace`;
+        ctx.font = `bold 20px monospace`;
         let width = 0;
         for (const line of lines) {
           const candidate_width = ctx.measureText(line).width;
@@ -370,11 +370,11 @@
 
         const x = 0.5 * size - width / 2;
         for (let i = 0; i < lines.length; i++) {
-          ctx.fillText(lines[i], x, 0.5 * size + i * 30 - (lines.length * 15));
+          ctx.fillText(lines[i], x, 0.5 * size + i * 20 - (lines.length * 10));
         }
 
         const loading_bar_width = Math.max(0, (level_summary_duration - (now - current_wave_finished_at)) / level_summary_duration) * width;
-        ctx.fillRect(x, 0.5 * size + lines.length * 15, loading_bar_width, 30);
+        ctx.fillRect(x, 0.5 * size + lines.length * 10, loading_bar_width, 20);
       }
 
       requestAnimationFrame(frame);
