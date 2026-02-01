@@ -69,8 +69,8 @@
 
     let score = 0;
     const interceptor_cost = 1;
-    const missile_intercept_gain = 5;
-    const interceptor_slot_alive_at_wave_end_gain = 20;
+    const missile_intercept_gain = 1;
+    const interceptor_slot_alive_at_wave_end_gain = 5;
     const level_summary_duration = 10000;
 
     let missiles = new Map();
@@ -150,7 +150,7 @@
     function frame() {
       const now = performance.now();
       const missile_spawn_t = now - current_wave_started_at;
-      if (!current_wave_finished && current_wave < waves.length) {
+      if (!current_wave_finished) {
         const wave = waves[current_wave];
         const missiles_spawned_during_wave = missiles_spawned - missiles_spawned_at_wave_start;
         const expected_missiles = Math.max(0, Math.min(wave.count, Math.ceil(missile_spawn_t / wave.period)));
@@ -172,7 +172,7 @@
         }
       }
 
-      if (current_wave_finished && now - current_wave_finished_at > level_summary_duration) {
+      if (current_wave_finished && now - current_wave_finished_at > level_summary_duration && current_wave < waves.length - 1) {
         current_wave++;
         current_wave_finished = false;
         current_wave_started_at = now;
@@ -376,12 +376,15 @@
       ctx.fillText(`score: ${score}`, 5, 30);
       ctx.globalAlpha = 1;
 
-      if (current_wave_finished && now - current_wave_finished_at < level_summary_duration) {
+      if (current_wave_finished) {
         const fired = interceptors_spawned - interceptors_spawned_at_wave_start;
         const level_score = fired * -interceptor_cost +
           current_wave_missiles_intercepted * missile_intercept_gain +
           current_wave_interceptor_slots_alive_at_end * interceptor_slot_alive_at_wave_end_gain;
         let line1 = `wave ${current_wave + 1} finished`;
+        if (current_wave === waves.length - 1) {
+          line1 += '. game over!';
+        }
         let line3 = `fired:       ${fired} x -${interceptor_cost} each`;
         let line4 = `blocked:     ${current_wave_missiles_intercepted} x ${missile_intercept_gain} each`;
         let line5 = `towers left: ${current_wave_interceptor_slots_alive_at_end} x ${interceptor_slot_alive_at_wave_end_gain} each`;
@@ -415,13 +418,16 @@
           line8
         ];
 
+        const line_height = font_size_px * 1.2;
         const x = 0.5 * size - width / 2;
         for (let i = 0; i < lines.length; i++) {
-          ctx.fillText(lines[i], x, 0.5 * size + i * font_size_px - (lines.length * (font_size_px / 2)));
+          ctx.fillText(lines[i], x, 0.5 * size + i * line_height - (lines.length * (line_height / 2)));
         }
 
-        const loading_bar_width = Math.max(0, (level_summary_duration - (now - current_wave_finished_at)) / level_summary_duration) * width;
-        ctx.fillRect(x, 0.5 * size + lines.length * (font_size_px / 2) - font_size_px / 2, loading_bar_width, font_size_px);
+        if (current_wave < waves.length - 1) {
+          const loading_bar_width = Math.max(0, (level_summary_duration - (now - current_wave_finished_at)) / level_summary_duration) * width;
+          ctx.fillRect(x, 0.5 * size + lines.length * (line_height / 2) - line_height / 2, loading_bar_width, line_height);
+        }
       }
 
       requestAnimationFrame(frame);
