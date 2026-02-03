@@ -122,30 +122,36 @@
       return a + (b - a) * t;
     }
 
-    let mouse_down_time = 0;
-    let mouse_is_down = false;
-    let mouse_x = 0;
-    let mouse_y = 0;
-
     document.addEventListener('contextmenu', event => event.preventDefault());
 
     canvas.addEventListener('pointerdown', ev => {
-      mouse_is_down = true;
-      mouse_down_time = performance.now();
-      mouse_x = (ev.clientX - x_offset) / size;
-      mouse_y = (ev.clientY - y_offset) / size;
-      interceptors_spawned_during_strafe = 0;
-      ev.preventDefault();
-    });
-
-    canvas.addEventListener('pointermove', ev => {
-      mouse_x = (ev.clientX - x_offset) / size;
-      mouse_y = (ev.clientY - y_offset) / size;
-      ev.preventDefault();
-    });
-
-    canvas.addEventListener('pointerup', ev => {
-      mouse_is_down = false;
+      if (!current_wave_finished) {
+        const now = performance.now();
+        const mouse_x = (ev.clientX - x_offset) / size;
+        const mouse_y = (ev.clientY - y_offset) / size;
+        let alive_interceptor_slot_count = 0;
+        for (const interceptor_slot of interceptor_slots) {
+          if (interceptor_slot.alive) {
+            alive_interceptor_slot_count++;
+          }
+        }
+        let closest_interceptor_slot = interceptor_slots[0];
+        for (const next_interceptor_slot of interceptor_slots) {
+          if (next_interceptor_slot.alive
+            && now - next_interceptor_slot.last_used_at > interceptor_slot_reload_period
+            && (!closest_interceptor_slot.alive
+              || now - closest_interceptor_slot.last_used_at <= interceptor_slot_reload_period
+              || Math.abs(next_interceptor_slot.x - mouse_x) < Math.abs(closest_interceptor_slot.x - mouse_x))) {
+            closest_interceptor_slot = next_interceptor_slot;
+          }
+        }
+        if (closest_interceptor_slot.alive && now - closest_interceptor_slot.last_used_at > interceptor_slot_reload_period) {
+          closest_interceptor_slot.last_used_at = now;
+          interceptors.set(interceptors_spawned, { spawn_time: now, target_x: mouse_x, target_y: mouse_y, start_x: closest_interceptor_slot.x });
+          score -= interceptor_cost;
+          interceptors_spawned++;
+        }
+      }
       ev.preventDefault();
     });
 
@@ -192,36 +198,6 @@
         missiles_spawned_at_wave_start = missiles_spawned;
         interceptors_spawned_at_wave_start = interceptors_spawned;
         current_wave_missiles_intercepted = 0;
-      }
-
-      if (mouse_is_down) {
-        let alive_interceptor_slot_count = 0;
-        for (const interceptor_slot of interceptor_slots) {
-          if (interceptor_slot.alive) {
-            alive_interceptor_slot_count++;
-          }
-        }
-        let interceptor_spawn_period = interceptor_slot_reload_period / alive_interceptor_slot_count;
-        const new_interceptors_to_spawn = Math.floor((now - mouse_down_time) / interceptor_spawn_period) - interceptors_spawned_during_strafe + 1;
-        for (let i = 0; i < new_interceptors_to_spawn; i++) {
-          let closest_interceptor_slot = interceptor_slots[0];
-          for (const next_interceptor_slot of interceptor_slots) {
-            if (next_interceptor_slot.alive
-              && now - next_interceptor_slot.last_used_at > interceptor_slot_reload_period
-              && (!closest_interceptor_slot.alive
-                 || now - closest_interceptor_slot.last_used_at <= interceptor_slot_reload_period
-                 || Math.abs(next_interceptor_slot.x - mouse_x) < Math.abs(closest_interceptor_slot.x - mouse_x))) {
-              closest_interceptor_slot = next_interceptor_slot;
-            }
-          }
-          if (closest_interceptor_slot.alive && now - closest_interceptor_slot.last_used_at > interceptor_slot_reload_period) {
-            closest_interceptor_slot.last_used_at = now;
-            interceptors.set(interceptors_spawned, { spawn_time: now, target_x: mouse_x, target_y: mouse_y, start_x: closest_interceptor_slot.x });
-            score -= interceptor_cost;
-            interceptors_spawned++;
-            interceptors_spawned_during_strafe++;
-          }
-        }
       }
 
       for (const [ id, explosion ] of explosions) {
