@@ -96,6 +96,7 @@
 
     let interceptors = new Map();
     let interceptor_slot_reload_period = 3000;
+    let interceptor_slot_shift_period = 250;
     let interceptor_velocity = 6 / 20000;
     let interceptors_spawned = 0;
     let interceptors_spawned_at_wave_start = 0;
@@ -104,7 +105,10 @@
     for (let i = 0; i < interceptor_slot_count; i++) {
       interceptor_slots.push({
         x: (i + 0.5) / (interceptor_slot_count),
-        last_used_at: -interceptor_slot_reload_period,
+        bullet_fire_times: Array(3).fill(-interceptor_slot_reload_period),
+        bullet_index_snapshot: 0,
+        bullet_index_snapshot_at: 0,
+        next_bullet_index: 0,
         alive: true,
         destroyed_at: 0
       });
@@ -124,6 +128,10 @@
 
     document.addEventListener('contextmenu', event => event.preventDefault());
 
+    function interceptor_slot_bullet_index_snapshot(slot, now) {
+      return Math.min(slot.next_bullet_index, lerp(slot.bullet_index_snapshot, slot.next_bullet_index, (now - slot.bullet_index_snapshot_at) / interceptor_slot_shift_period));
+    }
+
     canvas.addEventListener('pointerdown', ev => {
       if (!current_wave_finished) {
         const now = performance.now();
@@ -135,18 +143,31 @@
             alive_interceptor_slot_count++;
           }
         }
-        let closest_interceptor_slot = interceptor_slots[0];
+        let closest_interceptor_slot = null;
+        let bullet_to_fire_index = 0;
         for (const next_interceptor_slot of interceptor_slots) {
-          if (next_interceptor_slot.alive
-            && now - next_interceptor_slot.last_used_at > interceptor_slot_reload_period
-            && (!closest_interceptor_slot.alive
-              || now - closest_interceptor_slot.last_used_at <= interceptor_slot_reload_period
-              || Math.abs(next_interceptor_slot.x - mouse_x) < Math.abs(closest_interceptor_slot.x - mouse_x))) {
-            closest_interceptor_slot = next_interceptor_slot;
+          if (next_interceptor_slot.alive && (closest_interceptor_slot === null || Math.abs(next_interceptor_slot.x - mouse_x) < Math.abs(closest_interceptor_slot.x - mouse_x))) {
+            let next_interceptor_slot_is_firable = false;
+            let max_bullet_wait_time = 0;
+            for (let i = 0; i < next_interceptor_slot.bullet_fire_times.length; i++) {
+              let bullet_wait_time = now - next_interceptor_slot.bullet_fire_times[i];
+              if (bullet_wait_time > interceptor_slot_reload_period && bullet_wait_time > max_bullet_wait_time) {
+                next_interceptor_slot_is_firable = true;
+                bullet_to_fire_index = i;
+                max_bullet_wait_time = bullet_wait_time;
+              }
+            }
+            if (next_interceptor_slot_is_firable) {
+              closest_interceptor_slot = next_interceptor_slot;
+            }
           }
         }
-        if (closest_interceptor_slot.alive && now - closest_interceptor_slot.last_used_at > interceptor_slot_reload_period) {
-          closest_interceptor_slot.last_used_at = now;
+        if (closest_interceptor_slot !== null) {
+          closest_interceptor_slot.bullet_fire_times[bullet_to_fire_index] = now;
+          const bullet_fire_time = 
+          closest_interceptor_slot.bullet_index_snapshot = interceptor_slot_bullet_index_snapshot(closest_interceptor_slot, now);
+          closest_interceptor_slot.bullet_index_snapshot_at = now;
+          closest_interceptor_slot.next_bullet_index++;
           interceptors.set(interceptors_spawned, { spawn_time: now, target_x: mouse_x, target_y: mouse_y, start_x: closest_interceptor_slot.x });
           score -= interceptor_cost;
           interceptors_spawned++;
@@ -329,10 +350,15 @@
       ctx.fillStyle = color__interceptor;
       for (const interceptor_slot of interceptor_slots) {
         if (interceptor_slot.alive) {
-          let offset = Math.max(0, (interceptor_slot_reload_period - now + interceptor_slot.last_used_at) / interceptor_slot_reload_period * ground_height);
-          ctx.beginPath();
-          ctx.arc(interceptor_slot.x * size, ((1 - ground_height) + offset) * size, marker_radius * size, 0, 2 * Math.PI);
-          ctx.fill();
+          for (let i = 0; i < interceptor_slot.bullet_fire_times.length; i++) {
+            let adjusted_i = (interceptor_slot.next_bullet_index + i) % interceptor_slot.bullet_fire_times.length;
+            let bullet_fire_time = interceptor_slot.bullet_fire_times[adjusted_i];
+            let extra_offset = (i + interceptor_slot.next_bullet_index - interceptor_slot_bullet_index_snapshot(interceptor_slot, now)) * marker_radius * 2;
+            let offset = Math.max(0, lerp(ground_height, 0, (now - bullet_fire_time) / interceptor_slot_reload_period)) + extra_offset;
+            ctx.beginPath();
+            ctx.arc(interceptor_slot.x * size, ((1 - ground_height) + offset) * size, marker_radius * size, 0, 2 * Math.PI);
+            ctx.fill();
+          }
         }
       }
 
