@@ -82,6 +82,7 @@
     let bombs_spawned = 0;
     let bombs_spawned_at_wave_start = 0;
     let bomb_size = 10 / 1000;
+    let bomb_flicker_period = Math.PI / 1000 * 10;
 
     let missiles = new Map();
     let missile_velocity = 1 / 20000;
@@ -96,6 +97,7 @@
       { count: 50, period: 500, bomb_count: 3, bomb_period: 10000 },
       { count: 20, period: 100, bomb_count: 0, bomb_period: 1000 },
       { count: 30, period: 1000, bomb_count: 10, bomb_period: 3000 },
+      { count: 50, period: 300, bomb_count: 10, bomb_period: 3000 },
     ];
     let current_wave = 0;
     let current_wave_started_at = 0;
@@ -400,9 +402,14 @@
       ctx.stroke();
 
       ctx.fillStyle = color__bomb;
-      ctx.beginPath();
       for (const bomb of bombs.values()) {
-        ctx.fillRect((bomb.x - bomb_size / 2) * size, (bomb.y - bomb_size / 2) * size, bomb_size * size, bomb_size * size);
+        ctx.globalAlpha = 1 + Math.sin(bomb_flicker_period * (now - bomb.spawn_time)) / 2;
+        ctx.save();
+        ctx.translate((bomb.x - bomb_size / 2) * size, (bomb.y - bomb_size / 2) * size);
+        ctx.rotate(Math.PI / 4);
+        ctx.fillRect(0, 0, bomb_size * size, bomb_size * size);
+        ctx.restore();
+        ctx.globalAlpha = 1;
       }
       ctx.stroke();
 
