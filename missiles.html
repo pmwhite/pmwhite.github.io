@@ -33,6 +33,7 @@
     const red400 = '#f87171';
     const red700 = '#b91c1c';
     const yellow500 = '#eab308';
+    const yellow300 = '#fde047';
     const neutral300 = '#d4d4d4';
     const lime200 = '#d9f99d';
     const teal200 = '#99f6e4';
@@ -44,6 +45,7 @@
     const color__interceptor_target = red400;
     const color__interceptor = red700;
     const color__missile = yellow500;
+    const color__bomb = yellow300;
     const color__text = neutral300;
     const color__explosion = [ lime200, teal200, blue200, indigo200 ];
 
@@ -71,27 +73,36 @@
     let score = 0;
     const interceptor_cost = 1;
     const missile_intercept_gain = 1;
+    const bomb_intercept_gain = 5;
     const interceptor_slot_alive_at_wave_end_gain = 5;
     const level_summary_duration = 10000;
 
+    let bombs = new Map();
+    let bomb_period = 2 / 20000;
+    let bombs_spawned = 0;
+    let bombs_spawned_at_wave_start = 0;
+    let bomb_size = 10 / 1000;
+
     let missiles = new Map();
-    let missile_spawn_period = 3000;
     let missile_velocity = 1 / 20000;
     let missiles_spawned = 0;
     let missiles_spawned_at_wave_start = 0;
     let waves = [
-      { count: 10, period: 1000 },
-      { count: 15, period: 500 },
-      { count: 50, period: 450 },
-      { count: 50, period: 200 },
-      { count: 50, period: 500 },
-      { count: 20, period: 100 }
+      { count: 10, period: 1000, bomb_count: 0, bomb_period: 1000 },
+      { count: 15, period: 500, bomb_count: 0, bomb_period: 1000 },
+      { count: 10, period: 1000, bomb_count: 3, bomb_period: 4000 },
+      { count: 50, period: 450, bomb_count: 2, bomb_period: 10000 },
+      { count: 50, period: 200, bomb_count: 0, bomb_period: 1000 },
+      { count: 50, period: 500, bomb_count: 3, bomb_period: 10000 },
+      { count: 20, period: 100, bomb_count: 0, bomb_period: 1000 },
+      { count: 30, period: 1000, bomb_count: 10, bomb_period: 3000 },
     ];
     let current_wave = 0;
     let current_wave_started_at = 0;
     let current_wave_finished = false;
     let current_wave_finished_at = 0;
     let current_wave_missiles_intercepted = 0;
+    let current_wave_bombs_intercepted = 0;
     let current_wave_interceptor_slots_alive_at_end = 0;
     let game_lost = false;
 
@@ -179,7 +190,7 @@
 
     function frame() {
       const now = performance.now();
-      const missile_spawn_t = now - current_wave_started_at;
+      const wave_t = now - current_wave_started_at;
 
       let interceptor_slots_alive = 0;
       for (const interceptor_slot of interceptor_slots) {
@@ -193,14 +204,33 @@
 
       if (!current_wave_finished && !game_lost) {
         const wave = waves[current_wave];
+
         const missiles_spawned_during_wave = missiles_spawned - missiles_spawned_at_wave_start;
-        const expected_missiles = Math.max(0, Math.min(wave.count, Math.ceil(missile_spawn_t / wave.period)));
+        const expected_missiles = Math.max(0, Math.min(wave.count, Math.ceil(wave_t / wave.period)));
         const new_missiles_to_spawn = expected_missiles - missiles_spawned_during_wave;
         for (let i = 0; i < new_missiles_to_spawn; i++) {
           missiles.set(missiles_spawned, { spawn_time: now, start: Math.random(), end: Math.random() });
           missiles_spawned++;
         }
-        if (missiles_spawned_during_wave === wave.count && missiles.size === 0 && explosions.size === 0) {
+
+        const bombs_spawned_during_wave = bombs_spawned - bombs_spawned_at_wave_start;
+        const expected_bombs = Math.max(0, Math.min(wave.bomb_count, Math.ceil(wave_t / wave.bomb_period)));
+        const new_bombs_to_spawn = expected_bombs - bombs_spawned_during_wave;
+        for (let i = 0; i < new_bombs_to_spawn; i++) {
+          const weights = [];
+          for (let w = 0; w < 10; w++) {
+            weights[w] = Math.random();
+          }
+          bombs.set(bombs_spawned, { spawn_time: now, weights: weights });
+          bombs_spawned++;
+        }
+
+        if (missiles_spawned_during_wave === wave.count 
+          && missiles.size === 0 
+          && bombs_spawned_during_wave === wave.bomb_count 
+          && bombs.size === 0 
+          && explosions.size === 0) {
+
           current_wave_finished = true;
           current_wave_finished_at = now;
           current_wave_interceptor_slots_alive_at_end = 0;
@@ -218,8 +248,10 @@
         current_wave_finished = false;
         current_wave_started_at = now;
         missiles_spawned_at_wave_start = missiles_spawned;
+        bombs_spawned_at_wave_start = bombs_spawned;
         interceptors_spawned_at_wave_start = interceptors_spawned;
         current_wave_missiles_intercepted = 0;
+        current_wave_bombs_intercepted = 0;
       }
 
       for (const [ id, explosion ] of explosions) {
@@ -232,7 +264,6 @@
 
         explosion.radius = radius;
       }
-
 
       for (const [ id, missile ] of missiles) {
         const end_start_diff = missile.end - missile.start;
@@ -266,6 +297,42 @@
 
         missile.x = x;
         missile.y = y;
+      }
+
+      const bomb_base_weights = [ 1, 9, 36, 84, 126, 126, 84, 36, 9, 1 ];
+      for (const [ id, bomb ] of bombs) {
+        const t = (now - bomb.spawn_time) * bomb_period;
+        let x = 0;
+        for (let i = 0; i < bomb.weights.length; i++) {
+          x += bomb.weights[i] * bomb_base_weights[i] * Math.pow(t, i) * Math.pow(1 - t, bomb.weights.length - 1 - i);
+        }
+        const y = lerp(0, 1 - ground_height, t);
+
+        let should_explode = t > 1;
+        if (!should_explode) {
+          for (const explosion of explosions.values()) {
+            const x_diff = explosion.x - x;
+            const y_diff = explosion.y - y;
+            const dist = Math.sqrt(x_diff * x_diff + y_diff * y_diff);
+            if (dist < explosion.radius) {
+              should_explode = true;
+              if (!game_lost) {
+                score += bomb_intercept_gain;
+                current_wave_bombs_intercepted += 1;
+              }
+              break;
+            }
+          }
+        }
+
+        if (should_explode) {
+          bombs.delete(id);
+          explosions.set(explosions_spawned, { spawn_time: now, x: x, y: y, color: random_explosion_color() });
+          explosions_spawned++;
+        }
+
+        bomb.x = x;
+        bomb.y = y;
       }
 
       for (const [ id, interceptor ] of interceptors) {
@@ -329,6 +396,13 @@
       for (const missile of missiles.values()) {
         ctx.moveTo(missile.start * size, 0);
         ctx.lineTo(missile.x * size, missile.y * size);
+      }
+      ctx.stroke();
+
+      ctx.fillStyle = color__bomb;
+      ctx.beginPath();
+      for (const bomb of bombs.values()) {
+        ctx.fillRect((bomb.x - bomb_size / 2) * size, (bomb.y - bomb_size / 2) * size, bomb_size * size, bomb_size * size);
       }
       ctx.stroke();
 
@@ -398,6 +472,7 @@
         const fired = interceptors_spawned - interceptors_spawned_at_wave_start;
         const level_score = fired * -interceptor_cost +
           current_wave_missiles_intercepted * missile_intercept_gain +
+          current_wave_bombs_intercepted * bomb_intercept_gain +
           current_wave_interceptor_slots_alive_at_end * interceptor_slot_alive_at_wave_end_gain;
         let line1 = `wave ${current_wave + 1} finished`;
         if (game_lost) {
@@ -405,12 +480,13 @@
         } else if (current_wave === waves.length - 1) {
           line1 += '. game over!';
         }
-        let line3 = `fired:       ${fired} x -${interceptor_cost} each`;
-        let line4 = `blocked:     ${current_wave_missiles_intercepted} x ${missile_intercept_gain} each`;
-        let line5 = `towers left: ${current_wave_interceptor_slots_alive_at_end} x ${interceptor_slot_alive_at_wave_end_gain} each`;
-        let line7 = `level score: ${level_score}`;
-        let line8 = `total score: ${score}`;
-        let content_lines = [ line1, line3, line4, line5, line7, line8 ];
+        let line3 = `fired:    ${fired} x -${interceptor_cost} each`;
+        let line4 = `missiles: ${current_wave_missiles_intercepted} x ${missile_intercept_gain} each`;
+        let line5 = `bombs:    ${current_wave_bombs_intercepted} x ${bomb_intercept_gain} each`;
+        let line6 = `towers:   ${current_wave_interceptor_slots_alive_at_end} x ${interceptor_slot_alive_at_wave_end_gain} each`;
+        let line8 = `level:    ${level_score}`;
+        let line9 = `total:    ${score}`;
+        let content_lines = [ line1, line3, line4, line5, line6, line8, line9 ];
 
         let width = size;
         let characters = 0;
@@ -433,9 +509,10 @@
           line3,
           line4,
           line5,
+          line6,
           '-'.repeat(characters),
-          line7,
-          line8
+          line8,
+          line9
         ];
 
         const line_height = font_size_px * 1.2;
