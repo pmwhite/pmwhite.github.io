@@ -85,7 +85,7 @@ index" so that each of the bullets gets shifted up; the shifting happens in a
 smooth, interpolated manner so that the bullets do not suddenly jump up each
 time the user fires.</p>
 
-<p>It is not as though <em>no</em> state gets tracked and mutating throughout
+<p>It is not as though <em>no</em> state gets tracked and mutated throughout
 the game. Rather, I've restrained myself to only tracking the minimal amount of
 necessary state. Typically, it's user actions and object collisions that
 require some mutation of state to mark the start time of a new behavior for
