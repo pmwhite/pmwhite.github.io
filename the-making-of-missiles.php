@@ -1,0 +1,97 @@
+<?php
+include "common.php";
+essay_begin($the_making_of_missiles);
+?>
+
+<p>I recently finished making a small game modeled heavily after the classic
+arcade game "Missile Command". You can play it <a
+href="missiles.html">here</a>. This essay will describe the ideas behind the
+design and implementation, which you can see by simply inspecting the source
+code of that page in your browser..</p>
+
+<p>The web page contains a canvas which is auto-resized such that it takes up
+the entirety of the screen. The playable area of the game is constrained to be
+a square, so we pick the smaller of the two dimensions of the screen to be the
+square's side length. Everything in the game is scaled by this side-length, so
+it should play the same on small screens or large. You may find it easier on a
+smaller or larger screen just due to how easy it is to see what is going on and
+quickly click on a precise point, but at least the game mechanics are the
+same.</p>
+
+<p>My approach to implementing the game logic was to have each from compute the
+position of each entity at the current frame using a time-varying function.
+Some state was necessary, such as detecting collisions and creating new
+explosions from them, but animation and motion was implemented directly in
+terms of the current time. One benefit of doing this is that the game works the
+same regardless of framerate. Another benefit is that there is less state to
+remember to update, since the time-varying function just describes the state at
+all points in time.<p>
+
+<p>There are 9 levels in the game, each of which is defined by a number of
+missiles, bombs, and ships that gets spawned during the level, along with a
+frequency at which they get spawned. During each frame, we compute the number
+of expected items to be spawned based on amount of time since the start of the
+level, and if it is greater than the number of items <em>actually</em> spawned,
+then we just spawn more until the numbers match. This is another example of the
+same basic approach: instead of spawning a new item based on the time since the
+last spawn, we do it based on the time since the level began, which ensures
+that level duration doesn't drift based on framerate.</p>
+
+<p><b>Missiles</b> are spawned with a random starting and ending x
+coordinate; motion is simply linear interpolation from the <code>(start,
+0)</code> to <code>(end, 1)</code> (note that the coordinate space is from
+<code>(0, 0)</code> in the top left to <code>(1, 1)</code> in the bottom
+right). Missiles are rendered as a line from the starting point to the
+interpolated point. The missile has a constant velocity, so it may take longer
+to land if it is shooting at an angle, since it has a longer distance to
+travel.</p>
+
+<p><b>Bombs</b> are spawned with a degree-10 <a
+href="https://en.wikipedia.org/wiki/Bernstein_polynomial">Bernstein
+Polynomial</a> with random coefficients. The y-coordinate is a simple
+interpolation from 0 to 1 over a fixed amount of time, and the x coordinate is
+the value of the polynomial. The result is a wiggly and difficult-to-predict
+motion. The rationale for choosing Bernstein polynomials is that I wanted
+something like the "smart bombs" in the real missile command game, but that
+also stays true to the concept of time-varying functions. While the polynomials
+are not actually "smart", since they don't react to the users missiles, they
+are unpredictable enough that the user will need to fire multiple missiles to
+properly defend against them. Bombs are rendered as a diamond whose
+transparency is the <code>1 + sin(t)</code>, with t being a scaled version of
+the time since the bomb was spawned. So even the extra color refinements in the
+game follow the time-varying function idea.</p>
+
+<p><b>Ships</b> are spawned at a random y coordinate and speed, between certain
+allowable ranges. The motion is a simple interpolation of the x coordinate; the
+y coordinate stays fixed over the life of the bomb. Ships are rendered as two
+ellipses rotating in opposite directions, the angles of which are derived from
+the current time.</p>
+
+<p>When the user clicks around the screen, they shoot <b>bullets</b>, which
+travel from the nearest <b>tower</b> to the target point and spawn an
+<b>explosion</b>. The bullets motion is very similar to that of missiles: just
+interpolate from a start point to an end point. Each tower has three bullets to
+fire, and each of these bullets has a cooldown period; from the users
+perspective, they are constantly firing new bullets, but in order to smoothly
+render the bullets getting enqueued in the tower, we just track the position of
+three individual bullets. The position of those "reload bullets" (for rendering
+purposes, we think of them as distinct from the actual bullets that get fired)
+is a linear interpolation from the bottom of the screen to the top of the
+"ground level", where they will rest until fired. But we also want the three
+bullets to stack while waiting to be fired, instead of having all three
+rendered to the same position; we accomplish this by offsetting each bullet by
+its bullet index. Then, when a bullet is fired, we increment the "next bullet
+index" so that each of the bullets gets shifted up; the shifting happens in a
+smooth, interpolated manner so that the bullets do not suddenly jump up each
+time the user fires.</p>
+
+<p>It is not as though <em>no</em> state gets tracked and mutating throughout
+the game. Rather, I've restrained myself to only tracking the minimal amount of
+necessary state. Typically, it's user actions and object collisions that
+require some mutation of state to mark the start time of a new behavior for
+each object. One could imagine having the entire world be described in a
+time-varying manner such that collisions don't even require state
+transformation, but this seems to be a lot more complicated and difficult than
+the current approach, so I didn't pursue it too far.</p>
+
+<?php essay_end() ?>

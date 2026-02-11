@@ -25,6 +25,11 @@ $yet_wisdom_is_justified_by_her_deeds_page =
   , "id" => "yet-wisdom-is-justified-by-her-deeds"
   , "date" => "Dec 3, 2025" ];
 
+$the_making_of_missiles =
+  [ "title" => "The making of 'missiles'"
+  , "id" => "the-making-of-missiles"
+  , "date" => "Feb 10, 2026" ];
+
 $pages = [
 
   $new_types_page,
@@ -48,7 +53,8 @@ $pages = [
   , "date" => "Apr 12, 2025" ],
 
   $parts_of_a_pl_implementation_page,
-  $yet_wisdom_is_justified_by_her_deeds_page
+  $yet_wisdom_is_justified_by_her_deeds_page,
+  $the_making_of_missiles
 
 ];
 

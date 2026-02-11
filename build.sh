@@ -8,3 +8,4 @@ php -f parts-of-a-pl-implementation.php > parts-of-a-pl-implementation.html
 php -f yet-wisdom-is-justified-by-her-deeds.php > yet-wisdom-is-justified-by-her-deeds.html
 php -f bfm2000.php > bfm2000.html
 php -f bible-search.php > bible-search.html
+php -f the-making-of-missiles.php > the-making-of-missiles.html
