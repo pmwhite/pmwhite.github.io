@@ -26,9 +26,9 @@ $yet_wisdom_is_justified_by_her_deeds_page =
   , "date" => "Dec 3, 2025" ];
 
 $the_making_of_missiles =
-  [ "title" => "The making of 'missiles'"
+  [ "title" => "The making of 'missiles'."
   , "id" => "the-making-of-missiles"
-  , "date" => "Feb 10, 2026" ];
+  , "date" => "Feb 11, 2026" ];
 
 $pages = [
 
