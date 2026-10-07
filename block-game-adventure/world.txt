@@ -1,0 +1,5695 @@
+# Moonlit garden: a world for the block game.
+#
+# Each level of the garden teaches something, in order:
+#   Garden Gate: push a block out of the way
+#   Two Abreast: pushes do not chain; get behind a block
+#   Steps: ramps climb onto walls, and wall tops are paths
+#   Topple: from a ramp, walking into a stack knocks its top off
+#   Ramparts: a knocked-off block is a step up onto the walls
+#   Stepping Stone: a block pushed into water becomes a stepping stone
+#   Ford: blocks can be pushed across stepping stones
+#   Shallows: you can wade, push things along the bottom, and climb out on a ramp
+#   Hitch: a ramp rides the block it rests on, even uphill, and lands on it in water
+#   Twins: linked shapes move together
+#   Ferry: a sunk twin slides along the bottom with its partner
+#   Anchor: a sunk twin only lets its partner move where it can follow
+#   Treetops: tree crowns hold you up; carts and ramps reach them
+#
+# Past them, the Wilds hold harder puzzles, in any order:
+#   Bramble: lift a block onto the hedge with a ramp, and drop it in from above
+#   Staircase: push a ramp up another ramp to stand it on a block
+#   Monolith: a cart is the step between a ramp and a two-block stack
+#   Twin Drop: walk a twin off its hedge so it falls in the pond
+#   Flooded Ruins: wade, and steer the ramp along the bottom to the island
+#
+# Every level was checked with solve.l8: each solves, the garden's cannot be
+# left but by their doors, and entering the Wilds' from any side is no help.
+world
+lamp 59 38 1
+lamp 59 42 1
+lamp 71 38 1
+lamp 79 38 1
+lamp 71 46 1
+lamp 79 46 1
+lamp 68 36 1
+lamp 84 34 1
+lamp 98 36 1
+lamp 95 49 1
+lamp 71 49 1
+lamp 10 4 1
+lamp 13 0 1
+lamp 23 6 1
+lamp 26 2 1
+lamp 41 6 1
+lamp 44 2 1
+lamp 55 2 1
+lamp 59 7 1
+lamp 59 22 1
+lamp 55 27 1
+lamp 44 22 1
+lamp 41 26 1
+lamp 29 21 1
+lamp 26 25 1
+lamp 12 17 1
+lamp 9 21 1
+lamp -5 17 1
+lamp -9 22 1
+lamp -6 35 1
+lamp -5 42 1
+lamp 9 42 1
+lamp 12 38 1
+lamp 28 42 1
+lamp 31 38 1
+lamp -5 -2 0
+lamp -1 2 0
+lamp 49 37 0
+lamp 55 43 0
+p -3 0
+e 0 0
+e 14 2
+e 27 4
+e 45 4
+e 57 8
+e 54 25
+e 40 24
+e 25 23
+e 8 19
+e -7 23
+e -4 40
+e 13 40
+e 32 40
+e 66 35
+e 82 33
+e 96 35
+e 93 50
+e 69 50
+level gate 0 -2 9 3 Garden Gate
+level abreast 14 1 22 5 Two Abreast
+level steps 27 1 40 7 Steps
+level topple 45 1 54 7 Topple
+level ramparts 53 8 61 21 Ramparts
+level stone 45 22 54 27 Stepping Stone
+level ford 30 20 40 26 Ford
+level shallows 13 18 25 25 Shallows
+level hitch -4 16 8 22 Hitch
+level twins -10 23 -5 34 Twins
+level ferry -4 36 8 44 Ferry
+level anchor 13 37 27 43 Anchor
+level treetops 32 35 48 44 Treetops
+level bramble 62 26 70 35 Bramble
+level staircase 77 27 87 33 Staircase
+level monolith 92 29 101 35 Monolith
+level twindrop 88 50 97 57 Twin Drop
+level flooded 63 50 73 57 Flooded Ruins
+g 9 2
+g 22 4
+g 40 4
+g 54 4
+g 57 21
+g 45 24
+g 30 23
+g 13 19
+g -4 19
+g -8 34
+g 8 40
+g 27 40
+g 48 40
+g 66 29
+g 80 30
+g 96 32
+g 93 55
+g 68 54
+w -10 23
+w -10 24
+w -10 25
+w -10 26
+w -10 27
+w -10 28
+w -10 29
+w -10 30
+w -10 31
+w -10 32
+w -10 33
+w -10 34
+w -9 23
+w -9 30
+w -9 34
+w -8 23
+w -7 30
+w -7 34
+w -6 23
+w -6 30
+w -6 34
+w -5 23
+w -5 24
+w -5 25
+w -5 26
+w -5 27
+w -5 28
+w -5 29
+w -5 30
+w -5 31
+w -5 32
+w -5 33
+w -5 34
+w -4 16
+w -4 17
+w -4 18
+w -4 20
+w -4 21
+w -4 22
+w -4 36
+w -4 37
+w -4 38
+w -4 39
+w -4 41
+w -4 42
+w -4 43
+w -4 44
+w -3 16
+w -3 22
+w -3 36
+w -3 44
+w -2 16
+w -2 22
+w -2 36
+w -2 44
+w -1 16
+w -1 22
+w -1 36
+w -1 44
+w 0 -2
+w 0 -1
+w 0 1
+w 0 2
+w 0 3
+w 0 16
+w 0 22
+w 0 36
+w 0 44
+w 1 -2
+w 1 3
+w 1 16
+w 1 18
+w 1 19
+w 1 20
+w 1 22
+w 1 36
+w 1 44
+w 2 -2
+w 2 3
+w 2 16
+w 2 22
+w 2 36
+w 2 44
+w 3 -2
+w 3 3
+w 3 16
+w 3 22
+w 3 36
+w 3 44
+w 4 -2
+w 4 3
+w 4 16
+w 4 22
+w 4 36
+w 4 44
+w 5 -2
+w 5 3
+w 5 16
+w 5 22
+w 5 36
+w 5 44
+w 6 -2
+w 6 3
+w 6 16
+w 6 22
+w 6 36
+w 6 44
+w 7 -2
+w 7 3
+w 7 16
+w 7 22
+w 7 36
+w 7 44
+w 8 -2
+w 8 3
+w 8 16
+w 8 17
+w 8 18
+w 8 20
+w 8 21
+w 8 22
+w 8 36
+w 8 37
+w 8 38
+w 8 39
+w 8 41
+w 8 42
+w 8 43
+w 8 44
+w 9 -2
+w 9 -1
+w 9 0
+w 9 1
+w 9 3
+w 13 18
+w 13 20
+w 13 21
+w 13 22
+w 13 23
+w 13 24
+w 13 25
+w 13 37
+w 13 38
+w 13 39
+w 13 41
+w 13 42
+w 13 43
+w 14 1
+w 14 3
+w 14 4
+w 14 5
+w 14 18
+w 14 25
+w 14 37
+w 14 43
+w 15 1
+w 15 5
+w 15 18
+w 15 25
+w 15 37
+w 15 43
+w 16 1
+w 16 5
+w 16 18
+w 16 25
+w 16 37
+w 16 43
+w 17 1
+w 17 5
+w 17 18
+w 17 25
+w 17 37
+w 17 43
+w 18 1
+w 18 5
+w 18 18
+w 18 25
+w 18 37
+w 18 43
+w 19 1
+w 19 5
+w 19 18
+w 19 25
+w 19 37
+w 19 43
+w 20 1
+w 20 5
+w 20 18
+w 20 25
+w 20 37
+w 20 43
+w 21 1
+w 21 5
+w 21 18
+w 21 25
+w 21 37
+w 21 43
+w 22 1
+w 22 2
+w 22 3
+w 22 5
+w 22 18
+w 22 25
+w 22 37
+w 22 43
+w 23 18
+w 23 25
+w 23 37
+w 23 38
+w 23 39
+w 23 41
+w 23 42
+w 23 43
+w 24 18
+w 24 25
+w 24 37
+w 24 41
+w 24 43
+w 25 18
+w 25 19
+w 25 20
+w 25 21
+w 25 22
+w 25 24
+w 25 25
+w 25 37
+w 25 43
+w 26 37
+w 26 43
+w 27 1
+w 27 2
+w 27 3
+w 27 5
+w 27 6
+w 27 7
+w 27 37
+w 27 38
+w 27 39
+w 27 41
+w 27 42
+w 27 43
+w 28 1
+w 28 7
+w 29 1
+w 29 7
+w 30 1
+w 30 7
+w 30 20
+w 30 21
+w 30 22
+w 30 24
+w 30 25
+w 30 26
+w 31 1
+w 31 7
+w 31 20
+w 31 26
+w 32 1
+w 32 3
+w 32 4
+w 32 5
+w 32 7
+w 32 20
+w 32 26
+w 32 35
+w 32 36
+w 32 37
+w 32 38
+w 32 39
+w 32 41
+w 32 42
+w 32 43
+w 32 44
+w 33 1
+w 33 5
+w 33 7
+w 33 20
+w 33 26
+w 33 35
+w 33 44
+w 34 1
+w 34 5
+w 34 7
+w 34 20
+w 34 26
+w 34 35
+w 34 44
+w 35 1
+w 35 5
+w 35 7
+w 35 20
+w 35 26
+w 35 35
+w 35 44
+w 36 1
+w 36 3
+w 36 4
+w 36 5
+w 36 7
+w 36 20
+w 36 26
+w 36 35
+w 36 44
+w 37 1
+w 37 7
+w 37 20
+w 37 26
+w 37 35
+w 37 44
+w 38 1
+w 38 7
+w 38 20
+w 38 26
+w 38 35
+w 38 44
+w 39 1
+w 39 7
+w 39 20
+w 39 26
+w 39 35
+w 39 44
+w 40 1
+w 40 2
+w 40 3
+w 40 5
+w 40 6
+w 40 7
+w 40 20
+w 40 21
+w 40 22
+w 40 23
+w 40 25
+w 40 26
+w 40 35
+w 40 44
+w 41 35
+w 41 44
+w 42 35
+w 42 44
+w 43 35
+w 43 44
+w 44 35
+w 44 44
+w 45 1
+w 45 2
+w 45 3
+w 45 5
+w 45 6
+w 45 7
+w 45 22
+w 45 23
+w 45 25
+w 45 26
+w 45 27
+w 45 35
+w 45 44
+w 46 1
+w 46 7
+w 46 22
+w 46 27
+w 46 35
+w 46 44
+w 47 1
+w 47 7
+w 47 22
+w 47 27
+w 47 35
+w 47 44
+w 48 1
+w 48 7
+w 48 22
+w 48 27
+w 48 35
+w 48 36
+w 48 37
+w 48 38
+w 48 39
+w 48 41
+w 48 42
+w 48 43
+w 48 44
+w 49 1
+w 49 7
+w 49 22
+w 49 27
+w 50 1
+w 50 7
+w 50 22
+w 50 27
+w 51 1
+w 51 7
+w 51 22
+w 51 27
+w 52 1
+w 52 7
+w 52 22
+w 52 27
+w 53 1
+w 53 7
+w 53 8
+w 53 9
+w 53 10
+w 53 11
+w 53 12
+w 53 13
+w 53 14
+w 53 15
+w 53 16
+w 53 17
+w 53 18
+w 53 19
+w 53 20
+w 53 21
+w 53 22
+w 53 27
+w 54 1
+w 54 2
+w 54 3
+w 54 5
+w 54 6
+w 54 7
+w 54 8
+w 54 21
+w 54 22
+w 54 23
+w 54 24
+w 54 26
+w 54 27
+w 55 8
+w 55 21
+w 56 8
+w 56 16
+w 56 17
+w 56 18
+w 56 19
+w 56 21
+w 57 16
+w 58 8
+w 58 16
+w 58 17
+w 58 18
+w 58 19
+w 58 21
+w 58 23
+w 58 24
+w 58 25
+w 58 26
+w 58 27
+w 58 28
+w 58 29
+w 58 30
+w 58 31
+w 58 32
+w 58 33
+w 58 34
+w 58 35
+w 58 36
+w 58 37
+w 58 38
+w 58 39
+w 58 41
+w 58 42
+w 58 43
+w 58 44
+w 58 45
+w 58 46
+w 58 47
+w 58 48
+w 58 49
+w 58 50
+w 58 51
+w 58 52
+w 58 53
+w 58 54
+w 58 55
+w 58 56
+w 58 57
+w 58 58
+w 58 59
+w 58 60
+w 58 61
+w 58 62
+w 58 63
+w 59 8
+w 59 21
+w 59 23
+w 59 63
+w 60 8
+w 60 21
+w 60 23
+w 60 53
+w 60 63
+w 61 8
+w 61 9
+w 61 10
+w 61 11
+w 61 12
+w 61 13
+w 61 14
+w 61 15
+w 61 16
+w 61 17
+w 61 18
+w 61 19
+w 61 20
+w 61 21
+w 61 23
+w 61 53
+w 61 63
+w 62 23
+w 62 63
+w 63 23
+w 63 50
+w 63 51
+w 63 52
+w 63 53
+w 63 55
+w 63 56
+w 63 57
+w 63 63
+w 64 23
+w 64 50
+w 64 51
+w 64 57
+w 64 63
+w 65 23
+w 65 50
+w 65 63
+w 66 23
+w 66 57
+w 66 63
+w 67 23
+w 67 57
+w 67 63
+w 68 23
+w 68 57
+w 68 59
+w 68 63
+w 69 23
+w 69 57
+w 69 59
+w 69 63
+w 70 23
+w 70 57
+w 70 63
+w 71 23
+w 71 63
+w 72 23
+w 72 50
+w 72 57
+w 72 63
+w 73 23
+w 73 50
+w 73 51
+w 73 52
+w 73 53
+w 73 54
+w 73 56
+w 73 57
+w 73 63
+w 74 23
+w 74 63
+w 75 23
+w 75 63
+w 76 23
+w 76 59
+w 76 63
+w 77 23
+w 77 55
+w 77 56
+w 77 59
+w 77 63
+w 78 23
+w 78 63
+w 79 23
+w 79 63
+w 80 23
+w 80 63
+w 81 23
+w 81 63
+w 82 23
+w 82 63
+w 83 23
+w 83 63
+w 84 23
+w 84 63
+w 85 23
+w 85 63
+w 86 23
+w 86 63
+w 87 23
+w 87 63
+w 88 23
+w 88 63
+w 89 23
+w 89 63
+w 90 23
+w 90 63
+w 91 23
+w 91 63
+w 92 23
+w 92 63
+w 93 23
+w 93 63
+w 94 23
+w 94 63
+w 95 23
+w 95 63
+w 96 23
+w 96 63
+w 97 23
+w 97 63
+w 98 23
+w 98 63
+w 99 23
+w 99 63
+w 100 23
+w 100 63
+w 101 23
+w 101 63
+w 102 23
+w 102 63
+w 103 23
+w 103 63
+w 104 23
+w 104 24
+w 104 25
+w 104 26
+w 104 27
+w 104 28
+w 104 29
+w 104 30
+w 104 31
+w 104 32
+w 104 33
+w 104 34
+w 104 35
+w 104 36
+w 104 37
+w 104 38
+w 104 39
+w 104 40
+w 104 41
+w 104 42
+w 104 43
+w 104 44
+w 104 45
+w 104 46
+w 104 47
+w 104 48
+w 104 49
+w 104 50
+w 104 51
+w 104 52
+w 104 53
+w 104 54
+w 104 55
+w 104 56
+w 104 57
+w 104 58
+w 104 59
+w 104 60
+w 104 61
+w 104 62
+w 104 63
+f -15 27 grass
+f -15 28 grass
+f -15 29 grass
+f -15 30 tall-grass
+f -15 31 tall-grass
+f -15 32 tall-grass
+f -15 33 tall-grass
+f -15 34 tall-grass
+f -15 35 tall-grass
+f -15 36 tall-grass
+f -15 37 tall-grass
+f -15 38 grass
+f -15 39 tall-grass
+f -14 24 grass
+f -14 25 grass
+f -14 26 grass
+f -14 27 grass
+f -14 28 grass
+f -14 29 grass
+f -14 30 tall-grass
+f -14 31 tall-grass
+f -14 32 grass
+f -14 33 tall-grass
+f -14 34 tall-grass
+f -14 35 tall-grass
+f -14 36 tall-grass
+f -14 37 tall-grass
+f -14 38 tall-grass
+f -14 39 tall-grass
+f -13 20 grass
+f -13 21 grass
+f -13 22 grass
+f -13 23 grass
+f -13 24 grass
+f -13 25 grass
+f -13 26 grass
+f -13 27 grass
+f -13 28 grass
+f -13 29 grass
+f -13 30 tall-grass
+f -13 31 tall-grass
+f -13 32 tall-grass
+f -13 33 tall-grass
+f -13 34 tall-grass
+f -13 35 tall-grass
+f -13 36 tall-grass
+f -13 37 tall-grass
+f -13 38 tall-grass
+f -13 39 tall-grass
+f -13 40 tall-grass
+f -12 20 grass
+f -12 25 grass
+f -12 26 grass
+f -12 27 grass
+f -12 28 grass
+f -12 29 grass
+f -12 30 grass
+f -12 31 tall-grass
+f -12 32 tall-grass
+f -12 33 tall-grass
+f -12 34 tall-grass
+f -12 35 tall-grass
+f -12 36 tall-grass
+f -12 37 tall-grass
+f -12 38 tall-grass
+f -12 39 tall-grass
+f -12 40 tall-grass
+f -12 41 grass
+f -11 3 grass
+f -11 4 grass
+f -11 5 grass
+f -11 6 tall-grass
+f -11 7 tall-grass
+f -11 8 tall-grass
+f -11 14 tall-grass
+f -11 26 grass
+f -11 27 grass
+f -11 28 grass
+f -11 29 grass
+f -11 30 grass
+f -11 31 tall-grass
+f -11 32 tall-grass
+f -11 33 tall-grass
+f -11 34 tall-grass
+f -11 35 tall-grass
+f -11 36 tall-grass
+f -11 37 tall-grass
+f -11 38 tall-grass
+f -11 39 grass
+f -11 40 grass
+f -11 41 grass
+f -11 42 grass
+f -10 -7 grass
+f -10 -6 grass
+f -10 -5 grass
+f -10 -4 grass
+f -10 0 grass
+f -10 1 grass
+f -10 2 grass
+f -10 3 grass
+f -10 4 grass
+f -10 5 grass
+f -10 6 grass
+f -10 7 tall-grass
+f -10 8 tall-grass
+f -10 10 tall-grass
+f -10 14 grass
+f -10 15 grass
+f -10 16 grass
+f -10 17 grass
+f -10 20 grass
+f -10 35 tall-grass
+f -10 36 tall-grass
+f -10 37 tall-grass
+f -10 38 grass
+f -10 39 grass
+f -10 40 grass
+f -10 41 grass
+f -10 42 grass
+f -10 43 grass
+f -10 44 grass
+f -9 -7 grass
+f -9 -6 grass
+f -9 -5 grass
+f -9 0 grass
+f -9 1 grass
+f -9 2 grass
+f -9 3 grass
+f -9 4 grass
+f -9 5 grass
+f -9 6 grass
+f -9 7 grass
+f -9 8 grass
+f -9 10 tall-grass
+f -9 11 grass
+f -9 12 grass
+f -9 13 grass
+f -9 14 grass
+f -9 15 grass
+f -9 16 grass
+f -9 18 grass
+f -9 24 grass
+f -9 25 grass
+f -9 26 grass
+f -9 27 grass
+f -9 28 grass
+f -9 29 grass
+f -9 31 grass
+f -9 32 grass
+f -9 33 grass
+f -9 39 grass
+f -9 40 grass
+f -9 41 grass
+f -8 -7 grass
+f -8 -6 grass
+f -8 -5 grass
+f -8 0 grass
+f -8 1 grass
+f -8 2 grass
+f -8 3 grass
+f -8 4 grass
+f -8 5 grass
+f -8 6 grass
+f -8 7 grass
+f -8 8 grass
+f -8 10 grass
+f -8 11 grass
+f -8 12 grass
+f -8 13 grass
+f -8 14 grass
+f -8 15 grass
+f -8 24 grass
+f -8 25 grass
+f -8 26 grass
+f -8 27 grass
+f -8 28 grass
+f -8 29 grass
+f -8 30 grass
+f -8 31 grass
+f -8 32 grass
+f -8 33 grass
+f -8 34 grass
+f -8 35 grass stone
+f -8 36 grass stone
+f -8 37 grass stone
+f -8 39 grass
+f -8 40 grass
+f -8 47 grass
+f -7 -7 grass
+f -7 -6 grass
+f -7 -5 grass
+f -7 -4 grass
+f -7 -3 grass
+f -7 -1 grass
+f -7 0 grass
+f -7 1 grass
+f -7 2 grass
+f -7 3 grass
+f -7 4 grass
+f -7 5 grass
+f -7 6 grass
+f -7 7 grass
+f -7 8 grass
+f -7 10 grass
+f -7 11 grass
+f -7 12 grass
+f -7 13 grass
+f -7 14 grass
+f -7 15 grass
+f -7 17 grass
+f -7 22 grass stone
+f -7 23 grass
+f -7 24 grass
+f -7 25 grass
+f -7 26 grass
+f -7 27 grass
+f -7 28 grass
+f -7 29 grass
+f -7 31 grass
+f -7 32 grass
+f -7 33 grass
+f -7 37 grass stone
+f -7 39 grass
+f -7 40 grass
+f -6 -7 grass
+f -6 -6 grass
+f -6 -5 grass
+f -6 -4 grass
+f -6 4 grass
+f -6 5 grass
+f -6 6 grass
+f -6 7 grass
+f -6 8 grass
+f -6 9 grass
+f -6 10 grass
+f -6 11 grass
+f -6 12 grass
+f -6 13 grass
+f -6 14 grass
+f -6 15 grass
+f -6 19 grass stone
+f -6 20 grass stone
+f -6 21 grass stone
+f -6 22 grass stone
+f -6 24 grass
+f -6 25 grass
+f -6 26 grass
+f -6 27 grass
+f -6 28 grass
+f -6 29 grass
+f -6 31 grass
+f -6 32 grass
+f -6 33 grass
+f -6 35 grass
+f -6 37 grass stone
+f -5 -7 grass
+f -5 -6 grass
+f -5 -5 grass
+f -5 -4 grass
+f -5 -2 grass
+f -5 -1 grass
+f -5 0 grass
+f -5 1 grass
+f -5 2 grass
+f -5 4 grass
+f -5 5 grass
+f -5 6 grass
+f -5 7 grass
+f -5 8 grass
+f -5 9 grass
+f -5 11 grass
+f -5 12 grass
+f -5 13 grass
+f -5 14 grass
+f -5 15 grass
+f -5 19 grass stone
+f -5 35 tall-grass
+f -5 37 grass stone
+f -5 38 grass stone
+f -5 39 grass stone
+f -5 40 grass stone
+f -5 50 grass
+f -4 -7 grass
+f -4 -6 grass
+f -4 -5 grass
+f -4 -4 grass
+f -4 -2 grass
+f -4 -1 grass
+f -4 0 grass
+f -4 1 grass
+f -4 2 grass
+f -4 4 grass
+f -4 5 grass
+f -4 6 grass
+f -4 7 grass
+f -4 8 grass
+f -4 11 grass
+f -4 12 grass
+f -4 13 grass
+f -4 14 grass
+f -4 15 grass
+f -4 24 grass
+f -4 25 grass
+f -4 26 grass
+f -4 27 grass
+f -4 28 grass
+f -4 29 tall-grass
+f -4 30 tall-grass
+f -4 31 tall-grass
+f -4 32 tall-grass
+f -4 33 tall-grass
+f -4 34 tall-grass
+f -4 35 tall-grass
+f -4 40 grass
+f -4 49 grass
+f -4 50 grass
+f -3 -7 grass
+f -3 -6 grass
+f -3 -5 grass
+f -3 -4 grass
+f -3 -2 grass
+f -3 -1 grass
+f -3 0 grass
+f -3 1 grass
+f -3 2 grass
+f -3 4 grass
+f -3 5 grass
+f -3 6 grass
+f -3 7 grass
+f -3 8 grass
+f -3 11 grass
+f -3 12 grass
+f -3 13 grass
+f -3 14 grass
+f -3 15 grass
+f -3 17 grass
+f -3 18 grass
+f -3 19 grass
+f -3 20 grass
+f -3 21 grass
+f -3 23 grass
+f -3 24 grass
+f -3 25 grass
+f -3 26 grass
+f -3 27 grass
+f -3 28 tall-grass
+f -3 29 tall-grass
+f -3 30 tall-grass
+f -3 31 tall-grass
+f -3 32 tall-grass
+f -3 33 tall-grass
+f -3 34 tall-grass
+f -3 35 tall-grass
+f -3 37 water
+f -3 38 water
+f -3 39 water
+f -3 40 grass
+f -3 41 water
+f -3 42 water
+f -3 43 water
+f -3 48 grass
+f -3 49 grass
+f -3 50 grass
+f -2 -7 tall-grass
+f -2 -6 tall-grass
+f -2 -5 tall-grass
+f -2 -4 tall-grass
+f -2 -2 grass
+f -2 -1 grass
+f -2 0 grass
+f -2 1 grass
+f -2 2 grass
+f -2 4 grass
+f -2 5 grass
+f -2 6 grass
+f -2 7 grass
+f -2 8 grass
+f -2 11 grass
+f -2 12 grass
+f -2 13 grass
+f -2 14 grass
+f -2 15 grass
+f -2 17 grass
+f -2 18 grass
+f -2 19 grass
+f -2 20 grass
+f -2 21 grass
+f -2 23 grass
+f -2 24 grass
+f -2 25 grass
+f -2 26 grass
+f -2 27 tall-grass
+f -2 28 tall-grass
+f -2 29 tall-grass
+f -2 30 tall-grass
+f -2 31 tall-grass
+f -2 32 tall-grass
+f -2 33 tall-grass
+f -2 34 tall-grass
+f -2 35 tall-grass
+f -2 37 water
+f -2 38 grass
+f -2 39 grass
+f -2 40 grass
+f -2 41 grass
+f -2 42 grass
+f -2 43 water
+f -2 47 grass
+f -2 48 grass
+f -2 49 grass
+f -2 50 grass
+f -1 -7 grass
+f -1 -6 tall-grass
+f -1 -5 tall-grass
+f -1 -4 tall-grass
+f -1 -2 grass
+f -1 -1 grass
+f -1 0 grass
+f -1 1 grass
+f -1 2 grass
+f -1 4 grass
+f -1 5 grass
+f -1 6 grass
+f -1 7 grass
+f -1 8 grass
+f -1 11 grass
+f -1 12 grass
+f -1 13 grass
+f -1 14 grass
+f -1 15 grass
+f -1 17 grass
+f -1 18 grass
+f -1 19 grass
+f -1 20 grass
+f -1 21 grass
+f -1 23 grass
+f -1 24 grass
+f -1 25 tall-grass
+f -1 26 tall-grass
+f -1 27 tall-grass
+f -1 28 tall-grass
+f -1 29 tall-grass
+f -1 30 tall-grass
+f -1 31 tall-grass
+f -1 32 tall-grass
+f -1 33 tall-grass
+f -1 34 tall-grass
+f -1 35 tall-grass
+f -1 37 water
+f -1 38 grass
+f -1 39 grass
+f -1 40 grass
+f -1 41 grass
+f -1 42 grass
+f -1 43 water
+f -1 45 grass
+f -1 46 grass
+f -1 47 grass
+f -1 48 grass
+f -1 49 grass
+f -1 50 tall-grass
+f 0 -7 tall-grass
+f 0 -6 tall-grass
+f 0 -5 tall-grass
+f 0 -4 tall-grass
+f 0 0 grass
+f 0 4 grass
+f 0 5 grass
+f 0 6 grass
+f 0 7 grass
+f 0 8 grass
+f 0 12 tall-grass
+f 0 13 tall-grass
+f 0 14 grass
+f 0 15 grass
+f 0 17 grass
+f 0 18 grass
+f 0 19 grass
+f 0 20 grass
+f 0 21 grass
+f 0 23 grass
+f 0 24 tall-grass
+f 0 25 tall-grass
+f 0 26 tall-grass
+f 0 27 tall-grass
+f 0 28 tall-grass
+f 0 29 tall-grass
+f 0 30 tall-grass
+f 0 31 tall-grass
+f 0 32 tall-grass
+f 0 33 tall-grass
+f 0 34 tall-grass
+f 0 35 tall-grass
+f 0 37 water
+f 0 38 grass
+f 0 39 grass
+f 0 40 grass
+f 0 41 grass
+f 0 42 grass
+f 0 43 water
+f 0 45 grass
+f 0 46 grass
+f 0 47 grass
+f 0 48 grass
+f 0 49 tall-grass
+f 1 -7 tall-grass
+f 1 -6 tall-grass
+f 1 -5 tall-grass
+f 1 -4 tall-grass
+f 1 -3 tall-grass
+f 1 -1 grass
+f 1 0 grass
+f 1 1 grass
+f 1 2 grass
+f 1 4 grass
+f 1 5 grass
+f 1 6 grass
+f 1 7 grass
+f 1 8 grass
+f 1 12 tall-grass
+f 1 13 tall-grass
+f 1 14 tall-grass
+f 1 15 tall-grass
+f 1 17 water
+f 1 21 water
+f 1 23 tall-grass
+f 1 24 tall-grass
+f 1 25 tall-grass
+f 1 26 tall-grass
+f 1 27 tall-grass
+f 1 31 tall-grass
+f 1 32 tall-grass
+f 1 33 grass
+f 1 34 tall-grass
+f 1 35 tall-grass
+f 1 37 water
+f 1 38 grass
+f 1 39 grass
+f 1 40 grass
+f 1 41 grass
+f 1 42 grass
+f 1 43 water
+f 1 45 grass
+f 1 46 grass
+f 1 47 grass
+f 1 48 grass
+f 1 49 tall-grass
+f 2 -7 grass
+f 2 -6 tall-grass
+f 2 -5 tall-grass
+f 2 -4 tall-grass
+f 2 -3 tall-grass
+f 2 -1 grass
+f 2 0 grass
+f 2 1 grass
+f 2 2 grass
+f 2 4 grass
+f 2 5 grass
+f 2 6 grass
+f 2 7 grass
+f 2 8 grass
+f 2 12 tall-grass
+f 2 13 tall-grass
+f 2 14 tall-grass
+f 2 15 tall-grass
+f 2 17 water
+f 2 18 water
+f 2 19 water
+f 2 20 water
+f 2 21 water
+f 2 23 tall-grass
+f 2 24 tall-grass
+f 2 25 tall-grass
+f 2 26 tall-grass
+f 2 27 tall-grass
+f 2 31 tall-grass
+f 2 32 tall-grass
+f 2 33 tall-grass
+f 2 34 tall-grass
+f 2 35 tall-grass
+f 2 37 water
+f 2 38 water
+f 2 39 water
+f 2 40 water
+f 2 41 water
+f 2 42 water
+f 2 43 water
+f 2 45 grass
+f 2 46 grass
+f 2 47 grass
+f 2 48 tall-grass
+f 2 49 tall-grass
+f 3 -7 tall-grass
+f 3 -6 tall-grass
+f 3 -5 tall-grass
+f 3 -4 tall-grass
+f 3 -3 tall-grass
+f 3 -1 grass
+f 3 0 grass
+f 3 1 grass
+f 3 2 grass
+f 3 4 grass
+f 3 5 grass
+f 3 6 grass
+f 3 7 grass
+f 3 8 grass
+f 3 11 tall-grass
+f 3 12 tall-grass
+f 3 13 tall-grass
+f 3 14 tall-grass
+f 3 15 tall-grass
+f 3 17 grass
+f 3 18 grass
+f 3 19 grass
+f 3 20 grass
+f 3 21 grass
+f 3 23 tall-grass
+f 3 24 tall-grass
+f 3 25 tall-grass
+f 3 26 tall-grass
+f 3 27 tall-grass
+f 3 31 tall-grass
+f 3 32 tall-grass
+f 3 33 tall-grass
+f 3 34 tall-grass
+f 3 35 tall-grass
+f 3 37 water
+f 3 38 grass
+f 3 39 grass
+f 3 40 grass
+f 3 41 grass
+f 3 42 grass
+f 3 43 water
+f 3 45 grass
+f 3 46 grass
+f 3 47 grass
+f 3 48 tall-grass
+f 3 49 tall-grass
+f 3 50 tall-grass
+f 4 -7 tall-grass
+f 4 -6 tall-grass
+f 4 -5 tall-grass
+f 4 -4 tall-grass
+f 4 -3 grass
+f 4 -1 grass
+f 4 0 grass
+f 4 1 grass
+f 4 2 grass
+f 4 4 grass
+f 4 5 grass
+f 4 6 grass
+f 4 7 grass
+f 4 8 grass
+f 4 11 tall-grass
+f 4 12 tall-grass
+f 4 13 tall-grass
+f 4 14 tall-grass
+f 4 15 tall-grass
+f 4 17 grass
+f 4 18 grass
+f 4 19 grass
+f 4 20 grass
+f 4 21 grass
+f 4 23 grass
+f 4 24 grass
+f 4 25 tall-grass
+f 4 26 tall-grass
+f 4 27 tall-grass
+f 4 31 tall-grass
+f 4 32 tall-grass
+f 4 33 tall-grass
+f 4 34 tall-grass
+f 4 35 grass
+f 4 37 water
+f 4 38 grass
+f 4 39 grass
+f 4 40 grass
+f 4 41 grass
+f 4 42 grass
+f 4 43 water
+f 4 45 grass
+f 4 46 grass
+f 4 47 grass
+f 4 48 tall-grass
+f 4 49 tall-grass
+f 4 50 tall-grass
+f 5 -7 tall-grass
+f 5 -6 tall-grass
+f 5 -5 tall-grass
+f 5 -4 grass
+f 5 -3 grass
+f 5 -1 grass
+f 5 0 grass
+f 5 1 grass
+f 5 2 grass
+f 5 4 grass
+f 5 5 grass
+f 5 6 grass
+f 5 7 grass
+f 5 8 grass
+f 5 11 grass
+f 5 12 tall-grass
+f 5 13 tall-grass
+f 5 14 tall-grass
+f 5 15 tall-grass
+f 5 17 grass
+f 5 18 grass
+f 5 20 grass
+f 5 21 grass
+f 5 23 grass
+f 5 24 grass
+f 5 25 grass
+f 5 26 grass
+f 5 27 grass
+f 5 31 grass
+f 5 32 grass
+f 5 33 grass
+f 5 34 grass
+f 5 35 grass
+f 5 37 water
+f 5 38 grass
+f 5 39 grass
+f 5 40 grass
+f 5 41 grass
+f 5 42 grass
+f 5 43 water
+f 5 45 grass
+f 5 46 grass
+f 5 47 grass
+f 5 48 grass
+f 5 49 tall-grass
+f 5 50 grass
+f 6 -7 tall-grass
+f 6 -6 tall-grass
+f 6 -5 grass
+f 6 -4 grass
+f 6 -3 grass
+f 6 -1 grass
+f 6 0 grass
+f 6 1 grass
+f 6 2 grass
+f 6 5 grass
+f 6 6 grass
+f 6 7 grass
+f 6 8 grass
+f 6 11 grass
+f 6 12 grass
+f 6 13 tall-grass
+f 6 14 tall-grass
+f 6 15 tall-grass
+f 6 17 grass
+f 6 18 grass
+f 6 19 grass
+f 6 20 grass
+f 6 21 grass
+f 6 23 grass
+f 6 24 grass
+f 6 25 grass
+f 6 26 grass
+f 6 27 grass
+f 6 31 grass
+f 6 32 grass
+f 6 33 grass
+f 6 34 grass
+f 6 35 grass
+f 6 37 water
+f 6 38 grass
+f 6 39 grass
+f 6 40 grass
+f 6 41 grass
+f 6 42 grass
+f 6 43 water
+f 6 45 grass
+f 6 46 grass
+f 6 47 grass
+f 6 48 grass
+f 6 49 tall-grass
+f 6 50 tall-grass
+f 7 -7 tall-grass
+f 7 -6 grass
+f 7 -5 grass
+f 7 -4 grass
+f 7 -3 grass
+f 7 -1 grass
+f 7 0 grass
+f 7 1 grass
+f 7 2 grass
+f 7 6 grass
+f 7 7 grass
+f 7 8 grass
+f 7 9 grass
+f 7 10 grass
+f 7 11 grass
+f 7 12 grass
+f 7 13 grass
+f 7 14 grass
+f 7 15 grass
+f 7 17 grass
+f 7 18 grass
+f 7 19 grass
+f 7 20 grass
+f 7 21 grass
+f 7 23 grass
+f 7 24 grass
+f 7 25 grass
+f 7 26 grass
+f 7 27 grass
+f 7 31 grass
+f 7 32 grass
+f 7 33 grass
+f 7 34 grass
+f 7 35 grass
+f 7 37 water
+f 7 38 water
+f 7 39 water
+f 7 40 grass
+f 7 41 water
+f 7 42 water
+f 7 43 water
+f 7 45 grass
+f 7 46 grass
+f 7 47 grass
+f 7 48 grass
+f 7 49 grass
+f 7 50 tall-grass
+f 8 -7 grass
+f 8 -6 grass
+f 8 -5 grass
+f 8 -4 grass
+f 8 -1 grass
+f 8 0 grass
+f 8 1 grass
+f 8 2 grass
+f 8 7 grass
+f 8 8 grass
+f 8 9 grass
+f 8 10 grass
+f 8 11 grass
+f 8 12 grass
+f 8 13 grass
+f 8 14 grass
+f 8 15 grass
+f 8 23 grass
+f 8 24 grass
+f 8 25 grass
+f 8 26 grass
+f 8 27 grass
+f 8 28 grass
+f 8 29 grass
+f 8 30 grass
+f 8 31 grass
+f 8 32 grass
+f 8 33 grass
+f 8 34 grass
+f 8 35 grass
+f 8 40 grass
+f 8 45 grass
+f 8 46 grass
+f 8 47 grass
+f 8 48 grass
+f 8 49 grass
+f 8 50 grass
+f 8 51 grass
+f 9 -7 grass
+f 9 -6 grass
+f 9 -5 grass
+f 9 2 grass
+f 9 7 grass
+f 9 8 grass
+f 9 9 grass
+f 9 10 grass
+f 9 11 grass
+f 9 12 grass
+f 9 13 grass
+f 9 14 grass
+f 9 15 grass
+f 9 16 grass
+f 9 17 grass
+f 9 19 grass stone
+f 9 21 grass
+f 9 29 grass
+f 9 30 grass
+f 9 31 grass
+f 9 32 grass
+f 9 33 grass
+f 9 34 grass
+f 9 35 grass
+f 9 36 grass
+f 9 37 grass
+f 9 38 grass
+f 9 40 grass stone
+f 9 43 grass
+f 9 44 grass
+f 9 45 grass
+f 9 46 grass
+f 9 47 grass
+f 9 48 grass
+f 9 49 grass
+f 9 50 grass
+f 9 51 grass
+f 10 -7 grass
+f 10 -6 grass
+f 10 -5 grass
+f 10 -4 grass
+f 10 2 grass stone
+f 10 7 grass
+f 10 8 grass
+f 10 9 grass
+f 10 10 grass
+f 10 11 grass
+f 10 12 grass
+f 10 13 grass
+f 10 14 grass
+f 10 15 grass
+f 10 16 grass
+f 10 17 grass
+f 10 19 grass stone
+f 10 30 grass
+f 10 31 grass
+f 10 32 grass
+f 10 33 grass
+f 10 34 grass
+f 10 35 grass
+f 10 36 grass
+f 10 37 grass
+f 10 38 grass
+f 10 40 grass stone
+f 10 42 grass
+f 10 43 grass
+f 10 44 grass
+f 10 45 grass
+f 10 46 grass
+f 10 47 grass
+f 10 48 grass
+f 10 49 grass
+f 10 50 grass
+f 11 -7 grass
+f 11 -6 grass
+f 11 -5 grass
+f 11 0 grass
+f 11 2 grass stone
+f 11 6 grass
+f 11 7 grass
+f 11 8 grass
+f 11 9 grass
+f 11 10 grass
+f 11 11 grass
+f 11 12 tall-grass
+f 11 13 tall-grass
+f 11 14 grass
+f 11 15 grass
+f 11 16 grass
+f 11 17 grass
+f 11 19 grass stone
+f 11 30 grass
+f 11 31 grass
+f 11 32 grass
+f 11 33 grass
+f 11 34 grass
+f 11 35 grass
+f 11 36 grass
+f 11 37 grass
+f 11 38 grass
+f 11 40 grass stone
+f 11 42 grass
+f 11 43 grass
+f 11 44 grass
+f 11 45 grass
+f 11 46 grass
+f 11 47 grass
+f 11 48 grass
+f 11 49 grass
+f 11 50 grass
+f 12 -7 grass
+f 12 -6 grass
+f 12 -5 grass
+f 12 2 grass stone
+f 12 6 grass
+f 12 7 grass
+f 12 8 grass
+f 12 9 grass
+f 12 10 tall-grass
+f 12 11 tall-grass
+f 12 12 tall-grass
+f 12 13 tall-grass
+f 12 14 tall-grass
+f 12 15 grass
+f 12 16 grass
+f 12 17 grass
+f 12 19 grass stone
+f 12 29 grass
+f 12 30 grass
+f 12 31 grass
+f 12 32 grass
+f 12 33 grass
+f 12 34 grass
+f 12 35 grass
+f 12 36 grass
+f 12 37 grass
+f 12 38 grass
+f 12 40 grass stone
+f 12 42 grass
+f 12 43 grass
+f 12 44 grass
+f 12 45 grass
+f 12 46 grass
+f 12 47 grass
+f 12 48 grass
+f 12 49 grass
+f 12 50 grass
+f 13 -7 grass
+f 13 -6 grass
+f 13 -5 grass
+f 13 2 grass stone
+f 13 5 grass
+f 13 6 grass
+f 13 7 grass
+f 13 8 grass
+f 13 9 tall-grass
+f 13 10 tall-grass
+f 13 11 tall-grass
+f 13 12 tall-grass
+f 13 13 tall-grass
+f 13 14 tall-grass
+f 13 15 tall-grass
+f 13 16 grass
+f 13 17 grass
+f 13 19 grass
+f 13 28 grass
+f 13 29 grass
+f 13 30 grass
+f 13 31 grass
+f 13 32 grass
+f 13 33 grass
+f 13 34 grass
+f 13 35 grass
+f 13 36 grass
+f 13 40 grass
+f 13 44 grass
+f 13 45 grass
+f 13 46 grass
+f 13 47 grass
+f 13 48 grass
+f 13 49 grass
+f 13 50 grass
+f 14 2 grass
+f 14 6 grass
+f 14 7 grass
+f 14 8 tall-grass
+f 14 9 tall-grass
+f 14 10 tall-grass
+f 14 11 tall-grass
+f 14 12 tall-grass
+f 14 13 tall-grass
+f 14 14 tall-grass
+f 14 15 tall-grass
+f 14 16 tall-grass
+f 14 17 grass
+f 14 19 grass
+f 14 20 grass
+f 14 21 grass
+f 14 22 grass
+f 14 23 grass
+f 14 24 grass
+f 14 27 grass
+f 14 28 grass
+f 14 29 grass
+f 14 30 grass
+f 14 32 grass
+f 14 33 grass
+f 14 34 grass
+f 14 35 grass
+f 14 36 tall-grass
+f 14 38 grass
+f 14 39 grass
+f 14 40 grass
+f 14 41 grass
+f 14 42 grass
+f 14 44 grass
+f 14 45 grass
+f 14 46 grass
+f 14 47 grass
+f 14 48 grass
+f 15 -3 grass
+f 15 2 grass
+f 15 3 grass
+f 15 4 grass
+f 15 6 grass
+f 15 7 tall-grass
+f 15 8 tall-grass
+f 15 9 tall-grass
+f 15 10 tall-grass
+f 15 11 tall-grass
+f 15 13 tall-grass
+f 15 14 tall-grass
+f 15 15 tall-grass
+f 15 16 tall-grass
+f 15 17 grass
+f 15 19 grass
+f 15 20 grass
+f 15 21 water
+f 15 22 water
+f 15 23 grass
+f 15 24 grass
+f 15 26 grass
+f 15 27 grass
+f 15 28 grass
+f 15 29 grass
+f 15 30 grass
+f 15 32 tall-grass
+f 15 33 tall-grass
+f 15 34 grass
+f 15 35 tall-grass
+f 15 36 tall-grass
+f 15 38 grass
+f 15 39 grass
+f 15 40 grass
+f 15 41 grass
+f 15 42 grass
+f 15 44 grass
+f 15 45 grass
+f 15 46 grass
+f 15 47 grass
+f 15 48 grass
+f 16 -2 grass
+f 16 -1 grass
+f 16 0 grass
+f 16 2 grass
+f 16 3 grass
+f 16 4 grass
+f 16 6 tall-grass
+f 16 7 tall-grass
+f 16 8 tall-grass
+f 16 9 tall-grass
+f 16 10 tall-grass
+f 16 13 tall-grass
+f 16 14 tall-grass
+f 16 15 tall-grass
+f 16 16 tall-grass
+f 16 17 grass
+f 16 19 grass
+f 16 20 grass
+f 16 21 water
+f 16 22 water
+f 16 23 grass
+f 16 24 grass
+f 16 26 grass
+f 16 27 grass
+f 16 28 grass
+f 16 29 grass
+f 16 30 grass
+f 16 32 tall-grass
+f 16 33 tall-grass
+f 16 34 tall-grass
+f 16 35 tall-grass
+f 16 36 tall-grass
+f 16 38 grass
+f 16 39 grass
+f 16 40 grass
+f 16 41 grass
+f 16 42 grass
+f 16 44 grass
+f 16 45 grass
+f 16 46 grass
+f 16 47 grass
+f 16 48 grass
+f 17 -2 grass
+f 17 -1 grass
+f 17 0 grass
+f 17 2 grass
+f 17 3 grass
+f 17 4 grass
+f 17 6 tall-grass
+f 17 7 tall-grass
+f 17 8 tall-grass
+f 17 9 tall-grass
+f 17 10 tall-grass
+f 17 13 tall-grass
+f 17 14 tall-grass
+f 17 15 tall-grass
+f 17 16 tall-grass
+f 17 17 grass
+f 17 19 grass
+f 17 20 grass
+f 17 21 water
+f 17 22 water
+f 17 23 grass
+f 17 24 grass
+f 17 26 grass
+f 17 27 grass
+f 17 28 grass
+f 17 29 grass
+f 17 30 tall-grass
+f 17 32 tall-grass
+f 17 33 tall-grass
+f 17 34 tall-grass
+f 17 35 tall-grass
+f 17 36 tall-grass
+f 17 38 grass
+f 17 39 grass
+f 17 40 grass
+f 17 41 grass
+f 17 42 grass
+f 17 44 grass
+f 17 45 grass
+f 17 46 grass
+f 17 47 grass
+f 17 48 grass
+f 18 -2 grass
+f 18 -1 grass
+f 18 0 grass
+f 18 2 grass
+f 18 3 grass
+f 18 4 grass
+f 18 6 tall-grass
+f 18 7 tall-grass
+f 18 8 tall-grass
+f 18 9 tall-grass
+f 18 10 tall-grass
+f 18 14 tall-grass
+f 18 15 tall-grass
+f 18 16 tall-grass
+f 18 17 grass
+f 18 19 grass
+f 18 20 grass
+f 18 21 water
+f 18 22 water
+f 18 23 grass
+f 18 24 grass
+f 18 26 grass
+f 18 27 grass
+f 18 28 grass
+f 18 29 tall-grass
+f 18 30 tall-grass
+f 18 32 tall-grass
+f 18 33 tall-grass
+f 18 34 tall-grass
+f 18 35 tall-grass
+f 18 36 tall-grass
+f 18 38 grass
+f 18 39 grass
+f 18 40 grass
+f 18 41 grass
+f 18 42 grass
+f 18 44 grass
+f 18 45 grass
+f 18 46 grass
+f 18 47 grass
+f 19 -3 grass
+f 19 -2 grass
+f 19 -1 grass
+f 19 0 grass
+f 19 2 grass
+f 19 3 grass
+f 19 4 grass
+f 19 6 tall-grass
+f 19 7 tall-grass
+f 19 8 tall-grass
+f 19 9 tall-grass
+f 19 10 tall-grass
+f 19 14 grass
+f 19 15 tall-grass
+f 19 16 tall-grass
+f 19 17 grass
+f 19 19 grass
+f 19 20 grass
+f 19 21 water
+f 19 22 water
+f 19 23 grass
+f 19 24 grass
+f 19 26 grass
+f 19 27 grass
+f 19 28 grass
+f 19 29 tall-grass
+f 19 30 tall-grass
+f 19 32 grass
+f 19 33 tall-grass
+f 19 34 tall-grass
+f 19 35 tall-grass
+f 19 36 tall-grass
+f 19 38 water
+f 19 39 water
+f 19 40 water
+f 19 41 water
+f 19 42 water
+f 19 44 grass
+f 19 45 grass
+f 19 46 grass
+f 19 47 grass
+f 20 -3 grass
+f 20 -2 grass
+f 20 -1 grass
+f 20 0 grass
+f 20 2 grass
+f 20 3 grass
+f 20 4 grass
+f 20 6 tall-grass
+f 20 7 tall-grass
+f 20 8 tall-grass
+f 20 9 tall-grass
+f 20 10 tall-grass
+f 20 14 tall-grass
+f 20 15 tall-grass
+f 20 16 grass
+f 20 17 grass
+f 20 19 grass
+f 20 20 grass
+f 20 21 water
+f 20 22 water
+f 20 23 grass
+f 20 24 grass
+f 20 26 grass
+f 20 27 grass
+f 20 28 tall-grass
+f 20 29 tall-grass
+f 20 30 tall-grass
+f 20 32 tall-grass
+f 20 33 tall-grass
+f 20 34 tall-grass
+f 20 35 tall-grass
+f 20 36 tall-grass
+f 20 38 grass
+f 20 39 grass
+f 20 40 grass
+f 20 41 grass
+f 20 42 grass
+f 20 44 grass
+f 20 45 grass
+f 20 46 grass
+f 20 47 grass
+f 21 -3 grass
+f 21 -2 grass
+f 21 -1 grass
+f 21 0 grass
+f 21 2 grass
+f 21 3 grass
+f 21 4 grass
+f 21 6 tall-grass
+f 21 7 tall-grass
+f 21 8 tall-grass
+f 21 9 tall-grass
+f 21 10 tall-grass
+f 21 14 tall-grass
+f 21 15 grass
+f 21 16 grass
+f 21 17 grass
+f 21 19 grass
+f 21 20 grass
+f 21 21 water
+f 21 22 water
+f 21 23 grass
+f 21 24 grass
+f 21 26 grass
+f 21 27 grass
+f 21 28 tall-grass
+f 21 29 tall-grass
+f 21 30 tall-grass
+f 21 31 tall-grass
+f 21 32 tall-grass
+f 21 33 tall-grass
+f 21 34 tall-grass
+f 21 35 tall-grass
+f 21 36 tall-grass
+f 21 38 grass
+f 21 39 grass
+f 21 40 grass
+f 21 41 grass
+f 21 42 grass
+f 21 44 grass
+f 21 45 grass
+f 21 46 grass
+f 21 47 grass
+f 21 48 grass
+f 22 -3 grass
+f 22 -2 grass
+f 22 -1 grass
+f 22 0 grass
+f 22 4 grass
+f 22 6 tall-grass
+f 22 7 tall-grass
+f 22 8 tall-grass
+f 22 9 tall-grass
+f 22 10 tall-grass
+f 22 11 tall-grass
+f 22 12 tall-grass
+f 22 14 grass
+f 22 15 grass
+f 22 16 grass
+f 22 17 grass
+f 22 19 grass
+f 22 20 grass
+f 22 21 water
+f 22 22 water
+f 22 23 grass
+f 22 24 grass
+f 22 26 grass
+f 22 27 grass
+f 22 28 grass
+f 22 29 tall-grass
+f 22 30 tall-grass
+f 22 31 tall-grass
+f 22 32 tall-grass
+f 22 33 tall-grass
+f 22 34 tall-grass
+f 22 35 tall-grass
+f 22 36 tall-grass
+f 22 38 grass
+f 22 39 grass
+f 22 40 grass
+f 22 41 grass
+f 22 42 grass
+f 22 44 grass
+f 22 45 grass
+f 22 46 grass
+f 22 47 grass
+f 22 48 grass
+f 23 -4 grass
+f 23 -3 grass
+f 23 -2 grass
+f 23 -1 grass
+f 23 0 grass
+f 23 1 grass
+f 23 2 grass
+f 23 4 grass stone
+f 23 6 tall-grass
+f 23 7 tall-grass
+f 23 8 tall-grass
+f 23 9 tall-grass
+f 23 10 tall-grass
+f 23 11 grass
+f 23 12 grass
+f 23 14 grass
+f 23 15 grass
+f 23 16 grass
+f 23 17 grass
+f 23 19 grass
+f 23 20 grass
+f 23 21 water
+f 23 22 water
+f 23 23 grass
+f 23 24 grass
+f 23 26 grass
+f 23 27 grass
+f 23 28 grass
+f 23 29 tall-grass
+f 23 30 tall-grass
+f 23 31 tall-grass
+f 23 32 tall-grass
+f 23 33 tall-grass
+f 23 34 tall-grass
+f 23 35 tall-grass
+f 23 36 tall-grass
+f 23 40 grass
+f 24 -4 grass
+f 24 -3 grass
+f 24 -2 grass
+f 24 -1 grass
+f 24 0 grass
+f 24 1 grass
+f 24 2 grass
+f 24 4 grass stone
+f 24 6 grass
+f 24 7 grass
+f 24 8 grass
+f 24 9 grass
+f 24 10 grass
+f 24 11 grass
+f 24 12 grass
+f 24 13 grass
+f 24 14 grass
+f 24 15 grass
+f 24 16 grass
+f 24 19 grass
+f 24 20 grass
+f 24 21 grass
+f 24 22 grass
+f 24 23 grass
+f 24 24 grass
+f 24 26 grass
+f 24 27 grass
+f 24 28 grass
+f 24 29 grass
+f 24 30 tall-grass
+f 24 31 tall-grass
+f 24 32 tall-grass
+f 24 33 tall-grass
+f 24 34 tall-grass
+f 24 35 tall-grass
+f 24 36 tall-grass
+f 24 38 grass
+f 24 39 grass
+f 24 40 grass
+f 24 42 grass
+f 25 -4 grass
+f 25 -3 grass
+f 25 -2 grass
+f 25 -1 grass
+f 25 0 grass
+f 25 1 grass
+f 25 2 grass
+f 25 4 grass stone
+f 25 6 grass
+f 25 7 grass
+f 25 8 grass
+f 25 9 grass
+f 25 10 grass
+f 25 11 grass
+f 25 12 grass
+f 25 13 grass
+f 25 14 grass
+f 25 15 grass
+f 25 23 grass
+f 25 26 grass
+f 25 27 grass
+f 25 28 grass
+f 25 29 grass
+f 25 30 tall-grass
+f 25 31 tall-grass
+f 25 32 tall-grass
+f 25 33 tall-grass
+f 25 34 grass
+f 25 35 tall-grass
+f 25 36 grass
+f 25 38 grass
+f 25 39 grass
+f 25 40 grass
+f 25 41 grass
+f 25 42 grass
+f 26 -4 grass
+f 26 -3 grass
+f 26 -2 grass
+f 26 -1 grass
+f 26 0 grass
+f 26 1 grass
+f 26 2 grass
+f 26 4 grass stone
+f 26 6 grass
+f 26 7 grass
+f 26 8 grass
+f 26 9 grass
+f 26 10 grass
+f 26 11 grass
+f 26 12 grass
+f 26 13 grass
+f 26 14 grass
+f 26 23 grass stone
+f 26 25 grass
+f 26 26 grass
+f 26 27 grass
+f 26 28 grass
+f 26 29 grass
+f 26 30 grass
+f 26 31 tall-grass
+f 26 32 tall-grass
+f 26 33 tall-grass
+f 26 34 grass
+f 26 35 grass
+f 26 36 grass
+f 26 38 grass
+f 26 39 grass
+f 26 40 grass
+f 26 41 grass
+f 26 42 grass
+f 26 50 grass
+f 26 51 grass
+f 27 -5 grass
+f 27 -4 grass
+f 27 -3 grass
+f 27 -2 grass
+f 27 -1 grass
+f 27 0 grass
+f 27 8 grass
+f 27 9 grass
+f 27 10 grass
+f 27 11 grass
+f 27 12 grass
+f 27 13 grass
+f 27 14 grass
+f 27 23 grass stone
+f 27 25 grass
+f 27 26 grass
+f 27 27 grass
+f 27 28 grass
+f 27 29 grass
+f 27 30 grass
+f 27 31 tall-grass
+f 27 32 tall-grass
+f 27 33 grass
+f 27 34 grass
+f 27 35 grass
+f 27 36 grass
+f 27 40 grass
+f 27 50 grass
+f 27 51 grass
+f 28 -5 grass
+f 28 -4 grass
+f 28 -3 grass
+f 28 -2 grass
+f 28 -1 grass
+f 28 0 grass
+f 28 8 grass
+f 28 9 grass
+f 28 10 grass
+f 28 11 grass
+f 28 12 grass
+f 28 13 grass
+f 28 14 grass
+f 28 23 grass stone
+f 28 25 grass
+f 28 26 grass
+f 28 27 grass
+f 28 28 grass
+f 28 29 grass
+f 28 30 grass
+f 28 31 tall-grass
+f 28 32 tall-grass
+f 28 33 grass
+f 28 34 grass
+f 28 35 grass
+f 28 36 grass
+f 28 37 grass
+f 28 38 grass
+f 28 40 grass stone
+f 28 50 grass
+f 28 51 grass
+f 29 -4 grass
+f 29 -3 grass
+f 29 -2 grass
+f 29 -1 grass
+f 29 0 grass
+f 29 8 grass
+f 29 9 grass
+f 29 10 grass
+f 29 11 grass
+f 29 12 grass
+f 29 13 grass
+f 29 14 grass
+f 29 15 grass
+f 29 16 grass
+f 29 23 grass stone
+f 29 25 grass
+f 29 26 grass
+f 29 27 grass
+f 29 28 grass
+f 29 29 grass
+f 29 30 tall-grass
+f 29 31 tall-grass
+f 29 32 tall-grass
+f 29 33 grass
+f 29 34 grass
+f 29 35 grass
+f 29 36 grass
+f 29 37 grass
+f 29 38 grass
+f 29 40 grass stone
+f 29 49 grass
+f 29 50 grass
+f 29 51 grass
+f 30 -4 grass
+f 30 -3 grass
+f 30 -2 grass
+f 30 -1 grass
+f 30 0 grass
+f 30 8 grass
+f 30 9 grass
+f 30 10 grass
+f 30 11 grass
+f 30 12 grass
+f 30 13 grass
+f 30 14 grass
+f 30 15 grass
+f 30 16 grass
+f 30 17 grass
+f 30 18 grass
+f 30 19 grass
+f 30 23 grass
+f 30 27 grass
+f 30 28 grass
+f 30 29 tall-grass
+f 30 30 tall-grass
+f 30 31 tall-grass
+f 30 32 tall-grass
+f 30 33 grass
+f 30 34 grass
+f 30 35 grass
+f 30 36 grass
+f 30 37 grass
+f 30 38 grass
+f 30 40 grass stone
+f 30 48 grass
+f 30 49 grass
+f 30 50 grass
+f 30 51 grass
+f 31 -4 grass
+f 31 -3 grass
+f 31 -2 grass
+f 31 -1 grass
+f 31 0 grass
+f 31 8 grass
+f 31 9 grass
+f 31 10 grass
+f 31 11 grass
+f 31 12 grass
+f 31 15 grass
+f 31 16 grass
+f 31 17 grass
+f 31 18 grass
+f 31 19 grass
+f 31 21 grass
+f 31 22 grass
+f 31 23 grass
+f 31 24 grass
+f 31 25 grass
+f 31 27 grass
+f 31 28 tall-grass
+f 31 29 tall-grass
+f 31 30 tall-grass
+f 31 31 tall-grass
+f 31 32 tall-grass
+f 31 33 tall-grass
+f 31 34 grass
+f 31 35 grass
+f 31 36 grass
+f 31 37 grass
+f 31 38 grass
+f 31 40 grass stone
+f 31 46 grass
+f 31 47 grass
+f 31 48 grass
+f 31 49 grass
+f 31 50 grass
+f 31 51 tall-grass
+f 32 -4 tall-grass
+f 32 -3 grass
+f 32 -2 grass
+f 32 -1 grass
+f 32 0 grass
+f 32 2 water
+f 32 6 water
+f 32 8 grass
+f 32 9 grass
+f 32 10 grass
+f 32 11 grass
+f 32 12 grass
+f 32 15 grass
+f 32 16 grass
+f 32 17 grass
+f 32 18 grass
+f 32 19 grass
+f 32 21 grass
+f 32 22 grass
+f 32 23 grass
+f 32 24 grass
+f 32 25 grass
+f 32 27 tall-grass
+f 32 28 tall-grass
+f 32 29 tall-grass
+f 32 30 tall-grass
+f 32 31 tall-grass
+f 32 32 grass
+f 32 33 tall-grass
+f 32 34 tall-grass
+f 32 40 grass
+f 32 45 grass
+f 32 46 grass
+f 32 47 grass
+f 32 48 grass
+f 32 49 grass
+f 32 50 tall-grass
+f 33 -3 tall-grass
+f 33 -2 grass
+f 33 -1 grass
+f 33 0 grass
+f 33 8 grass
+f 33 9 grass
+f 33 10 grass
+f 33 11 grass
+f 33 12 tall-grass
+f 33 15 tall-grass
+f 33 16 tall-grass
+f 33 17 grass
+f 33 18 grass
+f 33 19 grass
+f 33 21 grass
+f 33 22 grass
+f 33 23 grass
+f 33 24 grass
+f 33 25 grass
+f 33 27 tall-grass
+f 33 28 tall-grass
+f 33 29 tall-grass
+f 33 30 tall-grass
+f 33 31 tall-grass
+f 33 32 tall-grass
+f 33 33 tall-grass
+f 33 34 tall-grass
+f 33 36 water
+f 33 37 water
+f 33 38 water
+f 33 39 water
+f 33 40 grass
+f 33 41 water
+f 33 42 water
+f 33 43 water
+f 33 45 grass
+f 33 46 grass
+f 33 47 grass
+f 33 48 grass
+f 33 49 tall-grass
+f 33 50 tall-grass
+f 34 -3 tall-grass
+f 34 -2 grass
+f 34 -1 grass
+f 34 0 grass
+f 34 8 grass
+f 34 9 grass
+f 34 10 tall-grass
+f 34 11 tall-grass
+f 34 12 tall-grass
+f 34 15 tall-grass
+f 34 16 tall-grass
+f 34 17 tall-grass
+f 34 18 tall-grass
+f 34 19 tall-grass
+f 34 21 water
+f 34 22 water
+f 34 23 water
+f 34 24 water
+f 34 25 water
+f 34 27 tall-grass
+f 34 28 tall-grass
+f 34 29 tall-grass
+f 34 30 tall-grass
+f 34 31 tall-grass
+f 34 32 tall-grass
+f 34 33 tall-grass
+f 34 34 tall-grass
+f 34 36 water
+f 34 37 grass
+f 34 38 grass
+f 34 39 grass
+f 34 40 grass
+f 34 41 grass
+f 34 42 grass
+f 34 43 water
+f 34 45 grass
+f 34 46 grass
+f 34 47 grass
+f 34 48 tall-grass
+f 34 49 tall-grass
+f 34 50 tall-grass
+f 35 -2 grass
+f 35 -1 grass
+f 35 0 grass
+f 35 8 grass
+f 35 9 tall-grass
+f 35 10 tall-grass
+f 35 11 tall-grass
+f 35 12 tall-grass
+f 35 15 tall-grass
+f 35 16 tall-grass
+f 35 17 tall-grass
+f 35 18 tall-grass
+f 35 19 tall-grass
+f 35 21 water
+f 35 22 water
+f 35 23 water
+f 35 24 water
+f 35 25 water
+f 35 27 tall-grass
+f 35 28 tall-grass
+f 35 29 tall-grass
+f 35 30 tall-grass
+f 35 31 tall-grass
+f 35 32 tall-grass
+f 35 33 tall-grass
+f 35 34 tall-grass
+f 35 36 water
+f 35 37 grass
+f 35 38 grass
+f 35 39 grass
+f 35 40 grass
+f 35 41 grass
+f 35 42 grass
+f 35 43 water
+f 35 45 grass
+f 35 46 grass
+f 35 47 tall-grass
+f 35 48 tall-grass
+f 35 49 tall-grass
+f 36 -2 grass
+f 36 -1 grass
+f 36 0 grass
+f 36 2 water
+f 36 6 water
+f 36 8 grass
+f 36 9 tall-grass
+f 36 10 tall-grass
+f 36 11 tall-grass
+f 36 12 tall-grass
+f 36 15 tall-grass
+f 36 16 tall-grass
+f 36 17 tall-grass
+f 36 18 tall-grass
+f 36 19 tall-grass
+f 36 21 grass
+f 36 22 grass
+f 36 23 grass
+f 36 24 grass
+f 36 25 grass
+f 36 27 tall-grass
+f 36 28 tall-grass
+f 36 29 tall-grass
+f 36 30 tall-grass
+f 36 31 tall-grass
+f 36 32 tall-grass
+f 36 33 tall-grass
+f 36 34 tall-grass
+f 36 36 water
+f 36 37 grass
+f 36 38 grass
+f 36 39 grass
+f 36 40 grass
+f 36 41 grass
+f 36 42 grass
+f 36 43 water
+f 36 45 grass
+f 36 46 tall-grass
+f 36 47 tall-grass
+f 36 48 tall-grass
+f 36 49 tall-grass
+f 37 -2 grass
+f 37 -1 grass
+f 37 0 grass
+f 37 8 grass
+f 37 9 tall-grass
+f 37 10 tall-grass
+f 37 11 tall-grass
+f 37 12 tall-grass
+f 37 15 tall-grass
+f 37 16 tall-grass
+f 37 17 tall-grass
+f 37 18 tall-grass
+f 37 19 tall-grass
+f 37 21 grass
+f 37 22 grass
+f 37 23 grass
+f 37 24 grass
+f 37 25 grass
+f 37 27 grass
+f 37 28 grass
+f 37 29 tall-grass
+f 37 30 tall-grass
+f 37 31 tall-grass
+f 37 32 tall-grass
+f 37 33 tall-grass
+f 37 34 tall-grass
+f 37 36 water
+f 37 37 grass
+f 37 38 grass
+f 37 39 grass
+f 37 40 grass
+f 37 41 grass
+f 37 42 grass
+f 37 43 water
+f 37 45 grass
+f 37 46 tall-grass
+f 37 47 tall-grass
+f 37 48 tall-grass
+f 37 49 tall-grass
+f 38 -2 grass
+f 38 -1 grass
+f 38 0 grass
+f 38 8 grass
+f 38 9 tall-grass
+f 38 10 tall-grass
+f 38 11 tall-grass
+f 38 12 tall-grass
+f 38 15 tall-grass
+f 38 16 tall-grass
+f 38 17 tall-grass
+f 38 18 tall-grass
+f 38 19 tall-grass
+f 38 21 grass
+f 38 22 grass
+f 38 23 grass
+f 38 24 grass
+f 38 25 grass
+f 38 27 grass
+f 38 28 grass
+f 38 29 grass
+f 38 30 grass
+f 38 31 grass
+f 38 32 grass
+f 38 33 grass
+f 38 34 grass
+f 38 36 water
+f 38 37 grass
+f 38 38 grass
+f 38 39 grass
+f 38 40 grass
+f 38 41 grass
+f 38 42 grass
+f 38 43 water
+f 38 45 grass
+f 38 46 grass
+f 38 47 tall-grass
+f 38 48 tall-grass
+f 38 49 tall-grass
+f 39 -2 grass
+f 39 8 grass
+f 39 9 tall-grass
+f 39 10 tall-grass
+f 39 11 tall-grass
+f 39 12 tall-grass
+f 39 15 tall-grass
+f 39 16 tall-grass
+f 39 17 tall-grass
+f 39 18 tall-grass
+f 39 19 grass
+f 39 21 grass
+f 39 22 grass
+f 39 23 grass
+f 39 24 grass
+f 39 25 grass
+f 39 27 grass
+f 39 28 grass
+f 39 29 grass
+f 39 30 grass
+f 39 31 grass
+f 39 32 grass
+f 39 33 grass
+f 39 34 grass
+f 39 36 water
+f 39 37 grass
+f 39 38 grass
+f 39 39 grass
+f 39 40 grass
+f 39 41 grass
+f 39 42 grass
+f 39 43 water
+f 39 45 grass
+f 39 46 grass
+f 39 47 grass
+f 39 48 tall-grass
+f 39 49 tall-grass
+f 40 -3 grass
+f 40 8 grass
+f 40 9 grass
+f 40 10 tall-grass
+f 40 11 tall-grass
+f 40 12 tall-grass
+f 40 15 tall-grass
+f 40 16 tall-grass
+f 40 17 tall-grass
+f 40 18 grass
+f 40 19 grass
+f 40 24 grass
+f 40 27 grass
+f 40 28 grass
+f 40 29 grass
+f 40 30 grass
+f 40 31 grass
+f 40 32 grass
+f 40 33 grass
+f 40 34 grass
+f 40 36 water
+f 40 37 water
+f 40 38 water
+f 40 39 water
+f 40 40 water
+f 40 41 water
+f 40 42 water
+f 40 43 water
+f 40 45 grass
+f 40 46 grass
+f 40 47 grass
+f 40 48 grass
+f 40 49 grass
+f 40 50 tall-grass
+f 41 4 grass stone
+f 41 6 grass
+f 41 7 grass
+f 41 8 grass
+f 41 9 grass
+f 41 10 tall-grass
+f 41 11 tall-grass
+f 41 12 tall-grass
+f 41 13 tall-grass
+f 41 15 tall-grass
+f 41 16 grass
+f 41 17 grass
+f 41 18 grass
+f 41 19 grass
+f 41 20 grass
+f 41 21 grass
+f 41 22 grass
+f 41 24 grass stone
+f 41 28 grass
+f 41 29 grass
+f 41 30 grass
+f 41 31 grass
+f 41 32 grass
+f 41 33 grass
+f 41 34 grass
+f 41 36 water
+f 41 37 water
+f 41 38 water
+f 41 39 grass
+f 41 40 water
+f 41 41 water
+f 41 42 water
+f 41 43 water
+f 41 45 grass
+f 41 46 grass
+f 41 47 grass
+f 41 48 grass
+f 41 49 grass
+f 41 50 grass
+f 42 2 grass
+f 42 4 grass stone
+f 42 6 grass
+f 42 7 grass
+f 42 8 grass
+f 42 9 grass
+f 42 10 tall-grass
+f 42 11 tall-grass
+f 42 12 tall-grass
+f 42 13 tall-grass
+f 42 14 tall-grass
+f 42 15 grass
+f 42 16 grass
+f 42 17 grass
+f 42 18 grass
+f 42 19 grass
+f 42 20 grass
+f 42 24 grass stone
+f 42 29 grass
+f 42 30 grass
+f 42 31 grass
+f 42 32 grass
+f 42 33 grass
+f 42 34 grass
+f 42 36 water
+f 42 37 water
+f 42 38 water
+f 42 39 water
+f 42 40 water
+f 42 41 water
+f 42 42 water
+f 42 43 water
+f 42 45 grass
+f 42 46 grass
+f 42 47 grass
+f 42 48 grass
+f 42 49 grass
+f 42 50 grass
+f 43 -2 grass
+f 43 4 grass stone
+f 43 6 grass
+f 43 7 grass
+f 43 8 grass
+f 43 9 grass
+f 43 10 tall-grass
+f 43 11 tall-grass
+f 43 12 tall-grass
+f 43 13 tall-grass
+f 43 14 tall-grass
+f 43 15 grass
+f 43 16 grass
+f 43 17 grass
+f 43 18 grass
+f 43 19 grass
+f 43 24 grass stone
+f 43 30 grass
+f 43 31 grass
+f 43 32 grass
+f 43 33 grass
+f 43 34 grass
+f 43 36 water
+f 43 37 water
+f 43 38 water
+f 43 39 water
+f 43 40 water
+f 43 41 water
+f 43 42 water
+f 43 43 water
+f 43 45 grass
+f 43 46 grass
+f 43 47 grass
+f 43 48 grass
+f 43 49 grass
+f 43 50 grass
+f 44 4 grass stone
+f 44 6 grass
+f 44 7 grass
+f 44 8 grass
+f 44 9 grass
+f 44 10 tall-grass
+f 44 11 tall-grass
+f 44 12 tall-grass
+f 44 13 tall-grass
+f 44 14 grass
+f 44 15 grass
+f 44 16 grass
+f 44 17 grass
+f 44 18 grass
+f 44 24 grass stone
+f 44 30 grass
+f 44 31 grass
+f 44 32 grass
+f 44 33 grass
+f 44 34 grass
+f 44 36 water
+f 44 37 water
+f 44 38 water
+f 44 39 grass
+f 44 40 water
+f 44 41 water
+f 44 42 water
+f 44 43 water
+f 44 45 grass
+f 44 46 grass
+f 44 47 grass
+f 44 48 grass
+f 44 49 grass
+f 44 50 grass
+f 45 4 grass
+f 45 8 grass
+f 45 9 grass
+f 45 10 tall-grass
+f 45 11 tall-grass
+f 45 12 tall-grass
+f 45 13 tall-grass
+f 45 15 grass
+f 45 16 grass
+f 45 17 grass
+f 45 18 grass
+f 45 24 grass
+f 45 30 grass
+f 45 31 grass
+f 45 32 grass
+f 45 33 grass
+f 45 34 grass
+f 45 36 water
+f 45 37 water
+f 45 38 water
+f 45 39 water
+f 45 40 water
+f 45 41 water
+f 45 42 water
+f 45 43 water
+f 45 45 grass
+f 45 46 grass
+f 45 47 grass
+f 45 48 grass
+f 45 49 grass
+f 45 50 grass
+f 46 2 grass
+f 46 3 grass
+f 46 4 grass
+f 46 5 grass
+f 46 6 grass
+f 46 8 grass
+f 46 9 tall-grass
+f 46 10 tall-grass
+f 46 11 tall-grass
+f 46 12 tall-grass
+f 46 13 tall-grass
+f 46 17 grass
+f 46 18 grass
+f 46 23 grass
+f 46 24 grass
+f 46 25 grass
+f 46 26 grass
+f 46 29 grass
+f 46 30 grass
+f 46 31 grass
+f 46 32 grass
+f 46 33 grass
+f 46 34 grass
+f 46 36 water
+f 46 37 grass
+f 46 38 grass
+f 46 39 grass
+f 46 40 grass
+f 46 41 grass
+f 46 42 grass
+f 46 43 water
+f 46 45 grass
+f 46 46 grass
+f 46 47 grass
+f 46 48 grass
+f 46 49 grass
+f 47 2 grass
+f 47 3 grass
+f 47 4 grass
+f 47 5 grass
+f 47 6 grass
+f 47 8 tall-grass
+f 47 9 tall-grass
+f 47 10 tall-grass
+f 47 11 tall-grass
+f 47 12 tall-grass
+f 47 17 grass
+f 47 18 grass
+f 47 23 grass
+f 47 24 grass
+f 47 25 grass
+f 47 26 grass
+f 47 28 grass
+f 47 29 grass
+f 47 30 grass
+f 47 31 grass
+f 47 32 grass
+f 47 33 tall-grass
+f 47 34 tall-grass
+f 47 36 water
+f 47 37 water
+f 47 38 water
+f 47 39 water
+f 47 40 grass
+f 47 41 water
+f 47 42 water
+f 47 43 water
+f 47 45 grass
+f 47 46 grass
+f 47 47 grass
+f 47 48 grass
+f 47 49 grass
+f 48 0 grass
+f 48 2 grass
+f 48 3 grass
+f 48 4 grass
+f 48 5 grass
+f 48 6 grass
+f 48 8 tall-grass
+f 48 9 tall-grass
+f 48 10 tall-grass
+f 48 11 tall-grass
+f 48 12 tall-grass
+f 48 13 tall-grass
+f 48 14 grass
+f 48 15 grass
+f 48 18 grass
+f 48 19 grass
+f 48 23 grass
+f 48 24 grass
+f 48 25 grass
+f 48 26 grass
+f 48 28 grass
+f 48 29 grass
+f 48 30 grass
+f 48 31 tall-grass
+f 48 32 tall-grass
+f 48 33 tall-grass
+f 48 34 tall-grass
+f 48 40 grass
+f 48 45 grass
+f 48 46 grass
+f 48 47 grass
+f 48 48 grass
+f 48 49 grass
+f 49 -3 grass
+f 49 -2 grass
+f 49 -1 grass
+f 49 0 grass
+f 49 2 grass
+f 49 3 grass
+f 49 4 grass
+f 49 5 grass
+f 49 6 grass
+f 49 8 tall-grass
+f 49 9 tall-grass
+f 49 10 tall-grass
+f 49 11 tall-grass
+f 49 12 tall-grass
+f 49 13 tall-grass
+f 49 14 tall-grass
+f 49 15 grass
+f 49 16 grass
+f 49 17 grass
+f 49 19 grass
+f 49 23 water
+f 49 24 water
+f 49 25 water
+f 49 26 water
+f 49 28 grass
+f 49 29 grass
+f 49 30 tall-grass
+f 49 31 tall-grass
+f 49 32 tall-grass
+f 49 33 tall-grass
+f 49 34 tall-grass
+f 49 35 tall-grass
+f 49 37 grass
+f 49 38 grass
+f 49 39 grass
+f 49 40 grass
+f 49 41 grass
+f 49 42 grass
+f 49 43 grass
+f 49 45 grass
+f 49 46 grass
+f 49 47 grass
+f 49 48 grass
+f 49 49 grass
+f 50 -3 grass
+f 50 -2 grass
+f 50 -1 grass
+f 50 0 grass
+f 50 2 grass
+f 50 3 grass
+f 50 4 grass
+f 50 5 grass
+f 50 6 grass
+f 50 8 tall-grass
+f 50 9 tall-grass
+f 50 10 tall-grass
+f 50 11 tall-grass
+f 50 12 tall-grass
+f 50 13 tall-grass
+f 50 14 tall-grass
+f 50 15 tall-grass
+f 50 16 grass
+f 50 17 grass
+f 50 18 grass
+f 50 19 grass
+f 50 20 grass
+f 50 21 grass
+f 50 23 grass
+f 50 24 grass
+f 50 25 grass
+f 50 26 grass
+f 50 28 grass
+f 50 29 tall-grass
+f 50 30 tall-grass
+f 50 31 tall-grass
+f 50 32 tall-grass
+f 50 33 tall-grass
+f 50 34 tall-grass
+f 50 35 tall-grass
+f 50 37 grass
+f 50 38 grass
+f 50 39 grass
+f 50 40 grass
+f 50 41 grass
+f 50 42 grass
+f 50 43 grass
+f 50 45 grass
+f 50 46 grass
+f 50 47 grass
+f 50 48 grass
+f 50 49 grass
+f 51 -3 grass
+f 51 -2 grass
+f 51 -1 grass
+f 51 0 grass
+f 51 2 grass
+f 51 3 grass
+f 51 4 grass
+f 51 5 grass
+f 51 6 grass
+f 51 8 tall-grass
+f 51 9 tall-grass
+f 51 10 tall-grass
+f 51 11 tall-grass
+f 51 12 tall-grass
+f 51 13 grass
+f 51 14 tall-grass
+f 51 15 tall-grass
+f 51 16 grass
+f 51 17 grass
+f 51 18 grass
+f 51 19 grass
+f 51 20 grass
+f 51 21 grass
+f 51 23 grass
+f 51 24 grass
+f 51 25 grass
+f 51 26 grass
+f 51 28 tall-grass
+f 51 29 tall-grass
+f 51 30 tall-grass
+f 51 31 tall-grass
+f 51 32 tall-grass
+f 51 33 tall-grass
+f 51 34 tall-grass
+f 51 35 tall-grass
+f 51 37 grass
+f 51 38 grass
+f 51 39 grass
+f 51 40 grass
+f 51 41 grass
+f 51 42 grass
+f 51 43 grass
+f 51 45 grass
+f 51 46 grass
+f 51 47 grass
+f 51 48 grass
+f 51 49 grass
+f 52 -3 grass
+f 52 -2 grass
+f 52 -1 grass
+f 52 0 grass
+f 52 2 grass
+f 52 3 grass
+f 52 4 grass
+f 52 5 grass
+f 52 6 grass
+f 52 8 tall-grass
+f 52 9 tall-grass
+f 52 10 tall-grass
+f 52 11 tall-grass
+f 52 12 tall-grass
+f 52 13 tall-grass
+f 52 14 tall-grass
+f 52 15 tall-grass
+f 52 16 grass
+f 52 17 grass
+f 52 18 grass
+f 52 19 grass
+f 52 20 grass
+f 52 21 grass
+f 52 23 grass
+f 52 24 grass
+f 52 25 grass
+f 52 26 grass
+f 52 28 tall-grass
+f 52 29 tall-grass
+f 52 30 tall-grass
+f 52 31 tall-grass
+f 52 32 tall-grass
+f 52 33 tall-grass
+f 52 34 tall-grass
+f 52 35 tall-grass
+f 52 37 grass
+f 52 38 grass
+f 52 39 grass
+f 52 40 grass
+f 52 41 grass
+f 52 42 grass
+f 52 43 grass
+f 52 45 grass
+f 52 46 grass
+f 52 47 grass
+f 52 48 grass
+f 52 49 grass
+f 53 -3 grass
+f 53 -2 grass
+f 53 -1 grass
+f 53 0 tall-grass
+f 53 2 grass
+f 53 3 grass
+f 53 4 grass
+f 53 5 grass
+f 53 6 grass
+f 53 23 grass
+f 53 24 grass
+f 53 25 grass
+f 53 26 grass
+f 53 37 grass
+f 53 38 grass
+f 53 39 grass
+f 53 40 grass
+f 53 41 grass
+f 53 42 grass
+f 53 43 grass
+f 54 -3 grass
+f 54 -2 grass
+f 54 -1 grass
+f 54 0 grass
+f 54 4 grass
+f 54 9 water
+f 54 10 water
+f 54 11 water
+f 54 12 water
+f 54 13 water
+f 54 14 water
+f 54 15 water
+f 54 16 water
+f 54 17 water
+f 54 18 water
+f 54 19 water
+f 54 20 water
+f 54 25 grass
+f 54 37 grass
+f 54 38 grass
+f 54 39 grass
+f 54 40 grass
+f 54 41 grass
+f 54 42 grass
+f 54 43 grass
+f 55 -4 grass
+f 55 -3 grass
+f 55 -2 grass
+f 55 -1 grass
+f 55 0 grass
+f 55 1 grass
+f 55 2 grass
+f 55 4 grass stone
+f 55 9 water
+f 55 16 water
+f 55 17 water
+f 55 18 water
+f 55 19 water
+f 55 20 water
+f 55 23 grass stone
+f 55 24 grass stone
+f 55 25 grass stone
+f 55 37 grass
+f 55 38 grass
+f 55 39 grass
+f 55 40 grass
+f 55 41 grass
+f 55 42 grass
+f 55 43 grass
+f 56 -4 grass
+f 56 -3 grass
+f 56 -2 grass
+f 56 -1 grass
+f 56 0 grass
+f 56 1 grass
+f 56 2 grass
+f 56 4 grass stone
+f 56 5 grass stone
+f 56 6 grass stone
+f 56 7 grass stone
+f 56 9 water
+f 56 20 water
+f 56 23 grass stone
+f 56 40 grass stone
+f 57 -4 grass
+f 57 -3 grass
+f 57 -2 grass
+f 57 -1 grass
+f 57 0 grass
+f 57 1 grass
+f 57 2 grass
+f 57 7 grass stone
+f 57 17 grass
+f 57 18 grass
+f 57 19 grass
+f 57 20 grass
+f 57 22 grass stone
+f 57 23 grass stone
+f 57 40 grass stone
+f 58 -4 grass
+f 58 -3 grass
+f 58 -2 grass
+f 58 -1 grass
+f 58 0 grass
+f 58 1 grass
+f 58 2 grass
+f 58 3 grass
+f 58 4 grass
+f 58 5 grass
+f 58 9 water
+f 58 20 water
+f 58 40 grass stone
+f 59 -4 grass
+f 59 -3 grass
+f 59 -2 grass
+f 59 -1 grass
+f 59 0 grass
+f 59 1 grass
+f 59 2 grass
+f 59 3 grass
+f 59 4 grass
+f 59 5 grass
+f 59 6 grass
+f 59 7 grass
+f 59 9 water
+f 59 16 water
+f 59 17 water
+f 59 18 water
+f 59 19 water
+f 59 20 water
+f 59 24 grass
+f 59 35 grass
+f 59 36 grass
+f 59 37 grass
+f 59 38 grass
+f 59 39 grass
+f 59 40 grass stone
+f 59 41 grass stone
+f 59 42 grass
+f 59 43 grass
+f 59 44 grass
+f 59 45 grass
+f 59 46 grass
+f 59 47 grass
+f 59 48 grass
+f 59 49 grass
+f 59 50 grass
+f 59 51 grass
+f 59 52 grass
+f 59 53 grass
+f 59 54 grass
+f 59 55 grass
+f 59 56 grass
+f 59 57 grass
+f 59 58 grass
+f 59 59 grass
+f 59 60 grass
+f 59 61 grass
+f 59 62 grass
+f 60 -1 grass
+f 60 0 grass
+f 60 6 grass
+f 60 7 grass
+f 60 9 water
+f 60 10 water
+f 60 11 water
+f 60 12 water
+f 60 13 water
+f 60 14 water
+f 60 15 water
+f 60 16 water
+f 60 17 water
+f 60 18 water
+f 60 19 water
+f 60 20 water
+f 60 24 grass
+f 60 34 grass
+f 60 35 grass
+f 60 36 grass
+f 60 37 grass
+f 60 38 grass
+f 60 39 grass
+f 60 40 grass stone
+f 60 41 grass stone
+f 60 42 grass
+f 60 43 grass
+f 60 44 grass
+f 60 45 grass
+f 60 46 grass
+f 60 47 dirt stone
+f 60 48 dirt stone
+f 60 49 dirt stone
+f 60 50 dirt stone
+f 60 51 dirt stone
+f 60 52 dirt stone
+f 60 53 dirt stone
+f 60 54 dirt stone
+f 60 55 dirt stone
+f 60 56 grass
+f 60 57 dirt stone
+f 60 58 dirt stone
+f 60 59 dirt stone
+f 60 60 dirt stone
+f 60 61 grass
+f 60 62 grass
+f 61 -1 grass
+f 61 4 grass
+f 61 24 grass
+f 61 33 grass
+f 61 34 grass
+f 61 35 grass
+f 61 36 grass
+f 61 37 grass
+f 61 38 grass
+f 61 39 tall-grass
+f 61 40 grass stone
+f 61 41 grass stone
+f 61 42 tall-grass
+f 61 43 grass
+f 61 44 grass
+f 61 45 grass
+f 61 46 grass
+f 61 47 dirt stone
+f 61 48 dirt stone
+f 61 49 grass
+f 61 50 dirt stone
+f 61 51 dirt stone
+f 61 52 dirt stone
+f 61 53 dirt stone
+f 61 54 dirt stone
+f 61 55 dirt stone
+f 61 56 dirt stone
+f 61 57 dirt stone
+f 61 58 dirt stone
+f 61 59 dirt stone
+f 61 60 dirt stone
+f 61 61 grass
+f 61 62 grass
+f 62 8 grass
+f 62 9 grass
+f 62 10 grass
+f 62 11 grass
+f 62 12 grass
+f 62 13 grass
+f 62 14 grass
+f 62 15 grass
+f 62 16 grass
+f 62 17 grass
+f 62 24 grass
+f 62 26 grass
+f 62 27 grass
+f 62 28 grass
+f 62 29 grass
+f 62 30 grass
+f 62 31 grass
+f 62 32 grass
+f 62 33 grass
+f 62 34 grass
+f 62 35 grass
+f 62 36 grass
+f 62 37 tall-grass
+f 62 38 tall-grass
+f 62 39 tall-grass
+f 62 40 grass stone
+f 62 41 grass stone
+f 62 42 tall-grass
+f 62 43 tall-grass
+f 62 44 grass
+f 62 45 grass
+f 62 46 grass
+f 62 47 dirt stone
+f 62 48 dirt stone
+f 62 49 dirt stone
+f 62 50 dirt stone
+f 62 51 dirt stone
+f 62 52 dirt stone
+f 62 53 dirt stone
+f 62 54 dirt stone
+f 62 55 dirt stone
+f 62 56 dirt stone
+f 62 57 dirt stone
+f 62 58 dirt stone
+f 62 59 dirt stone
+f 62 60 dirt stone
+f 62 61 grass
+f 62 62 grass
+f 63 8 grass
+f 63 9 grass
+f 63 10 grass
+f 63 11 grass
+f 63 12 grass
+f 63 13 grass
+f 63 14 grass
+f 63 15 grass
+f 63 16 grass
+f 63 17 grass
+f 63 24 grass
+f 63 25 grass
+f 63 26 grass
+f 63 27 grass
+f 63 28 grass
+f 63 29 grass
+f 63 30 grass
+f 63 31 grass
+f 63 32 grass
+f 63 33 grass
+f 63 34 grass
+f 63 35 grass
+f 63 36 tall-grass
+f 63 37 tall-grass
+f 63 38 tall-grass
+f 63 39 tall-grass
+f 63 40 grass stone
+f 63 41 grass stone
+f 63 42 tall-grass
+f 63 43 tall-grass
+f 63 44 tall-grass
+f 63 45 grass
+f 63 46 grass
+f 63 47 dirt stone
+f 63 48 dirt stone
+f 63 49 dirt stone
+f 63 54 water
+f 63 58 dirt stone
+f 63 59 grass
+f 63 60 grass
+f 63 61 grass
+f 63 62 grass
+f 64 7 grass
+f 64 8 grass
+f 64 9 grass
+f 64 10 grass
+f 64 11 grass
+f 64 12 grass
+f 64 13 grass
+f 64 14 grass
+f 64 15 grass
+f 64 16 grass
+f 64 17 grass
+f 64 24 grass
+f 64 25 grass
+f 64 26 grass
+f 64 27 grass
+f 64 28 grass
+f 64 29 grass
+f 64 30 grass
+f 64 31 grass
+f 64 32 grass
+f 64 33 grass
+f 64 34 grass
+f 64 35 grass
+f 64 36 tall-grass
+f 64 37 tall-grass
+f 64 38 tall-grass
+f 64 39 tall-grass
+f 64 40 grass stone
+f 64 41 grass stone
+f 64 42 tall-grass
+f 64 43 tall-grass
+f 64 44 tall-grass
+f 64 45 tall-grass
+f 64 46 grass
+f 64 47 grass
+f 64 48 dirt stone
+f 64 49 dirt stone
+f 64 52 water
+f 64 53 water
+f 64 54 water
+f 64 55 water
+f 64 56 water
+f 64 58 grass
+f 64 59 grass
+f 64 60 grass
+f 64 61 tall-grass
+f 64 62 tall-grass
+f 65 5 grass
+f 65 6 grass
+f 65 7 grass
+f 65 8 grass
+f 65 9 grass
+f 65 10 grass
+f 65 11 grass
+f 65 12 grass
+f 65 13 grass
+f 65 14 grass
+f 65 15 grass
+f 65 16 grass
+f 65 17 grass
+f 65 24 grass
+f 65 25 grass
+f 65 26 grass
+f 65 27 grass
+f 65 28 water
+f 65 29 water
+f 65 30 water
+f 65 31 grass
+f 65 32 grass
+f 65 33 grass
+f 65 34 grass
+f 65 35 grass
+f 65 36 tall-grass
+f 65 37 tall-grass
+f 65 38 tall-grass
+f 65 39 tall-grass
+f 65 40 grass stone
+f 65 41 grass stone
+f 65 42 tall-grass
+f 65 43 tall-grass
+f 65 44 tall-grass
+f 65 45 tall-grass
+f 65 46 grass
+f 65 47 grass
+f 65 48 dirt stone
+f 65 49 dirt stone
+f 65 52 water
+f 65 53 water
+f 65 54 water
+f 65 55 water
+f 65 56 water
+f 65 57 water
+f 65 58 grass
+f 65 59 tall-grass
+f 65 60 tall-grass
+f 65 61 tall-grass
+f 65 62 tall-grass
+f 66 3 grass
+f 66 4 grass
+f 66 5 grass
+f 66 6 grass
+f 66 7 grass
+f 66 8 grass
+f 66 9 grass
+f 66 10 grass
+f 66 11 tall-grass
+f 66 12 tall-grass
+f 66 13 tall-grass
+f 66 14 tall-grass
+f 66 15 tall-grass
+f 66 16 tall-grass
+f 66 17 tall-grass
+f 66 24 grass
+f 66 25 grass
+f 66 26 grass
+f 66 27 grass
+f 66 28 water
+f 66 29 grass
+f 66 30 water
+f 66 31 grass
+f 66 32 grass
+f 66 33 grass
+f 66 34 grass
+f 66 35 grass
+f 66 36 grass stone
+f 66 37 grass stone
+f 66 38 grass stone
+f 66 39 grass stone
+f 66 40 grass stone
+f 66 41 grass stone
+f 66 42 tall-grass
+f 66 43 tall-grass
+f 66 44 tall-grass
+f 66 45 tall-grass
+f 66 46 grass
+f 66 47 grass
+f 66 48 dirt stone
+f 66 49 dirt stone
+f 66 52 water
+f 66 53 water
+f 66 54 water
+f 66 55 water
+f 66 56 water
+f 66 58 tall-grass
+f 66 59 tall-grass
+f 66 60 tall-grass
+f 66 61 tall-grass
+f 66 62 tall-grass
+f 67 24 grass
+f 67 25 grass
+f 67 26 grass
+f 67 27 grass
+f 67 28 water
+f 67 29 water
+f 67 30 water
+f 67 31 grass
+f 67 32 grass
+f 67 33 grass
+f 67 34 grass
+f 67 35 grass
+f 67 36 grass stone
+f 67 37 grass stone
+f 67 38 grass stone
+f 67 39 grass stone
+f 67 40 grass stone
+f 67 41 grass stone
+f 67 42 tall-grass
+f 67 43 tall-grass
+f 67 44 grass
+f 67 45 tall-grass
+f 67 46 grass
+f 67 47 grass
+f 67 48 dirt stone
+f 67 49 dirt stone
+f 67 52 water
+f 67 53 water
+f 67 54 water
+f 67 55 water
+f 67 56 water
+f 67 58 tall-grass
+f 67 59 tall-grass
+f 67 60 tall-grass
+f 67 61 tall-grass
+f 67 62 tall-grass
+f 68 24 grass
+f 68 25 grass
+f 68 26 grass
+f 68 27 grass
+f 68 28 grass
+f 68 29 grass
+f 68 30 grass
+f 68 31 grass
+f 68 32 grass
+f 68 33 grass
+f 68 34 grass
+f 68 35 grass
+f 68 36 tall-grass
+f 68 37 tall-grass
+f 68 38 tall-grass
+f 68 39 grass stone
+f 68 40 grass stone
+f 68 41 grass stone
+f 68 42 tall-grass
+f 68 43 tall-grass
+f 68 44 tall-grass
+f 68 45 grass
+f 68 46 grass
+f 68 47 dirt stone
+f 68 48 dirt stone
+f 68 49 dirt stone
+f 68 52 water
+f 68 53 water
+f 68 55 water
+f 68 56 water
+f 68 58 tall-grass
+f 68 59 tall-grass
+f 68 60 tall-grass
+f 68 61 tall-grass
+f 68 62 tall-grass
+f 69 24 grass
+f 69 25 grass
+f 69 26 grass
+f 69 27 grass
+f 69 28 grass
+f 69 29 grass
+f 69 30 grass
+f 69 31 grass
+f 69 32 grass
+f 69 33 grass
+f 69 34 grass
+f 69 35 grass
+f 69 36 tall-grass
+f 69 37 tall-grass
+f 69 38 tall-grass
+f 69 39 grass stone
+f 69 40 grass stone
+f 69 41 grass stone
+f 69 42 tall-grass
+f 69 43 tall-grass
+f 69 44 grass
+f 69 45 grass
+f 69 46 grass stone
+f 69 47 grass stone
+f 69 48 grass stone
+f 69 49 grass stone
+f 69 52 water
+f 69 53 water
+f 69 54 water
+f 69 55 water
+f 69 56 water
+f 69 58 tall-grass
+f 69 59 tall-grass
+f 69 60 tall-grass
+f 69 61 tall-grass
+f 69 62 tall-grass
+f 70 24 grass
+f 70 25 grass
+f 70 26 grass
+f 70 27 grass
+f 70 28 grass
+f 70 29 grass
+f 70 30 grass
+f 70 31 grass
+f 70 32 grass
+f 70 33 grass
+f 70 34 grass
+f 70 35 grass
+f 70 36 tall-grass
+f 70 37 tall-grass
+f 70 38 tall-grass
+f 70 39 grass stone
+f 70 40 grass stone
+f 70 41 grass stone
+f 70 42 tall-grass
+f 70 43 grass
+f 70 44 grass
+f 70 45 grass
+f 70 46 grass stone
+f 70 47 grass stone
+f 70 48 grass stone
+f 70 49 grass stone
+f 70 52 water
+f 70 53 water
+f 70 54 water
+f 70 55 water
+f 70 56 water
+f 70 58 tall-grass
+f 70 59 tall-grass
+f 70 60 tall-grass
+f 70 61 tall-grass
+f 70 62 tall-grass
+f 71 24 grass
+f 71 25 grass
+f 71 26 grass
+f 71 27 grass
+f 71 28 grass
+f 71 29 grass
+f 71 30 grass
+f 71 31 grass
+f 71 32 grass
+f 71 33 grass
+f 71 34 tall-grass
+f 71 35 tall-grass
+f 71 36 tall-grass
+f 71 37 tall-grass
+f 71 38 grass stone
+f 71 39 grass stone
+f 71 40 grass stone
+f 71 41 grass stone
+f 71 42 grass stone
+f 71 43 grass stone
+f 71 44 grass stone
+f 71 45 grass stone
+f 71 46 grass stone
+f 71 47 grass stone
+f 71 48 dirt stone
+f 71 49 dirt stone
+f 71 52 water
+f 71 53 water
+f 71 54 water
+f 71 55 water
+f 71 56 water
+f 71 57 water
+f 71 58 tall-grass
+f 71 59 tall-grass
+f 71 60 tall-grass
+f 71 61 tall-grass
+f 71 62 tall-grass
+f 72 24 grass
+f 72 25 grass
+f 72 26 grass
+f 72 27 grass
+f 72 28 grass
+f 72 29 grass
+f 72 30 grass
+f 72 31 grass
+f 72 32 grass
+f 72 33 grass
+f 72 34 grass
+f 72 35 tall-grass
+f 72 36 tall-grass
+f 72 37 tall-grass
+f 72 38 grass stone
+f 72 39 grass stone
+f 72 40 grass stone
+f 72 41 grass stone
+f 72 42 grass stone
+f 72 43 grass stone
+f 72 44 grass stone
+f 72 45 grass stone
+f 72 46 grass stone
+f 72 47 grass stone
+f 72 48 dirt stone
+f 72 49 dirt stone
+f 72 52 water
+f 72 53 water
+f 72 54 water
+f 72 55 water
+f 72 56 water
+f 72 58 grass
+f 72 59 tall-grass
+f 72 60 tall-grass
+f 72 61 tall-grass
+f 72 62 tall-grass
+f 73 24 grass
+f 73 25 grass
+f 73 26 grass
+f 73 27 grass
+f 73 28 grass
+f 73 29 grass
+f 73 30 grass
+f 73 31 grass
+f 73 32 grass
+f 73 33 grass
+f 73 34 grass
+f 73 35 grass
+f 73 36 grass
+f 73 37 grass
+f 73 38 grass stone
+f 73 39 grass stone
+f 73 40 grass stone
+f 73 41 grass stone
+f 73 42 grass stone
+f 73 43 grass stone
+f 73 44 grass stone
+f 73 45 grass stone
+f 73 46 grass stone
+f 73 47 grass stone
+f 73 48 dirt stone
+f 73 49 dirt stone
+f 73 55 water
+f 73 58 grass
+f 73 59 tall-grass
+f 73 60 tall-grass
+f 73 61 tall-grass
+f 73 62 tall-grass
+f 74 24 grass
+f 74 25 grass
+f 74 26 grass
+f 74 27 grass
+f 74 28 grass
+f 74 29 grass
+f 74 30 grass
+f 74 31 grass
+f 74 32 grass
+f 74 33 grass
+f 74 34 grass
+f 74 35 grass
+f 74 36 grass
+f 74 37 grass
+f 74 38 grass stone
+f 74 39 grass stone
+f 74 40 grass stone
+f 74 41 water
+f 74 42 water
+f 74 43 water
+f 74 44 grass stone
+f 74 45 grass stone
+f 74 46 grass stone
+f 74 47 grass stone
+f 74 48 dirt stone
+f 74 49 dirt stone
+f 74 50 dirt stone
+f 74 51 dirt stone
+f 74 52 dirt stone
+f 74 53 dirt stone
+f 74 54 dirt stone
+f 74 55 dirt stone
+f 74 56 dirt stone
+f 74 57 grass
+f 74 58 grass
+f 74 59 tall-grass
+f 74 60 tall-grass
+f 74 61 tall-grass
+f 74 62 tall-grass
+f 75 24 grass
+f 75 25 grass
+f 75 26 grass
+f 75 27 grass
+f 75 28 grass
+f 75 29 grass
+f 75 30 grass
+f 75 31 grass
+f 75 32 grass
+f 75 33 grass
+f 75 34 grass
+f 75 35 grass
+f 75 36 grass
+f 75 37 grass stone
+f 75 38 grass stone
+f 75 39 grass stone
+f 75 40 grass stone
+f 75 41 water
+f 75 42 water
+f 75 43 water
+f 75 44 grass stone
+f 75 45 grass stone
+f 75 46 grass stone
+f 75 47 grass stone
+f 75 48 dirt stone
+f 75 49 dirt stone
+f 75 50 dirt stone
+f 75 51 dirt stone
+f 75 52 dirt stone
+f 75 53 dirt stone
+f 75 54 dirt stone
+f 75 55 dirt stone
+f 75 56 dirt stone
+f 75 57 grass
+f 75 58 grass
+f 75 59 grass
+f 75 60 tall-grass
+f 75 61 tall-grass
+f 75 62 grass
+f 76 24 grass
+f 76 25 grass
+f 76 26 grass
+f 76 27 grass
+f 76 28 grass
+f 76 29 grass
+f 76 30 grass
+f 76 31 grass
+f 76 32 grass
+f 76 33 grass
+f 76 34 grass
+f 76 35 grass
+f 76 36 grass
+f 76 37 grass stone
+f 76 38 grass stone
+f 76 39 grass stone
+f 76 40 grass stone
+f 76 41 water
+f 76 42 water
+f 76 43 water
+f 76 44 grass stone
+f 76 45 grass stone
+f 76 46 grass stone
+f 76 47 grass stone
+f 76 48 dirt stone
+f 76 49 dirt stone
+f 76 50 dirt stone
+f 76 51 grass
+f 76 52 dirt stone
+f 76 53 dirt stone
+f 76 54 dirt stone
+f 76 55 dirt stone
+f 76 56 grass
+f 76 57 grass
+f 76 58 grass
+f 76 59 tall-grass
+f 76 60 tall-grass
+f 76 61 tall-grass
+f 76 62 grass
+f 77 24 grass
+f 77 25 grass
+f 77 26 grass
+f 77 27 grass
+f 77 28 grass
+f 77 29 grass
+f 77 30 grass
+f 77 31 grass
+f 77 32 grass
+f 77 33 grass
+f 77 34 grass
+f 77 35 grass
+f 77 36 grass
+f 77 37 grass stone
+f 77 38 grass stone
+f 77 39 grass stone
+f 77 40 grass stone
+f 77 41 grass stone
+f 77 42 grass stone
+f 77 43 grass stone
+f 77 44 grass stone
+f 77 45 grass stone
+f 77 46 grass stone
+f 77 47 grass stone
+f 77 52 grass
+f 77 53 grass
+f 77 54 grass
+f 77 55 grass
+f 77 56 grass
+f 77 57 grass
+f 77 58 tall-grass
+f 77 59 tall-grass
+f 77 60 tall-grass
+f 77 61 tall-grass
+f 77 62 grass
+f 78 24 grass
+f 78 25 grass
+f 78 26 grass
+f 78 27 grass
+f 78 28 grass
+f 78 29 grass
+f 78 30 grass
+f 78 31 grass
+f 78 32 grass
+f 78 33 grass
+f 78 34 grass
+f 78 35 grass
+f 78 36 grass
+f 78 37 grass stone
+f 78 38 grass stone
+f 78 39 grass stone
+f 78 40 grass stone
+f 78 41 grass stone
+f 78 42 grass stone
+f 78 43 grass stone
+f 78 44 grass stone
+f 78 45 grass stone
+f 78 46 grass stone
+f 78 47 grass stone
+f 78 50 grass
+f 78 51 grass
+f 78 52 grass
+f 78 53 grass
+f 78 54 grass
+f 78 55 grass
+f 78 56 grass
+f 78 57 tall-grass
+f 78 58 tall-grass
+f 78 59 tall-grass
+f 78 60 tall-grass
+f 78 61 tall-grass
+f 78 62 tall-grass
+f 79 24 grass
+f 79 25 grass
+f 79 26 grass
+f 79 27 grass
+f 79 28 grass
+f 79 29 grass
+f 79 30 grass
+f 79 31 grass
+f 79 32 grass
+f 79 33 grass
+f 79 34 grass
+f 79 35 grass
+f 79 36 grass
+f 79 37 grass stone
+f 79 38 grass stone
+f 79 39 grass stone
+f 79 40 grass stone
+f 79 41 grass stone
+f 79 42 grass stone
+f 79 43 grass stone
+f 79 44 grass stone
+f 79 45 grass stone
+f 79 46 grass stone
+f 79 47 grass stone
+f 79 48 grass
+f 79 49 grass
+f 79 50 grass
+f 79 51 grass
+f 79 52 grass
+f 79 53 grass
+f 79 54 grass
+f 79 55 grass
+f 79 56 tall-grass
+f 79 57 tall-grass
+f 79 58 tall-grass
+f 79 59 tall-grass
+f 79 60 tall-grass
+f 79 61 tall-grass
+f 79 62 grass
+f 80 24 grass
+f 80 25 grass
+f 80 26 grass
+f 80 27 grass
+f 80 28 grass
+f 80 29 grass
+f 80 30 grass
+f 80 31 grass
+f 80 32 grass
+f 80 33 grass
+f 80 34 grass
+f 80 35 grass
+f 80 36 grass
+f 80 37 grass stone
+f 80 38 grass stone
+f 80 39 grass stone
+f 80 40 grass stone
+f 80 41 grass
+f 80 42 grass
+f 80 43 grass
+f 80 44 grass
+f 80 45 grass
+f 80 46 grass stone
+f 80 47 grass stone
+f 80 48 grass
+f 80 49 grass
+f 80 50 grass
+f 80 51 grass
+f 80 52 grass
+f 80 53 grass
+f 80 54 grass
+f 80 55 tall-grass
+f 80 56 tall-grass
+f 80 57 grass
+f 80 58 tall-grass
+f 80 59 tall-grass
+f 80 60 tall-grass
+f 80 61 tall-grass
+f 80 62 tall-grass
+f 81 24 tall-grass
+f 81 25 grass
+f 81 26 grass
+f 81 27 grass
+f 81 28 grass
+f 81 29 grass
+f 81 30 grass
+f 81 31 grass
+f 81 32 grass
+f 81 33 grass
+f 81 34 grass
+f 81 35 grass
+f 81 36 grass
+f 81 37 grass stone
+f 81 38 grass stone
+f 81 39 grass stone
+f 81 40 grass stone
+f 81 41 grass
+f 81 42 grass
+f 81 43 grass
+f 81 44 grass
+f 81 45 grass
+f 81 46 grass stone
+f 81 47 grass stone
+f 81 48 grass
+f 81 49 grass
+f 81 50 grass
+f 81 51 grass
+f 81 52 grass
+f 81 53 tall-grass
+f 81 54 tall-grass
+f 81 55 tall-grass
+f 81 56 tall-grass
+f 81 57 tall-grass
+f 81 58 tall-grass
+f 81 59 tall-grass
+f 81 60 tall-grass
+f 81 61 tall-grass
+f 81 62 tall-grass
+f 82 24 tall-grass
+f 82 25 tall-grass
+f 82 26 grass
+f 82 27 grass
+f 82 28 grass
+f 82 29 grass
+f 82 30 grass
+f 82 31 grass
+f 82 32 grass
+f 82 33 grass
+f 82 34 grass stone
+f 82 35 grass stone
+f 82 36 grass stone
+f 82 37 grass stone
+f 82 38 grass stone
+f 82 39 grass stone
+f 82 40 grass stone
+f 82 41 grass
+f 82 42 grass
+f 82 43 grass
+f 82 44 grass
+f 82 45 grass
+f 82 46 grass stone
+f 82 47 grass stone
+f 82 48 grass
+f 82 49 grass
+f 82 50 grass
+f 82 51 grass
+f 82 52 tall-grass
+f 82 53 tall-grass
+f 82 54 tall-grass
+f 82 55 tall-grass
+f 82 56 tall-grass
+f 82 57 tall-grass
+f 82 58 tall-grass
+f 82 59 tall-grass
+f 82 60 tall-grass
+f 82 61 tall-grass
+f 82 62 tall-grass
+f 83 24 tall-grass
+f 83 25 tall-grass
+f 83 26 grass
+f 83 27 grass
+f 83 28 grass
+f 83 29 grass
+f 83 30 grass
+f 83 31 grass
+f 83 32 grass
+f 83 33 grass
+f 83 34 grass stone
+f 83 35 grass stone
+f 83 36 grass stone
+f 83 37 grass stone
+f 83 38 tall-grass
+f 83 39 grass stone
+f 83 40 grass stone
+f 83 41 tall-grass
+f 83 42 tall-grass
+f 83 43 tall-grass
+f 83 44 grass
+f 83 45 grass
+f 83 46 grass stone
+f 83 47 grass stone
+f 83 48 grass
+f 83 49 grass
+f 83 50 grass
+f 83 51 tall-grass
+f 83 52 tall-grass
+f 83 53 tall-grass
+f 83 54 tall-grass
+f 83 55 tall-grass
+f 83 56 tall-grass
+f 83 57 tall-grass
+f 83 58 tall-grass
+f 83 59 tall-grass
+f 83 60 tall-grass
+f 83 61 tall-grass
+f 83 62 tall-grass
+f 84 24 tall-grass
+f 84 25 tall-grass
+f 84 26 grass
+f 84 27 grass
+f 84 28 grass
+f 84 29 grass
+f 84 30 grass
+f 84 31 grass
+f 84 32 grass
+f 84 33 grass
+f 84 34 grass
+f 84 35 grass
+f 84 36 grass
+f 84 37 grass
+f 84 38 tall-grass
+f 84 39 grass stone
+f 84 40 grass stone
+f 84 41 tall-grass
+f 84 42 tall-grass
+f 84 43 tall-grass
+f 84 44 tall-grass
+f 84 45 tall-grass
+f 84 46 grass stone
+f 84 47 grass stone
+f 84 48 grass
+f 84 49 tall-grass
+f 84 50 tall-grass
+f 84 51 tall-grass
+f 84 52 tall-grass
+f 84 53 tall-grass
+f 84 54 tall-grass
+f 84 55 tall-grass
+f 84 56 tall-grass
+f 84 57 tall-grass
+f 84 58 tall-grass
+f 84 59 tall-grass
+f 84 60 tall-grass
+f 84 61 tall-grass
+f 84 62 tall-grass
+f 85 24 tall-grass
+f 85 25 grass
+f 85 26 grass
+f 85 27 grass
+f 85 28 grass
+f 85 29 grass
+f 85 30 grass
+f 85 31 grass
+f 85 32 grass
+f 85 33 grass
+f 85 34 grass
+f 85 35 grass
+f 85 36 grass
+f 85 37 grass
+f 85 38 tall-grass
+f 85 39 grass stone
+f 85 40 grass stone
+f 85 41 tall-grass
+f 85 42 grass
+f 85 43 tall-grass
+f 85 44 tall-grass
+f 85 45 tall-grass
+f 85 46 grass stone
+f 85 47 grass stone
+f 85 48 sand
+f 85 49 sand
+f 85 50 sand
+f 85 51 sand
+f 85 52 sand
+f 85 53 sand
+f 85 54 tall-grass
+f 85 55 grass
+f 85 56 tall-grass
+f 85 57 tall-grass
+f 85 58 tall-grass
+f 85 59 tall-grass
+f 85 60 tall-grass
+f 85 61 tall-grass
+f 85 62 tall-grass
+f 86 24 grass
+f 86 25 grass
+f 86 26 grass
+f 86 27 grass
+f 86 28 grass
+f 86 29 grass
+f 86 30 grass
+f 86 31 grass
+f 86 32 grass
+f 86 33 grass
+f 86 34 grass
+f 86 35 grass
+f 86 36 grass
+f 86 37 grass
+f 86 38 tall-grass
+f 86 39 grass stone
+f 86 40 grass stone
+f 86 41 tall-grass
+f 86 42 tall-grass
+f 86 43 tall-grass
+f 86 44 tall-grass
+f 86 45 tall-grass
+f 86 46 grass stone
+f 86 47 grass stone
+f 86 48 sand
+f 86 49 sand
+f 86 50 sand
+f 86 51 sand
+f 86 52 sand
+f 86 53 grass
+f 86 54 sand
+f 86 55 sand
+f 86 56 sand
+f 86 57 sand
+f 86 58 sand
+f 86 59 sand
+f 86 60 sand
+f 86 61 grass
+f 86 62 grass
+f 87 24 grass
+f 87 25 grass
+f 87 26 grass
+f 87 27 grass
+f 87 28 grass
+f 87 29 grass
+f 87 30 grass
+f 87 31 grass
+f 87 32 grass
+f 87 33 grass
+f 87 34 grass
+f 87 35 grass
+f 87 36 grass
+f 87 37 grass
+f 87 38 grass
+f 87 39 grass stone
+f 87 40 grass stone
+f 87 41 tall-grass
+f 87 42 tall-grass
+f 87 43 tall-grass
+f 87 44 tall-grass
+f 87 45 tall-grass
+f 87 46 grass stone
+f 87 47 grass stone
+f 87 48 sand
+f 87 49 sand
+f 87 50 sand
+f 87 51 sand
+f 87 52 sand
+f 87 53 sand
+f 87 54 sand
+f 87 55 sand
+f 87 56 sand
+f 87 57 sand
+f 87 58 sand
+f 87 59 sand
+f 87 60 sand
+f 87 61 grass
+f 87 62 grass
+f 88 24 grass
+f 88 25 grass
+f 88 26 grass
+f 88 27 grass
+f 88 32 grass
+f 88 33 grass
+f 88 34 grass
+f 88 35 grass
+f 88 36 grass
+f 88 37 grass
+f 88 38 grass
+f 88 39 grass stone
+f 88 40 grass stone
+f 88 41 tall-grass
+f 88 42 tall-grass
+f 88 43 tall-grass
+f 88 44 grass
+f 88 45 grass
+f 88 46 grass stone
+f 88 47 grass stone
+f 88 48 sand
+f 88 49 sand
+f 88 50 sand
+f 88 51 sand
+f 88 52 sand
+f 88 53 sand
+f 88 54 sand
+f 88 55 sand
+f 88 56 sand
+f 88 57 sand
+f 88 58 sand
+f 88 59 sand
+f 88 60 sand
+f 88 61 grass
+f 88 62 grass
+f 89 24 grass
+f 89 25 grass
+f 89 33 grass
+f 89 34 grass
+f 89 35 grass
+f 89 36 grass
+f 89 37 grass
+f 89 38 grass
+f 89 39 grass stone
+f 89 40 grass stone
+f 89 41 tall-grass
+f 89 42 grass
+f 89 43 grass
+f 89 44 grass
+f 89 45 grass
+f 89 46 grass stone
+f 89 47 grass stone
+f 89 48 sand
+f 89 49 sand
+f 89 50 sand
+f 89 51 sand
+f 89 52 sand
+f 89 53 water
+f 89 54 water
+f 89 55 water
+f 89 56 water
+f 89 57 sand
+f 89 58 sand
+f 89 59 sand
+f 89 60 sand
+f 89 61 grass
+f 89 62 grass
+f 90 24 grass
+f 90 34 grass
+f 90 35 grass
+f 90 36 grass
+f 90 37 grass
+f 90 38 grass
+f 90 39 grass stone
+f 90 40 grass stone
+f 90 41 grass
+f 90 42 grass
+f 90 43 grass
+f 90 44 grass
+f 90 45 grass
+f 90 46 grass stone
+f 90 47 grass stone
+f 90 48 sand
+f 90 49 sand
+f 90 50 sand
+f 90 51 sand
+f 90 52 sand
+f 90 53 water
+f 90 54 water
+f 90 55 water
+f 90 56 water
+f 90 57 sand
+f 90 58 sand
+f 90 59 sand
+f 90 60 sand
+f 90 61 grass
+f 90 62 grass
+f 91 34 grass
+f 91 35 grass
+f 91 36 grass
+f 91 37 grass
+f 91 38 grass
+f 91 39 grass stone
+f 91 40 grass stone
+f 91 41 grass
+f 91 42 grass
+f 91 43 grass
+f 91 44 grass
+f 91 45 grass
+f 91 46 grass stone
+f 91 47 grass stone
+f 91 48 sand
+f 91 49 sand
+f 91 50 sand
+f 91 51 sand
+f 91 52 sand
+f 91 53 water
+f 91 54 water
+f 91 55 water
+f 91 56 water
+f 91 57 sand
+f 91 58 sand
+f 91 59 sand
+f 91 60 sand
+f 91 61 grass
+f 91 62 grass
+f 92 26 grass
+f 92 29 tall-grass
+f 92 30 tall-grass
+f 92 31 tall-grass
+f 92 32 tall-grass
+f 92 33 tall-grass
+f 92 34 tall-grass
+f 92 35 tall-grass
+f 92 36 grass
+f 92 37 grass
+f 92 38 grass
+f 92 39 grass stone
+f 92 40 grass stone
+f 92 41 grass
+f 92 42 grass
+f 92 43 grass
+f 92 44 grass
+f 92 45 grass
+f 92 46 grass stone
+f 92 47 grass stone
+f 92 48 sand
+f 92 49 sand
+f 92 50 sand
+f 92 51 sand
+f 92 52 sand
+f 92 53 water
+f 92 54 water
+f 92 55 water
+f 92 56 water
+f 92 57 sand
+f 92 58 sand
+f 92 59 sand
+f 92 60 sand
+f 92 61 grass
+f 92 62 grass
+f 93 29 tall-grass
+f 93 30 grass
+f 93 31 grass
+f 93 32 grass
+f 93 33 grass
+f 93 34 grass
+f 93 35 tall-grass
+f 93 36 grass
+f 93 37 grass
+f 93 38 grass
+f 93 39 grass stone
+f 93 40 grass stone
+f 93 41 grass
+f 93 42 grass
+f 93 43 grass
+f 93 44 grass
+f 93 45 grass
+f 93 46 grass stone
+f 93 47 grass stone
+f 93 48 grass stone
+f 93 49 grass stone
+f 93 50 sand
+f 93 51 sand
+f 93 52 sand
+f 93 53 water
+f 93 54 water
+f 93 55 sand
+f 93 56 water
+f 93 57 sand
+f 93 58 sand
+f 93 59 sand
+f 93 60 sand
+f 93 61 grass
+f 93 62 grass
+f 94 29 tall-grass
+f 94 30 grass
+f 94 31 grass
+f 94 32 grass
+f 94 33 grass
+f 94 34 grass
+f 94 35 tall-grass
+f 94 36 grass
+f 94 37 grass
+f 94 38 tall-grass
+f 94 39 grass stone
+f 94 40 grass stone
+f 94 41 tall-grass
+f 94 42 grass
+f 94 43 grass
+f 94 44 grass
+f 94 45 grass
+f 94 46 grass stone
+f 94 47 grass stone
+f 94 48 grass stone
+f 94 49 grass stone
+f 94 50 sand
+f 94 51 sand
+f 94 52 sand
+f 94 53 sand
+f 94 54 water
+f 94 55 water
+f 94 56 water
+f 94 57 sand
+f 94 58 sand
+f 94 59 sand
+f 94 60 sand
+f 94 61 grass
+f 94 62 grass
+f 95 29 tall-grass
+f 95 30 grass
+f 95 31 grass
+f 95 32 grass
+f 95 33 grass
+f 95 34 grass
+f 95 35 tall-grass
+f 95 36 grass
+f 95 37 tall-grass
+f 95 38 tall-grass
+f 95 39 grass stone
+f 95 40 grass stone
+f 95 41 tall-grass
+f 95 42 tall-grass
+f 95 43 grass
+f 95 44 grass
+f 95 45 grass
+f 95 46 grass
+f 95 47 sand
+f 95 48 sand
+f 95 49 sand
+f 95 50 sand
+f 95 51 sand
+f 95 52 sand
+f 95 53 sand
+f 95 54 water
+f 95 55 water
+f 95 56 water
+f 95 57 sand
+f 95 58 sand
+f 95 59 sand
+f 95 60 sand
+f 95 61 grass
+f 95 62 grass
+f 96 29 tall-grass
+f 96 30 grass
+f 96 31 grass
+f 96 32 grass
+f 96 33 grass
+f 96 34 grass
+f 96 35 grass
+f 96 36 grass stone
+f 96 37 grass stone
+f 96 38 grass stone
+f 96 39 grass stone
+f 96 40 grass stone
+f 96 41 tall-grass
+f 96 42 tall-grass
+f 96 43 grass
+f 96 44 grass
+f 96 45 grass
+f 96 46 grass
+f 96 47 sand
+f 96 48 sand
+f 96 49 sand
+f 96 50 sand
+f 96 51 sand
+f 96 52 sand
+f 96 53 sand
+f 96 54 water
+f 96 55 water
+f 96 56 water
+f 96 57 sand
+f 96 58 sand
+f 96 59 sand
+f 96 60 sand
+f 96 61 grass
+f 96 62 grass
+f 97 24 grass
+f 97 25 grass
+f 97 26 grass
+f 97 27 grass
+f 97 28 grass
+f 97 29 tall-grass
+f 97 30 grass
+f 97 31 grass
+f 97 32 grass
+f 97 33 grass
+f 97 34 grass
+f 97 35 tall-grass
+f 97 36 grass stone
+f 97 37 grass stone
+f 97 38 grass stone
+f 97 39 grass stone
+f 97 40 tall-grass
+f 97 41 tall-grass
+f 97 42 tall-grass
+f 97 43 tall-grass
+f 97 44 grass
+f 97 45 grass
+f 97 46 grass
+f 97 47 sand
+f 97 48 sand
+f 97 49 sand
+f 97 50 sand
+f 97 51 sand
+f 97 52 sand
+f 97 53 sand
+f 97 54 sand
+f 97 55 sand
+f 97 56 sand
+f 97 57 sand
+f 97 58 sand
+f 97 59 sand
+f 97 60 sand
+f 97 61 tall-grass
+f 97 62 tall-grass
+f 98 24 grass
+f 98 25 grass
+f 98 26 grass
+f 98 27 grass
+f 98 28 grass
+f 98 29 tall-grass
+f 98 30 grass
+f 98 31 grass
+f 98 32 grass
+f 98 33 grass
+f 98 34 grass
+f 98 35 tall-grass
+f 98 36 tall-grass
+f 98 37 tall-grass
+f 98 38 tall-grass
+f 98 39 tall-grass
+f 98 40 tall-grass
+f 98 41 tall-grass
+f 98 42 tall-grass
+f 98 43 tall-grass
+f 98 44 grass
+f 98 45 grass
+f 98 46 grass
+f 98 47 sand
+f 98 48 sand
+f 98 49 sand
+f 98 50 sand
+f 98 51 sand
+f 98 52 sand
+f 98 53 sand
+f 98 54 sand
+f 98 55 sand
+f 98 56 sand
+f 98 57 sand
+f 98 58 sand
+f 98 59 tall-grass
+f 98 60 tall-grass
+f 98 61 tall-grass
+f 98 62 tall-grass
+f 99 24 grass
+f 99 25 grass
+f 99 26 grass
+f 99 27 grass
+f 99 28 grass
+f 99 29 tall-grass
+f 99 30 grass
+f 99 31 grass
+f 99 32 grass
+f 99 33 grass
+f 99 34 grass
+f 99 35 tall-grass
+f 99 36 tall-grass
+f 99 37 tall-grass
+f 99 38 tall-grass
+f 99 39 tall-grass
+f 99 40 tall-grass
+f 99 41 tall-grass
+f 99 42 tall-grass
+f 99 43 tall-grass
+f 99 44 grass
+f 99 45 grass
+f 99 46 grass
+f 99 47 sand
+f 99 48 sand
+f 99 49 sand
+f 99 50 sand
+f 99 51 sand
+f 99 52 sand
+f 99 53 sand
+f 99 54 sand
+f 99 55 sand
+f 99 56 sand
+f 99 57 sand
+f 99 58 tall-grass
+f 99 59 tall-grass
+f 99 60 tall-grass
+f 99 61 tall-grass
+f 99 62 tall-grass
+f 100 24 grass
+f 100 25 grass
+f 100 26 grass
+f 100 27 grass
+f 100 28 grass
+f 100 29 tall-grass
+f 100 30 grass
+f 100 31 grass
+f 100 32 grass
+f 100 33 grass
+f 100 34 grass
+f 100 35 tall-grass
+f 100 36 tall-grass
+f 100 37 tall-grass
+f 100 38 tall-grass
+f 100 39 tall-grass
+f 100 40 tall-grass
+f 100 41 tall-grass
+f 100 42 grass
+f 100 43 tall-grass
+f 100 44 grass
+f 100 45 grass
+f 100 46 grass
+f 100 47 sand
+f 100 48 sand
+f 100 49 sand
+f 100 50 grass
+f 100 51 sand
+f 100 52 sand
+f 100 53 sand
+f 100 54 sand
+f 100 55 sand
+f 100 56 sand
+f 100 57 tall-grass
+f 100 58 tall-grass
+f 100 59 tall-grass
+f 100 60 tall-grass
+f 100 61 tall-grass
+f 100 62 tall-grass
+f 101 24 grass
+f 101 25 grass
+f 101 26 grass
+f 101 27 grass
+f 101 28 grass
+f 101 29 tall-grass
+f 101 30 tall-grass
+f 101 31 tall-grass
+f 101 32 tall-grass
+f 101 33 tall-grass
+f 101 34 tall-grass
+f 101 35 tall-grass
+f 101 36 tall-grass
+f 101 37 tall-grass
+f 101 38 tall-grass
+f 101 39 tall-grass
+f 101 40 tall-grass
+f 101 41 tall-grass
+f 101 42 tall-grass
+f 101 43 tall-grass
+f 101 44 grass
+f 101 45 grass
+f 101 46 grass
+f 101 47 grass
+f 101 48 grass
+f 101 49 grass
+f 101 50 grass
+f 101 51 grass
+f 101 52 grass
+f 101 53 grass
+f 101 54 grass
+f 101 55 grass
+f 101 56 tall-grass
+f 101 57 tall-grass
+f 101 58 tall-grass
+f 101 59 tall-grass
+f 101 60 tall-grass
+f 101 61 tall-grass
+f 101 62 tall-grass
+f 102 24 grass
+f 102 25 grass
+f 102 26 grass
+f 102 27 grass
+f 102 28 grass
+f 102 29 grass
+f 102 30 grass
+f 102 31 tall-grass
+f 102 32 tall-grass
+f 102 33 tall-grass
+f 102 34 tall-grass
+f 102 35 tall-grass
+f 102 36 tall-grass
+f 102 37 tall-grass
+f 102 38 tall-grass
+f 102 39 tall-grass
+f 102 40 tall-grass
+f 102 41 tall-grass
+f 102 42 tall-grass
+f 102 43 grass
+f 102 44 grass
+f 102 45 grass
+f 102 46 grass
+f 102 47 grass
+f 102 48 grass
+f 102 49 grass
+f 102 50 grass
+f 102 51 grass
+f 102 52 grass
+f 102 53 grass
+f 102 54 grass
+f 102 55 grass
+f 102 56 tall-grass
+f 102 57 tall-grass
+f 102 58 tall-grass
+f 102 59 tall-grass
+f 102 60 tall-grass
+f 102 61 tall-grass
+f 102 62 tall-grass
+f 103 24 grass
+f 103 25 grass
+f 103 26 grass
+f 103 27 grass
+f 103 28 grass
+f 103 29 grass
+f 103 30 grass
+f 103 31 tall-grass
+f 103 32 tall-grass
+f 103 33 tall-grass
+f 103 34 tall-grass
+f 103 35 tall-grass
+f 103 36 tall-grass
+f 103 37 tall-grass
+f 103 38 tall-grass
+f 103 39 tall-grass
+f 103 40 tall-grass
+f 103 41 tall-grass
+f 103 42 grass
+f 103 43 grass
+f 103 44 grass
+f 103 45 grass
+f 103 46 grass
+f 103 47 grass
+f 103 48 grass
+f 103 49 grass
+f 103 50 grass
+f 103 51 grass
+f 103 52 grass
+f 103 53 grass
+f 103 54 grass
+f 103 55 grass
+f 103 56 tall-grass
+f 103 57 tall-grass
+f 103 58 tall-grass
+f 103 59 tall-grass
+f 103 60 tall-grass
+f 103 61 tall-grass
+f 103 62 tall-grass
+v 5 -1 0 1
+b 5 0
+v 5 1 0 2
+v 5 2 0 3
+v 17 2 0 1
+v 18 2 0 1
+b 16 3
+b 17 3
+v 17 4 0 0
+v 18 4 0 0
+r 31 4 1
+v 49 2 3 1
+v 49 3 3 1
+r 48 4 1
+b 49 4 0
+b 49 4 1
+v 50 4 0 1
+v 49 5 3 3
+v 49 6 3 0
+r 56 13 3
+v 55 14 3 3
+v 56 14 3 3
+b 57 14 0
+b 57 14 1
+v 58 14 3 3
+v 59 14 3 3
+b 51 25
+b 38 22
+b 37 24
+v 14 20 0 3
+v 15 20 0 1
+v 16 20 0 3
+v 18 20 0 0
+v 19 20 0 3
+v 20 20 0 1
+v 21 20 0 0
+v 22 20 0 2
+v 23 20 0 3
+v 24 20 0 3
+b 20 21 -1
+r 22 21 4 -1
+b 5 19
+r 5 19 2 1
+s -7 27 3
+s -8 30 3
+v 3 39 0 3
+v 4 39 0 0
+v 5 39 0 2
+v 6 39 0 0
+s 0 40 3
+v -1 41 0 0
+v 3 41 0 3
+v 4 41 0 3
+v 5 41 0 0
+v 6 41 0 0
+s 2 42 3 -1
+v 16 38 0 2
+v 25 38 0 1
+v 21 39 0 0
+s 23 40 3
+v 25 40 0 3
+v 15 41 0 1
+s 17 41 3
+v 39 37 3 1
+v 39 38 3 0
+v 35 39 0 0
+v 41 39 1 3
+v 44 39 1 1
+b 34 40
+v 39 40 3 1
+r 38 41 1
+v 39 41 3 3
+v 39 42 3 3
+r 34 40 1 1
+v 62 26 3 2
+v 63 26 3 2
+v 64 26 3 3
+v 65 26 3 1
+v 66 26 3 1
+v 67 26 3 0
+v 68 26 3 2
+v 69 26 3 2
+v 70 26 3 3
+v 62 27 3 1
+v 63 27 3 2
+v 64 27 0 1
+v 65 27 0 2
+v 66 27 0 2
+v 67 27 0 0
+v 68 27 0 1
+v 69 27 3 2
+v 70 27 3 1
+v 62 28 3 0
+v 63 28 3 2
+v 64 28 0 2
+v 68 28 0 1
+v 69 28 3 2
+v 70 28 3 0
+v 62 29 3 3
+v 63 29 3 2
+v 64 29 0 3
+v 68 29 0 2
+v 69 29 3 3
+v 70 29 3 1
+v 62 30 3 3
+v 63 30 3 0
+v 64 30 0 1
+v 68 30 0 0
+v 69 30 3 1
+v 70 30 3 1
+v 62 31 3 2
+v 63 31 3 0
+v 64 31 0 0
+v 65 31 0 3
+v 66 31 0 2
+v 67 31 0 1
+v 68 31 0 3
+v 69 31 3 1
+v 70 31 3 1
+v 62 32 3 3
+b 67 32
+r 68 32 4
+v 70 32 3 3
+v 62 33 3 3
+b 68 33
+v 70 33 3 3
+v 62 34 3 0
+v 70 34 3 0
+v 62 35 3 2
+v 63 35 3 0
+v 64 35 3 0
+v 65 35 3 0
+v 67 35 3 0
+v 68 35 3 2
+v 69 35 3 1
+v 70 35 3 3
+v 77 27 3 1
+v 78 27 3 0
+v 79 27 3 1
+v 80 27 3 0
+v 81 27 3 1
+v 82 27 3 2
+v 83 27 3 3
+v 84 27 3 0
+v 85 27 3 2
+v 86 27 3 2
+v 87 27 3 2
+v 77 28 3 2
+v 78 28 3 0
+v 87 28 3 3
+v 77 29 3 1
+v 78 29 3 0
+r 85 29 4
+v 87 29 3 0
+v 77 30 3 1
+v 78 30 3 1
+v 79 30 3 2
+v 80 30 1 3
+v 83 30 0 3
+v 84 30 0 0
+v 85 30 0 0
+v 86 30 3 1
+v 87 30 3 1
+v 77 31 3 3
+v 78 31 3 3
+b 82 31
+v 87 31 3 1
+v 77 32 3 3
+v 78 32 3 0
+r 81 32 2
+v 87 32 3 0
+v 77 33 3 3
+v 78 33 3 1
+v 79 33 3 3
+v 80 33 3 0
+v 81 33 3 3
+v 83 33 3 3
+v 84 33 3 2
+v 85 33 3 3
+v 86 33 3 1
+v 87 33 3 0
+v 93 31 3 1
+b 95 31
+v 96 31 3 0
+r 100 31 4
+v 95 32 3 3
+b 96 32 0
+b 96 32 1
+v 97 32 3 0
+b 97 33
+r 97 33 4 1
+v 98 34 3 0
+v 88 50 3 1
+v 89 50 3 0
+v 90 50 3 0
+v 91 50 3 2
+v 92 50 3 3
+v 94 50 3 0
+v 95 50 3 1
+v 96 50 3 1
+v 97 50 3 2
+v 88 51 3 3
+s 92 51 3
+v 97 51 3 1
+v 88 52 3 0
+b 91 52
+v 97 52 3 2
+v 88 53 3 2
+v 94 53 0 0
+v 95 53 0 2
+v 96 53 0 3
+v 97 53 3 1
+v 88 54 3 2
+v 97 54 3 0
+v 88 55 3 3
+v 97 55 3 2
+v 88 56 3 2
+v 97 56 3 2
+v 88 57 3 2
+v 89 57 3 2
+v 90 57 3 0
+v 91 57 3 1
+v 92 57 3 3
+v 93 57 3 2
+v 94 57 3 3
+v 95 57 3 2
+v 96 57 3 1
+v 97 57 3 2
+s 95 53 3 1
+r 69 51 1
+b 71 52 -1
+b 71 54 -1
+v 74 40 0 2
+v 73 43 0 1
+v 76 40 0 3
+v 77 40 0 0
+v 73 42 0 0
+v 75 44 0 0
+v 77 43 0 2
+v 74 44 0 0
+v 73 44 0 1
+v 75 40 0 0
+v 77 42 0 0
+v 73 41 0 3
+v 77 41 0 3
+v 76 44 0 0
+v 73 40 0 1
+v 77 44 0 0
+v 79 24 1 2
+v 87 25 4 1
+v 92 26 2 0
+v 75 31 3 0
+v 74 33 4 3
+v 85 42 4 1
+v 100 42 1 3
+v 67 44 4 3
+v 88 44 2 2
+v 59 45 1 2
+v 66 46 3 0
+v 61 49 4 0
+v 79 49 3 0
+v 100 50 4 1
+v 76 51 4 1
+v 86 53 4 0
+v 101 54 1 3
+v 85 55 3 2
+v 60 56 1 0
+v 80 57 4 1
+v 79 62 2 1
+v 66 19 4 3
+v 73 19 2 2
+v 78 19 4 3
+v 81 19 4 3
+v 84 19 4 0
+v 105 19 3 1
+v 69 20 2 2
+v 98 20 4 0
+v 108 20 3 0
+v 72 21 4 1
+v 82 21 3 3
+v 89 21 3 3
+v 95 22 4 3
+v 102 22 3 3
+v 105 23 4 3
+v 107 25 4 3
+v 56 28 2 0
+v 106 30 3 2
+v 55 32 2 3
+v 57 33 2 0
+v 105 33 4 0
+v 54 34 2 1
+v 106 39 4 3
+v 56 43 4 2
+v 54 44 3 1
+v 54 47 4 2
+v 57 47 4 3
+v 55 50 3 3
+v 105 51 4 2
+v 54 53 4 1
+v 55 55 4 2
+v 108 55 3 0
+v 105 56 4 0
+v 57 59 3 1
+v 55 60 4 2
+v 105 61 4 0
+v 57 62 4 3
+v 62 64 2 0
+v 77 64 4 1
+v 68 65 4 3
+v 94 65 2 1
+v 97 65 2 0
+v 66 66 4 3
+v 106 66 4 2
+v 61 67 4 1
+v 81 67 4 1
+v 84 67 2 0
+v 90 67 2 1
+v 108 67 3 2
+v -9 35 0 3
+v -9 36 0 3
+v -9 37 0 2
+v -9 38 0 2
+v -8 21 0 3
+v -8 22 0 1
+v -8 38 0 3
+v -7 18 0 0
+v -7 19 0 2
+v -7 20 0 1
+v -7 21 0 0
+v -7 35 0 3
+v -7 36 0 2
+v -7 38 0 3
+v -6 -3 0 0
+v -6 -2 0 2
+v -6 -1 0 2
+v -6 0 0 2
+v -6 1 0 2
+v -6 2 0 2
+v -6 3 0 3
+v -6 18 0 1
+v -6 36 0 2
+v -6 38 0 1
+v -6 39 0 1
+v -6 40 0 3
+v -6 41 0 1
+v -5 -3 0 1
+v -5 3 0 1
+v -5 18 0 2
+v -5 20 0 3
+v -5 21 0 0
+v -5 22 0 0
+v -5 36 0 3
+v -5 41 0 0
+v -4 -3 0 1
+v -4 3 0 3
+v -3 -3 0 0
+v -3 3 0 1
+v -2 -3 0 0
+v -2 3 0 1
+v -1 -3 0 2
+v -1 3 0 0
+v 0 -3 0 0
+v 9 18 0 3
+v 9 20 0 3
+v 9 39 0 2
+v 9 41 0 0
+v 10 1 0 1
+v 10 3 0 2
+v 10 18 0 0
+v 10 20 0 2
+v 10 39 0 0
+v 10 41 0 0
+v 11 1 0 1
+v 11 3 0 2
+v 11 18 0 0
+v 11 20 0 1
+v 11 39 0 0
+v 11 41 0 2
+v 12 1 0 1
+v 12 3 0 2
+v 12 18 0 2
+v 12 20 0 2
+v 12 39 0 0
+v 12 41 0 0
+v 13 1 0 2
+v 13 3 0 3
+v 23 3 0 1
+v 23 5 0 1
+v 24 3 0 2
+v 24 5 0 3
+v 25 3 0 1
+v 25 5 0 3
+v 26 3 0 0
+v 26 5 0 0
+v 26 22 0 1
+v 26 24 0 0
+v 27 22 0 2
+v 27 24 0 1
+v 28 22 0 2
+v 28 24 0 1
+v 28 39 0 0
+v 28 41 0 0
+v 29 22 0 0
+v 29 24 0 1
+v 29 39 0 1
+v 29 41 0 2
+v 30 39 0 2
+v 30 41 0 1
+v 31 39 0 3
+v 31 41 0 0
+v 41 3 0 0
+v 41 5 0 1
+v 41 23 0 1
+v 41 25 0 1
+v 42 3 0 2
+v 42 5 0 1
+v 42 23 0 3
+v 42 25 0 1
+v 43 3 0 1
+v 43 5 0 1
+v 43 23 0 3
+v 43 25 0 0
+v 44 3 0 3
+v 44 5 0 2
+v 44 23 0 3
+v 44 25 0 3
+v 49 36 0 2
+v 49 44 0 3
+v 50 36 0 2
+v 50 44 0 1
+v 51 36 0 2
+v 51 44 0 2
+v 52 36 0 3
+v 52 44 0 1
+v 53 36 0 2
+v 53 44 0 3
+v 54 36 0 2
+v 54 44 0 1
+v 55 3 0 3
+v 55 5 0 1
+v 55 6 0 3
+v 55 7 0 3
+v 55 22 0 0
+v 55 26 0 2
+v 55 36 0 3
+v 55 44 0 0
+v 56 3 0 0
+v 56 22 0 2
+v 56 24 0 2
+v 56 25 0 2
+v 56 26 0 3
+v 56 36 0 0
+v 56 37 0 1
+v 56 38 0 0
+v 56 39 0 0
+v 56 41 0 1
+v 56 42 0 3
+v 56 43 0 1
+v 56 44 0 3
+v 57 3 0 0
+v 57 4 0 2
+v 57 5 0 0
+v 57 6 0 2
+v 57 24 0 2
+v 57 39 0 0
+v 57 41 0 2
+v 58 6 0 0
+v 58 7 0 3
+v 58 22 0 1
+v -9 -7 4 2
+v -1 -7 3 1
+v 2 -7 4 3
+v 9 -7 1 0
+v 7 -6 1 0
+v 5 -4 3 0
+v 10 -4 4 2
+v 25 -4 2 0
+v 15 -3 4 2
+v 20 -3 4 0
+v 30 -3 3 2
+v 43 -2 4 3
+v 53 -2 4 0
+v 19 -1 3 2
+v 11 0 3 0
+v 59 1 4 1
+v 42 2 2 3
+v 61 4 2 0
+v -9 6 3 2
+v 66 8 1 2
+v 63 9 4 1
+v -7 11 3 0
+v 23 11 4 2
+v -2 12 1 1
+v 6 12 3 2
+v 10 13 3 2
+v 28 13 1 1
+v 51 13 2 3
+v -8 14 1 1
+v -5 14 4 0
+v -1 14 1 1
+v 19 14 3 3
+v 48 14 3 2
+v 43 15 2 2
+v 65 15 3 2
+v -7 17 4 0
+v 30 17 1 1
+v -9 18 2 0
+v 43 19 4 0
+v -10 20 3 3
+v 12 31 4 3
+v -14 32 3 3
+v 19 32 3 2
+v 32 32 2 0
+v 1 33 3 3
+v 27 33 1 2
+v 15 34 4 3
+v 25 34 4 2
+v 30 34 1 1
+v 28 35 3 0
+v -15 38 1 1
+v 30 38 3 1
+v -10 44 2 2
+v -8 47 3 2
+v 13 49 1 0
+v -4 50 3 3
+v 5 50 2 1
+v 26 50 3 1
