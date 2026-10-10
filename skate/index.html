@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#000000">
+<title>L8 skate</title>
+<style>
+  * { box-sizing: border-box; }
+  html, body {
+    height: 100%;
+    margin: 0;
+    overflow: hidden;
+    overscroll-behavior: none;
+    touch-action: none;
+  }
+  body {
+    background: #000;
+    color: #d7dbe3;
+    font: 15px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif;
+    height: 100dvh;
+    display: grid;
+    place-items: center;
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  canvas { display: block; background: #000; outline: none; touch-action: none; }
+  #overlay { position: fixed; inset: 0; display: grid; place-items: center; pointer-events: none; }
+  #overlay div {
+    background: rgba(14, 16, 20, 0.85);
+    border: 1px solid #323846;
+    border-radius: 10px;
+    padding: 18px 26px;
+    text-align: center;
+    max-width: 520px;
+  }
+  #overlay a { color: #7ea6ff; pointer-events: auto; }
+  #overlay[hidden] { display: none; }
+  .help {
+    position: fixed;
+    top: max(8px, env(safe-area-inset-top));
+    left: max(10px, env(safe-area-inset-left));
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.85);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+  }
+  body.touch .help { display: none; }
+  .controls { display: none; }
+  body.touch .controls { display: block; }
+  /* The screen is the controls: only the buttons to go to the park (or
+     back) and for a new course stay, top left. */
+  .actions { position: fixed; display: grid; gap: 8px; grid-template-columns: 72px 72px 72px; top: max(10px, env(safe-area-inset-top)); left: max(10px, env(safe-area-inset-left)); }
+  .key {
+    display: grid;
+    place-items: center;
+    border-radius: 14px;
+    background: rgba(74, 52, 34, 0.38);
+    border: 1px solid rgba(255, 248, 236, 0.55);
+    color: #fff;
+    font-size: 22px;
+    font-weight: 600;
+  }
+  .actions .key { height: 60px; font-size: 14px; }
+  .key.held { background: rgba(240, 150, 80, 0.55); }
+  body.park .actions .key.replay, body.park .actions .key.newcourse, body.park .on-course, body:not(.park) .on-park { display: none; }
+  #pads { display: none; }
+  body.touch #pads { display: block; }
+  /* The two panels: where the game reads the thumbs (see skate.js). */
+  .panel {
+    position: fixed;
+    pointer-events: none;
+    border: 2px solid rgba(255, 248, 236, 0.9);
+    border-radius: 18px;
+    background: rgba(74, 52, 34, 0.2);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
+    color: #fff;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+    font-weight: 700;
+  }
+  .panel .label { position: absolute; left: 0; right: 0; top: 8px; text-align: center; font-size: 13px; letter-spacing: 0.08em; }
+  .panel small { display: block; font-size: 10px; font-weight: 500; letter-spacing: 0; opacity: 0.9; }
+  .panel .track { position: absolute; left: 10%; right: 10%; top: 50%; height: 4px; margin-top: -2px; border-radius: 2px; background: rgba(255, 255, 255, 0.55); }
+  .panel .notch { position: absolute; left: 50%; top: 50%; width: 4px; height: 26px; margin: -13px 0 0 -2px; border-radius: 2px; background: #fff; }
+  .panel .chev { position: absolute; top: 50%; transform: translateY(-50%); font-size: 18px; }
+  .panel .chev.left { left: 8px; }
+  .panel .chev.right { right: 8px; }
+  .panel .arrow { position: absolute; font-size: 16px; text-align: center; line-height: 1.1; }
+  .panel .arrow.up { left: 0; right: 0; top: 34%; }
+  .panel .arrow.down { left: 0; right: 0; bottom: 8px; }
+  .panel .arrow.left { left: 8px; top: 50%; transform: translateY(-50%); }
+  .panel .arrow.right { right: 8px; top: 50%; transform: translateY(-50%); }
+  .panel .hold { position: absolute; left: 50%; top: 62%; width: 34px; height: 34px; margin: -17px 0 0 -17px; border: 2px dashed rgba(255, 255, 255, 0.85); border-radius: 50%; }
+  /* How the course works: a button out of the way (below the panels, on a
+     phone), and the guide it opens, which pauses the game. */
+  .how { position: fixed; bottom: max(12px, env(safe-area-inset-bottom)); right: max(12px, env(safe-area-inset-right)); height: 34px; padding: 0 16px; font-size: 14px; }
+  .how { display: grid; }
+  body.touch .how { bottom: max(22px, calc(env(safe-area-inset-bottom) + 8px)); right: auto; left: 50%; width: 72px; height: 44px; margin-left: -36px; padding: 0; }
+  .guide { position: fixed; inset: 0; display: grid; place-items: center; background: rgba(4, 6, 10, 0.72); z-index: 2; }
+  .guide[hidden] { display: none; }
+  /* The courses to pick from: a button beside How, and the sheet it opens. */
+  .pick { position: fixed; display: grid; bottom: max(12px, env(safe-area-inset-bottom)); right: calc(max(12px, env(safe-area-inset-right)) + 76px); height: 34px; padding: 0 16px; font-size: 14px; }
+  body.touch .how { margin-left: 4px; }
+  body.touch .pick { bottom: max(22px, calc(env(safe-area-inset-bottom) + 8px)); right: auto; left: 50%; width: 84px; height: 44px; margin-left: -88px; padding: 0; }
+  #courses .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; margin-top: 10px; }
+  #courses .course { padding: 8px 10px; border-radius: 10px; background: rgba(255, 248, 236, 0.08); border: 1px solid rgba(255, 248, 236, 0.25); cursor: pointer; }
+  #courses .course.now { border-color: #ffd36b; background: rgba(255, 211, 107, 0.14); }
+  #courses .course b { display: block; font-size: 17px; }
+  #courses .course span { display: block; font-size: 12px; color: #c9cfdb; line-height: 1.35; }
+  #courses .course i { display: block; margin-top: 4px; font-style: normal; font-size: 12px; color: #ffd36b; }
+  .guide .sheet {
+    position: relative;
+    width: min(620px, calc(100vw - 20px));
+    max-height: calc(100dvh - 20px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    touch-action: pan-y;
+    -webkit-user-select: text;
+    user-select: text;
+    background: rgba(14, 17, 24, 0.96);
+    border: 1px solid #323846;
+    border-radius: 14px;
+    padding: 18px 22px 22px;
+  }
+  .guide h2 { margin: 0 40px 6px 0; font-size: 20px; color: #fff; }
+  .guide h3 { margin: 18px 0 4px; font-size: 15px; color: #ffd36b; }
+  .guide p, .guide ul { margin: 4px 0; }
+  .guide ul { padding-left: 20px; }
+  .guide b { color: #fff; }
+  .guide table { border-collapse: collapse; margin: 6px 0; font-variant-numeric: tabular-nums; }
+  .guide th, .guide td { padding: 2px 10px 2px 0; text-align: left; vertical-align: top; }
+  .guide th { color: #9aa3b5; font-weight: 600; white-space: nowrap; }
+  .guide .close { position: absolute; top: 10px; right: 10px; width: 36px; height: 36px; font-size: 18px; }
+</style>
+</head>
+<body>
+<canvas id="screen" width="1200" height="720" tabindex="0" aria-label="L8 skate"></canvas>
+<div class="help">&larr;/&rarr; steer &middot; hold Space and tap arrows to pick a trick (each tap adds a turn), let go to jump &middot; X grab &middot; R restarts &middot; N new course &middot; a number and Enter: that course ([ and ] step) &middot; P replay, B best run &middot; Tab: the park, or back &middot; L: night, or day</div>
+<div id="pads">
+  <div class="panel steer">
+    <span class="label">STEER<small><span class="on-course">slide to aim &middot; middle = downhill</span><span class="on-park">slide to turn &middot; middle = straight</span></small></span>
+    <span class="track"></span><span class="notch"></span>
+    <span class="chev left">&#x25C0;</span><span class="chev right">&#x25B6;</span>
+  </div>
+  <div class="panel trick">
+    <span class="label">TRICK<small>hold &middot; drag &middot; let go to jump</small></span>
+    <span class="arrow up">&#x25B2;<small>front flip</small></span>
+    <span class="hold"></span>
+    <span class="arrow left">&#x25C0;<small>spin</small></span><span class="arrow right">&#x25B6;<small>spin</small></span>
+    <span class="arrow down"><small>backflip</small>&#x25BC;</span>
+  </div>
+</div>
+<div class="key how ui" role="button">How</div>
+<div class="key pick ui" role="button">Courses</div>
+<div id="courses" class="guide ui" hidden>
+  <div class="sheet" role="dialog" aria-label="Courses">
+    <div class="key close" role="button" aria-label="Close">&#x2715;</div>
+    <h2>Courses</h2>
+    <p>Each number is always the same course. Pick one, or take a new one at random. Your best score on each is kept on this device.</p>
+    <div class="grid"></div>
+  </div>
+</div>
+<div id="guide" class="guide ui" hidden>
+  <div class="sheet" role="dialog" aria-label="How the course works">
+    <div class="key close" role="button" aria-label="Close">&#x2715;</div>
+    <h2>How the course works</h2>
+    <p>Ride from the top of the hill to the finish. Every trick you land clean scores on its own, and the run's score is what they add up to. Every course is laid out at random, and what is on it decides which tricks pay, so each one is a little puzzle. <b>New</b> (N) lays out another course; R starts this one over.</p>
+
+    <h3>Riding</h3>
+    <ul>
+      <li><b>Steer</b> with the left panel: where your thumb is along it is where he aims, the middle straight down the hill. Let go and he keeps going the way he is. (Keyboard: &larr; and &rarr;.)</li>
+      <li>Pointed down the hill he runs fast; across it, he slows. The banks at the edges turn him back in.</li>
+    </ul>
+
+    <h3>Tricks</h3>
+    <ul>
+      <li>Press the <b>trick</b> panel and he crouches. Drag to choose the trick: up a front flip, down a backflip, sideways a spin; farther for more. Let go and he jumps into it. (Keyboard: hold Space and tap arrows, each tap adding a turn.)</li>
+      <li>He jumps the moment you let go. On a kicker, the most air is at the <b>lip</b>: let go too early and he only hops up the ramp; a moment late, still fine; later, less.</li>
+      <li>The trick <b>fits the air</b>: he turns just fast enough to finish it before he lands. If the air is too short for it, he lands sketchy.</li>
+      <li>Each jump ahead has a <b>tag</b> over its lip saying what it favors. While you aim, the tags turn green and say what your trick would score there, or red and <b>TOO BIG</b>, and each ramp glows <b>green</b> where letting go lands the trick, with a bright line where the glow starts. Most of the ramp glows for a small trick, a sliver at the lip for a big one, and none of it for one too big. A halfpipe's walls glow the same way, over the heights where letting go lands it. When letting go right now would land it, a green <b>ring</b> circles him and the trick's name turns green.</li>
+      <li>Press the panel again in the air to <b>grab</b> (keyboard: X). The longer he holds it, the more it's worth.</li>
+      <li>After an odd number of half turns he rides <b>switch</b> (backwards), and so he does after an air straight up a halfpipe wall, until the same turns him back round.</li>
+    </ul>
+
+    <h3>Sketchy</h3>
+    <p>A trick he doesn't finish before he lands, or a gap he comes up short of, is <b>sketchy</b>: he rides away, but it scores nothing.</p>
+
+    <h3>What a trick is worth</h3>
+    <p>It starts from a <b>base</b>, bigger for bigger tricks but less and less so:</p>
+    <table>
+      <tr><th>Flips</th><td>1: 600 &middot; 2: 900 &middot; 3: 1100</td></tr>
+      <tr><th>Spins</th><td>180: 200 &middot; 360: 350 &middot; 540: 480 &middot; 720: 580 &middot; 900: 660 &middot; 1080: 720</td></tr>
+      <tr><th>Grab</th><td>300, plus up to 200 more the longer it's held (at least a quarter of the air)</td></tr>
+      <tr><th>Straight air</th><td>100, off a kicker</td></tr>
+      <tr><th>Rail, box</th><td>300 to get on, then 150 a second</td></tr>
+    </table>
+    <p>Each part is multiplied by what the thing he flew off makes of it (below): it only ever adds, so what it doesn't favor is still worth its base. A flip and a spin together are worth &times;1.2. Then:</p>
+    <table>
+      <tr><th>Air</th><td>&times;0.5 to &times;1.6: seconds in the air &divide; 1.2</td></tr>
+      <tr><th>Landing</th><td>stomped in the sweet spot &times;1.25 &middot; clean &times;1 &middot; overshot &times;0.75 &middot; cased short &times;0.6</td></tr>
+      <tr><th>Switch</th><td>&times;1.5, and it counts as a different trick</td></tr>
+      <tr><th>Flat</th><td>&times;0.25 off flat ground or rollers</td></tr>
+      <tr><th>Repeat</th><td>&times;0.5 each time he has done that trick before in the run</td></tr>
+    </table>
+    <p>The same trick means the same flips and spins, each the same way round, with or without a grab, switch or not. A rail and a box are different things.</p>
+
+    <h3>What's on the course</h3>
+    <table>
+      <tr><th></th><th>Flips</th><th>Spins</th><th>Grab</th></tr>
+      <tr><th>Kicker</th><td>&times;2</td><td>&times;1</td><td>&times;1</td></tr>
+      <tr><th>Gap</th><td>&times;1.25</td><td>&times;1.25</td><td>&times;1.25</td></tr>
+      <tr><th>Halfpipe</th><td>&times;1</td><td>&times;2</td><td>&times;1.25</td></tr>
+      <tr><th>Cliff</th><td>&times;1</td><td>&times;1.25</td><td>&times;2.5</td></tr>
+    </table>
+    <ul>
+      <li><b>Kickers</b> throw him up for flips. Some sections offer two or three lanes side by side.</li>
+      <li><b>Gaps</b> are good for anything, but come up short and the trick is sketchy; there is a safer kicker beside each.</li>
+      <li><b>Halfpipes</b>: ride up a wall to air out of it; the walls pump him along, so you can go up again and again.</li>
+      <li><b>Cliffs</b> drop away for long, floaty airs: a place to grab.</li>
+      <li><b>Rails</b> (teal) and <b>boxes</b> (coral): land on one, or ride into its low end, to grind it.</li>
+      <li><b>Rollers</b> are flat ground for scoring: hops there count a quarter.</li>
+    </ul>
+
+    <h3>The park</h3>
+    <p><b>Park</b> (Tab) goes to a skatepark: the same kickers, gap, rails, boxes, and rollers, turned every which way on a flat floor inside a bowl, and the same tricks, scores, tags, and light. There is no hill, so he pushes along to a steady speed, and the steering turns him rather than aiming him: he can go any way. Ride up the bowl's walls to fly straight up off them and come back down the way you came (switch), as off a halfpipe's. There's no finish: the session goes on, and R starts it over.</p>
+
+    <h3>Taste</h3>
+    <p>The best runs suit each trick to where it's done, and don't repeat themselves: a double flip off a kicker, a spin in the pipe, a long grab off the cliff, a rail between. Big tricks pay less and less for each extra turn, so one that fits its air and lands stomped beats a bigger one that's sketchy. The finish screen shows every trick and its reasons, so you can see why a score came out high or low.</p>
+  </div>
+</div>
+<div id="overlay"><div id="message">Loading&hellip;</div></div>
+<div class="controls" aria-hidden="true">
+  <div class="actions">
+    <div class="key mode" data-key="65289">Park</div>
+    <div class="key newcourse" data-key="110">New</div>
+    <div class="key look" data-key="108">Night</div>
+    <div class="key replay" data-key="112">Replay</div>
+  </div>
+</div>
+<script type="module" src="skate.js"></script>
+</body>
+</html>
