@@ -1,5 +1,5 @@
 // The skate game on a canvas that fills the screen. It shares the block
-// game's browser implementation of X11, GLX, and OpenGL (./platform.js).
+// game's browser implementation of X11, GLX, and OpenGL (../game/platform.js).
 import { instantiate, runResumable, MemFS } from "./l8-runtime.js";
 import { createPlatform } from "./platform.js";
 import { startControl } from "./control.js";
@@ -11,6 +11,23 @@ const show = (html) => {
   message.innerHTML = html;
   overlay.hidden = false;
 };
+// (The game has stopped: it is not loading.)
+const stopped = (html) => {
+  document.body.classList.remove("loading");
+  show(html);
+};
+
+// A person's link is this page with their secret after the # (see the
+// leaderboards, below): it is kept, and taken out of the address before
+// anything else sees it there.
+const linked = location.hash.match(/^#me=([a-z0-9]{24})$/)?.[1] ?? null;
+if (linked) {
+  try {
+    localStorage.setItem("skate.me", JSON.stringify(linked));
+    localStorage.removeItem("skate.account");
+  } catch {}
+  history.replaceState(null, "", location.pathname + location.search);
+}
 
 for (const name of ["gesturestart", "gesturechange", "dblclick"]) {
   document.addEventListener(name, (e) => e.preventDefault(), { passive: false });
@@ -28,84 +45,148 @@ addEventListener("popstate", () => history.pushState({ stay: true }, "", locatio
 
 const touch = matchMedia("(pointer: coarse)").matches || navigator.maxTouchPoints > 0;
 if (touch) document.body.classList.add("touch");
-// The mode button (Tab) goes to the park, or back to the course; the
-// screen is the controls in either.
-const modeKey = document.querySelector(".key.mode");
-const setMode = (park) => {
-  document.body.classList.toggle("park", park);
-  modeKey.textContent = park ? "Course" : "Park";
-};
-setMode(new URLSearchParams(location.search).has("L8_PARK"));
 // Night or day (L): night to begin with where the device is in dark mode,
 // unless ?L8_LOOK= says which.
-const lookKey = document.querySelector(".key.look");
 const lookParam = new URLSearchParams(location.search).get("L8_LOOK");
 const startNight = lookParam ? lookParam === "n" : matchMedia("(prefers-color-scheme: dark)").matches;
-const setNight = (night) => {
-  document.body.classList.toggle("night", night);
-  lookKey.textContent = night ? "Day" : "Night";
-};
+const setNight = (night) => document.body.classList.toggle("night", night);
 setNight(startNight);
 let sendKey = null;
-for (const key of document.querySelectorAll(".controls .key")) {
-  const sym = Number(key.dataset.key);
-  if (!sym) continue;
-  if (key === modeKey) key.addEventListener("pointerdown", () => setMode(!document.body.classList.contains("park")));
-  if (key === lookKey) key.addEventListener("pointerdown", () => setNight(!document.body.classList.contains("night")));
-  let held = false;
-  const up = () => {
-    if (!held) return;
-    held = false;
-    key.classList.remove("held");
-    sendKey?.(3, sym);
-  };
-  key.addEventListener("pointerdown", (e) => {
-    e.preventDefault();
-    key.setPointerCapture(e.pointerId);
-    held = true;
-    key.classList.add("held");
+const typeKeys = (syms) => {
+  for (const sym of syms) {
     sendKey?.(2, sym, "");
-  });
-  for (const name of ["pointerup", "pointercancel", "lostpointercapture"]) key.addEventListener(name, up);
-}
+    sendKey?.(3, sym);
+  }
+};
 
-// The guide to the course: the How button opens it, and the game pauses
-// (holding Pause) until it closes, with its button, a tap outside it, or
-// Escape.
-const guide = document.getElementById("guide");
-const openGuide = () => {
-  guide.hidden = false;
+// A button is tapped, not just touched: pressed, and let go still on it,
+// without having moved far (a finger that moves is scrolling, or has
+// thought better of it). While it is pressed it shows it, the color
+// easing in (see .pressed, in index.html), so that the start of a drag,
+// which begins as a press does, shows hardly at all. `accepts` says
+// whether a press is the button's (as for a sheet's backdrop, which is
+// only where nothing else is).
+const TAP_SLOP = 10;
+const onTap = (el, act, accepts = () => true) => {
+  let press = null;
+  const end = () => {
+    press = null;
+    el.classList.remove("pressed");
+  };
+  el.addEventListener("pointerdown", (e) => {
+    if (e.button > 0 || !accepts(e)) return;
+    // (A button inside another, as a run to watch on a course's card: the
+    // press is the inner one's alone.)
+    e.stopPropagation();
+    press = { id: e.pointerId, x: e.clientX, y: e.clientY };
+    el.classList.add("pressed");
+    // A mouse held down is followed off the button and back (a finger
+    // already is).
+    if (e.pointerType === "mouse") el.setPointerCapture(e.pointerId);
+  });
+  el.addEventListener("pointermove", (e) => {
+    if (press && e.pointerId === press.id && Math.hypot(e.clientX - press.x, e.clientY - press.y) > TAP_SLOP) end();
+  });
+  el.addEventListener("pointerup", (e) => {
+    if (!press || e.pointerId !== press.id) return;
+    const r = el.getBoundingClientRect();
+    const inside = e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom;
+    end();
+    if (!inside) return;
+    e.preventDefault();
+    act(e);
+  });
+  // (The browser takes the touch for a scroll.)
+  el.addEventListener("pointercancel", end);
+};
+
+// The buttons over the game: night or day (the game's L), and watching the
+// run just finished again (its P), which the game says when to offer
+// (L8OVER).
+// (A mouse pressed on one does not take the keyboard from the game.)
+for (const el of document.querySelectorAll(".look, .replay")) el.addEventListener("mousedown", (e) => e.preventDefault());
+onTap(document.querySelector(".look"), () => {
+  setNight(!document.body.classList.contains("night"));
+  typeKeys([108]);
+});
+onTap(document.querySelector(".replay"), () => {
+  document.body.classList.remove("over");
+  typeKeys([112]);
+});
+
+// Sheets over the game: the menu, the guide, the places to pick from, and
+// a place. The game pauses (Pause, held) while any is open, and one
+// closes with its button, a tap outside it, or Escape.
+const sheets = Object.fromEntries(["menu", "guide", "places", "place"].map((id) => [id, document.getElementById(id)]));
+const sheetOpen = () => Object.values(sheets).some((el) => !el.hidden);
+// Whether he has started riding: until then the menu cannot be closed
+// without choosing.
+let started = false;
+// (The page's buttons know of it: with a sheet open, the one that goes back
+// from it takes the menu's place, unless there is nowhere to go back to.)
+const sheetsChanged = () => {
+  const open = Object.keys(sheets).find((id) => !sheets[id].hidden);
+  document.body.classList.toggle("sheet", !!open);
+  document.body.classList.toggle("canback", !!open && (open !== "menu" || started));
+  syncPreview();
+};
+// While a place's sheet is up the game shows the place off: a key held
+// tells it so (see fly_over, in programs/skate/main.l8).
+let previewing = false;
+const syncPreview = () => {
+  const want = !sheets.place.hidden;
+  if (!sendKey || want === previewing) return;
+  previewing = want;
+  sendKey(want ? 2 : 3, 65300, "");
+};
+const openSheet = (id) => {
+  for (const [name, el] of Object.entries(sheets)) el.hidden = name !== id;
+  sheetsChanged();
   canvas.blur();
   sendKey?.(2, 65299, "");
 };
-const closeGuide = () => {
-  guide.hidden = true;
+const closeSheets = () => {
+  for (const el of Object.values(sheets)) el.hidden = true;
+  started = true;
+  sheetsChanged();
+  overlay.hidden = true;
   sendKey?.(3, 65299);
   canvas.focus();
 };
-document.querySelector(".how").addEventListener("pointerdown", (e) => {
-  e.preventDefault();
-  openGuide();
-});
-guide.addEventListener("pointerdown", (e) => {
-  if (e.target === guide || e.target.closest(".close")) {
-    e.preventDefault();
-    closeGuide();
-  }
-});
+// (Closing any sheet but the menu goes back to the one it came from: the
+// menu, or for a place the list of places.)
+const closeSheet = (id) => {
+  if (id === "menu") {
+    if (started) closeSheets();
+  } else if (id === "guide" && started) closeSheets();
+  else if (id === "place" && placeFrom === "places") openPlaces(pickingParks);
+  else openMenu();
+};
+// A sheet closes with a tap outside it, the button in the corner that goes
+// back, or Escape.
+const goBack = () => {
+  const open = Object.entries(sheets).find(([, el]) => !el.hidden);
+  if (open) closeSheet(open[0]);
+};
+for (const [id, el] of Object.entries(sheets)) onTap(el, () => closeSheet(id), (e) => e.target === el);
+onTap(document.querySelector(".back"), goBack);
 addEventListener("keydown", (e) => {
-  if (e.key === "Escape" && !guide.hidden) closeGuide();
-  if (e.key === "Escape" && !courses.hidden) closeCourses();
+  if (e.key === "Escape") goBack();
 });
+onTap(document.querySelector(".how"), () => openSheet("guide"));
 
-// The courses: the game says what is on each of the first few (L8LIST
-// lines), which one he is on (L8COURSE), and each run's score as it ends
-// (L8FINISH); the best on each is kept here, on the device. Picking one
-// types its number to the game, and Enter.
-const COURSES = 24;
-const SECTION_NAMES = { KICKERS: "Kickers", RAILS: "Rails", PIPE: "Halfpipe", CLIFF: "Cliff", GAP: "Gap", ROLLERS: "Rollers" };
-const courseList = new Map();
-let courseNow = 0;
+// Places: a downhill course is a number; a park is one too, kept negative
+// (as the game says them: see run_id in programs/skate/park.l8). Each
+// number is always the same place, and each day has a course and a park of
+// its own, numbered by its date (as 20261010). The game says which he is
+// on (L8COURSE), and each run's score as it ends (L8FINISH); his runs on
+// each are kept here, on the device. Going to one types its number to the
+// game, and Enter (a course) or Tab (a park).
+const PLACES = 5;
+// The tutorial's course (see programs/skate/tutorial.l8): where a new
+// player starts, until he has left it for another.
+const TUTORIAL = 100000000;
+let placeNow = 0;
 const stored = (key, fallback) => {
   try {
     return JSON.parse(localStorage.getItem(key)) ?? fallback;
@@ -118,79 +199,381 @@ const store = (key, value) => {
     localStorage.setItem(key, JSON.stringify(value));
   } catch {}
 };
-const bests = stored("skate.best", {});
+// His own runs on each place, kept on the device: the latest few and the
+// best few, each a score and when.
+const KEEP_RECENT = 20;
+const KEEP_BEST = 10;
+const KEEP_PLACES = 60;
+const myRuns = stored("skate.runs", {});
+const noteRun = (id, score) => {
+  const mine = (myRuns[id] ??= { recent: [], best: [] });
+  const run = [score, Date.now()];
+  mine.recent = [run, ...mine.recent].slice(0, KEEP_RECENT);
+  mine.best = [...mine.best, run].sort((a, b) => b[0] - a[0] || a[1] - b[1]).slice(0, KEEP_BEST);
+  // (Only so many places' worth: those longest unridden go.)
+  const ids = Object.keys(myRuns).sort((a, b) => myRuns[b].recent[0][1] - myRuns[a].recent[0][1]);
+  for (const old of ids.slice(KEEP_PLACES)) delete myRuns[old];
+  store("skate.runs", myRuns);
+};
+// How long ago, in a word or two.
+const ago = (at) => {
+  const s = Math.max(0, (Date.now() - at) / 1000);
+  if (s < 90) return "just now";
+  if (s < 3600) return `${Math.round(s / 60)} min ago`;
+  if (s < 86400) return `${Math.round(s / 3600)} h ago`;
+  if (s < 7 * 86400) return `${Math.round(s / 86400)} d ago`;
+  return new Date(at).toLocaleDateString(undefined, { day: "numeric", month: "short" });
+};
+// The day's places: the date in one time zone for everyone, so that they
+// are the same for all of them, and change for all at once.
+const DAILY_ZONE = "America/New_York";
+const today = (at = Date.now()) => Number(new Intl.DateTimeFormat("en-CA", { timeZone: DAILY_ZONE }).format(new Date(at)).replace(/-/g, ""));
+const isDaily = (id) => Math.abs(id) >= 20000101 && Math.abs(id) <= 29991231;
+const dayName = (id) => {
+  const n = Math.abs(id);
+  return new Date(Date.UTC(Math.floor(n / 10000), (Math.floor(n / 100) % 100) - 1, n % 100)).toLocaleDateString("en-GB", { timeZone: "UTC", weekday: "short", day: "numeric", month: "short" });
+};
+const placeName = (id) => {
+  if (id === TUTORIAL) return "Tutorial";
+  if (isDaily(id)) return `${id < 0 ? "Daily park" : "Daily course"}${Math.abs(id) === today() ? "" : `, ${dayName(id)}`}`;
+  return `${id < 0 ? "Park" : "Course"} ${Math.abs(id)}`;
+};
+// (Picked before the game is up: it starts there instead. See main.)
+let wanted = null;
+// Where the game has been asked to go, until it says it is there.
+let headed = null;
+const typePlace = (id) => {
+  headed = id;
+  if (id === TUTORIAL) typeKeys([116]);
+  else typeKeys([...String(Math.abs(id))].map((c) => 48 + Number(c)).concat(id < 0 ? 65289 : 65293));
+};
+// Have the game go there, the page's sheets left as they are (see
+// openPlace).
+const visit = (id) => {
+  if (!sendKey) wanted = id;
+  else if (id !== (headed ?? placeNow)) typePlace(id);
+};
+// Ride there: from its start, if the game is there already.
+const goTo = (id) => {
+  closeSheets();
+  if (!sendKey) wanted = id;
+  else if (id === (headed ?? placeNow)) typeKeys([114]);
+  else typePlace(id);
+};
+const randomPlace = (park) => (park ? -1 : 1) * (PLACES + 1 + Math.floor(Math.random() * 99000));
+
+// The leaderboards (see ../skate-board/worker.js). There is nothing here to
+// join or sign up to: whoever looks after them makes each person a link
+// (this page, with their secret after its #: see `linked`, above) and puts
+// people in groups. Whoever opens a link plays as that person from then
+// on, on that device. A group keeps each member's best on a place, and
+// their latest runs there; a best run can be watched by anyone its rider
+// shares a group with: the game is handed it as a file, and V.
+// (?api= points a page on localhost at a worker run there, to try one.)
+const localApi = location.hostname === "localhost" && new URLSearchParams(location.search).get("api");
+const api = localApi || (location.hostname.endsWith("trailingwhite.space") ? "/skate/api" : "https://trailingwhite.space/skate/api");
+let mySecret = stored("skate.me", null);
+// Who he is, and his groups' scores, as last fetched: kept on the device
+// too, so that they show at once the next time, before they are fetched
+// again (which nothing waits for).
+let account = mySecret ? stored("skate.account", null) : null;
+const groups = () => account?.groups ?? [];
+let gameVersion = 0;
+let gameFs = null;
+const toast = (text) => {
+  const el = document.getElementById("toast");
+  el.textContent = text;
+  el.classList.add("on");
+  clearTimeout(toast.timer);
+  toast.timer = setTimeout(() => el.classList.remove("on"), 3500);
+};
+// Fetch them: one fetch at a time, and (unless `fresh` asks for them as
+// they are now) none if they were fetched in the last while. True if they
+// came, false if he is nobody (no link, or one that works no longer), null
+// if the leaderboards could not be reached.
+const ACCOUNT_FRESH = 20000;
+let accountLoad = null;
+let accountLoaded = 0;
+const loadMe = (fresh = true) => {
+  if (!mySecret) return Promise.resolve(false);
+  if (!fresh && Date.now() - accountLoaded < ACCOUNT_FRESH) return Promise.resolve(true);
+  // (One already on its way may be from before what he wants to see.)
+  if (accountLoad) return fresh ? accountLoad.then(() => loadMe()) : accountLoad;
+  accountLoad = (async () => {
+    try {
+      const r = await fetch(`${api}/me`, { headers: { authorization: `Bearer ${mySecret}` } });
+      if (r.status === 401) {
+        // (His link has been replaced by another: here he is nobody again.)
+        mySecret = null;
+        account = null;
+        localStorage.removeItem("skate.me");
+        localStorage.removeItem("skate.account");
+        toast("Your link no longer works");
+        return false;
+      }
+      if (!r.ok) return null;
+      account = await r.json();
+      accountLoaded = Date.now();
+      store("skate.account", account);
+      return true;
+    } catch {
+      return null;
+    }
+  })().finally(() => (accountLoad = null));
+  return accountLoad;
+};
+const loadScores = () => loadMe(false);
+// A group's bests on a place (one for each member, best first), and their
+// latest runs there (newest first). (Runs under older rules than this
+// game's are left out: they are not ones to beat.)
+const current = (run) => gameVersion === 0 || run.version >= gameVersion;
+const runsOn = (gid, which, id) => (groups().find((g) => g.id === gid)?.[which]?.[id] ?? []).filter(current);
+const bestsOn = (gid, id) => runsOn(gid, "courses", id);
+const recentOn = (gid, id) => runsOn(gid, "recent", id);
+const postable = (id) => (Math.abs(id) >= 1 && Math.abs(id) <= PLACES) || Math.abs(id) === today();
+// A run just finished, as the game wrote it: posted, to be logged, and
+// kept if it is his best there.
+const postRun = async (version, id, score, replay) => {
+  if (!mySecret || score <= 0 || !postable(id)) return;
+  try {
+    const r = await fetch(`${api}/score`, {
+      method: "POST",
+      headers: { "content-type": "application/json", authorization: `Bearer ${mySecret}` },
+      body: JSON.stringify({ course: id, score, version, replay }),
+    });
+    const body = await r.json();
+    await loadMe();
+    // (Where a new best puts him, in the first of his groups.)
+    const group = groups()[0];
+    if (r.ok && body.best && group) {
+      const place = bestsOn(group.id, id).findIndex((e) => e.id === account.id) + 1;
+      if (place > 0) toast(`#${place} in ${group.title}`);
+    }
+  } catch {
+    toast("Couldn't post score");
+  }
+  showOpen();
+};
+const watchRun = async (person, id) => {
+  if (!sendKey) return;
+  try {
+    const r = await fetch(`${api}/replay?person=${person}&course=${id}`, { headers: { authorization: `Bearer ${mySecret}` } });
+    const run = await r.json();
+    if (!r.ok) throw new Error(run.error);
+    gameFs.writeFile("watch.txt", `${run.version} ${run.course} ${run.score} ${run.name.replace(/ /g, "_")} ${run.replay}`);
+    closeSheets();
+    typeKeys([118]);
+  } catch {
+    toast("Couldn't load that run");
+  }
+};
 const gameSays = (line) => {
   const words = line.trim().split(/\s+/);
-  if (words[0] === "L8LIST") courseList.set(Number(words[1]), words.slice(2));
-  else if (words[0] === "L8COURSE") {
-    courseNow = Number(words[1]);
-    store("skate.course", courseNow);
-  } else if (words[0] === "L8FINISH") {
-    const [n, score] = [Number(words[1]), Number(words[2])];
-    if (score > (bests[n] ?? 0)) {
-      bests[n] = score;
-      store("skate.best", bests);
+  if (words[0] === "L8VERSION") {
+    gameVersion = Number(words[1]);
+    // (His runs under other rules are not ones to beat under these.)
+    if (stored("skate.rules", 1) !== gameVersion) {
+      for (const id of Object.keys(myRuns)) delete myRuns[id];
+      store("skate.runs", myRuns);
+      store("skate.rules", gameVersion);
+      showOpen();
     }
+  }
+  else if (words[0] === "L8LOAD") document.body.classList.toggle("loading", words[1] === "1");
+  else if (words[0] === "L8OVER") document.body.classList.toggle("over", words[1] === "1");
+  else if (words[0] === "L8REPLAY") postRun(Number(words[1]), Number(words[2]), Number(words[3]), words.slice(4).join(" "));
+  else if (words[0] === "L8COURSE") {
+    placeNow = Number(words[1]);
+    if (placeNow === headed) headed = null;
+    document.body.classList.toggle("park", placeNow < 0);
+    if (placeNow !== TUTORIAL) {
+      store("skate.course", placeNow);
+      store("skate.tutorial", true);
+    }
+  } else if (words[0] === "L8FINISH") {
+    const [id, score] = [Number(words[1]), Number(words[2])];
+    if (score > 0) noteRun(id, score);
   } else return false;
   return true;
 };
-const courses = document.getElementById("courses");
-const typeKeys = (syms) => {
-  for (const sym of syms) {
-    sendKey?.(2, sym, "");
-    sendKey?.(3, sym);
-  }
+
+// The menu: what to play.
+const showMenu = () => {
+  const el = sheets.menu;
+  const item = (go) => el.querySelector(`.item[data-go="${go}"]`);
+  const fresh = !stored("skate.tutorial", false) && !stored("skate.course", 0);
+  item("tutorial").classList.toggle("first", fresh);
+  item("tutorial").querySelector("i").textContent = fresh ? "Start here" : "";
+  // (Who he plays as, if someone, and in which groups.)
+  el.querySelector(".me").textContent = account ? [account.name, ...groups().map((g) => g.title)].join(" · ") : "";
 };
-const closeCourses = () => {
-  courses.hidden = true;
-  sendKey?.(3, 65299);
-  canvas.focus();
+const openMenu = () => {
+  showMenu();
+  openSheet("menu");
+  // (His groups as they are now, when they come.)
+  loadScores().then(() => {
+    if (!sheets.menu.hidden) showMenu();
+  });
 };
-const pickCourse = (n) => {
-  closeCourses();
-  setMode(false);
-  // Its digits and Enter; or N, for a new one at random.
-  if (n > 0) typeKeys([...String(n)].map((c) => 48 + Number(c)).concat(65293));
-  else typeKeys([110]);
-};
-const openCourses = () => {
-  const grid = courses.querySelector(".grid");
+for (const el of sheets.menu.querySelectorAll(".item")) {
+  onTap(el, () => {
+    const go = el.dataset.go;
+    if (go === "tutorial") goTo(TUTORIAL);
+    if (go === "daily") openPlace(today(), "menu");
+    if (go === "dailypark") openPlace(-today(), "menu");
+    if (go === "courses") openPlaces(false);
+    if (go === "parks") openPlaces(true);
+  });
+}
+onTap(document.querySelector(".pick"), () => openMenu());
+
+// The places to pick from: the courses, or the parks, and one at random.
+let pickingParks = false;
+const showPlaces = () => {
+  const el = sheets.places;
+  const park = pickingParks;
+  el.querySelector("h2").textContent = park ? "Parks" : "Courses";
+  const grid = el.querySelector(".grid");
   grid.textContent = "";
-  const card = (n, title, text) => {
-    const el = document.createElement("div");
-    el.className = "course" + (n === courseNow ? " now" : "");
-    el.innerHTML = `<b></b><span></span>${n > 0 && bests[n] ? "<i></i>" : ""}`;
-    el.querySelector("b").textContent = title;
-    el.querySelector("span").textContent = text;
-    if (n > 0 && bests[n]) el.querySelector("i").textContent = `Best ${bests[n]}`;
-    el.addEventListener("pointerdown", (e) => {
-      e.preventDefault();
-      pickCourse(n);
-    });
-    grid.append(el);
+  const card = (title, id) => {
+    const div = document.createElement("div");
+    div.className = "course";
+    div.textContent = title;
+    onTap(div, () => openPlace(id || randomPlace(park), "places"));
+    grid.append(div);
   };
-  for (const [n, kinds] of courseList) card(n, `Course ${n}`, kinds.map((k) => SECTION_NAMES[k] ?? k).join(" \u203a "));
-  if (courseNow > COURSES) card(courseNow, `Course ${courseNow}`, "The one you are on");
-  card(0, "Random", "A new course, laid out afresh");
-  courses.hidden = false;
-  canvas.blur();
-  sendKey?.(2, 65299, "");
+  for (let n = 1; n <= PLACES; n++) card(`${park ? "Park" : "Course"} ${n}`, park ? -n : n);
+  card("Random", 0);
 };
-document.querySelector(".pick").addEventListener("pointerdown", (e) => {
-  e.preventDefault();
-  openCourses();
-});
-courses.addEventListener("pointerdown", (e) => {
-  if (e.target === courses || e.target.closest(".close")) {
-    e.preventDefault();
-    closeCourses();
+const openPlaces = (park) => {
+  pickingParks = park;
+  showPlaces();
+  openSheet("places");
+};
+
+// A place, before he rides it. The game goes there and shows it off behind
+// the sheet (see fly_over, in programs/skate/main.l8); the sheet has a
+// button to ride it, and its scores: his own, kept on this device, and
+// each of his groups' (for a place groups keep scores of), either the best
+// (in a group, one for each member, with the run to watch) or the latest.
+// (Back goes to where it was opened from: the menu, or the places.)
+let placeOf = 0;
+let placeFrom = "menu";
+let tabWho = stored("skate.who", null);
+let tabWhat = "best";
+const showPlace = () => {
+  const el = sheets.place;
+  const id = placeOf;
+  el.querySelector("h2").textContent = placeName(id);
+  // Whose: his own, or a group's (the first, until he picks).
+  const theirs = postable(id) ? groups() : [];
+  const who = tabWho !== "me" && theirs.length ? (theirs.find((g) => g.id === tabWho) ?? theirs[0]).id : "me";
+  const tab = (row, label, on, pick) => {
+    const t = document.createElement("span");
+    t.className = "tab" + (on ? " on" : "");
+    t.textContent = label;
+    onTap(t, () => {
+      pick();
+      showPlace();
+    });
+    row.append(t);
+  };
+  const whos = el.querySelector(".tabs.who");
+  whos.textContent = "";
+  whos.hidden = theirs.length === 0;
+  const pickWho = (code) => () => store("skate.who", (tabWho = code));
+  for (const g of theirs) tab(whos, g.title, who === g.id, pickWho(g.id));
+  tab(whos, "You", who === "me", pickWho("me"));
+  const whats = el.querySelector(".tabs.what");
+  whats.textContent = "";
+  tab(whats, "Best", tabWhat === "best", () => (tabWhat = "best"));
+  tab(whats, "Recent", tabWhat === "recent", () => (tabWhat = "recent"));
+  // The runs: a score each, and whose or when.
+  const best = tabWhat === "best";
+  const runs = who === "me" ? (myRuns[id]?.[tabWhat] ?? []).map(([score, at]) => ({ score, at })) : best ? bestsOn(who, id) : recentOn(who, id);
+  const list = el.querySelector(".list");
+  list.textContent = "";
+  if (runs.length === 0) {
+    const p = document.createElement("p");
+    p.textContent = "No runs yet";
+    list.append(p);
+    return;
   }
-});
+  const ol = document.createElement("ol");
+  runs.forEach((run, i) => {
+    const li = document.createElement("li");
+    if (who !== "me" && run.name === account?.name) li.className = "me";
+    const cell = (cls, text) => {
+      const span = document.createElement("span");
+      span.className = cls;
+      span.textContent = text;
+      li.append(span);
+      return span;
+    };
+    if (best) cell("n", `${i + 1}.`);
+    if (who === "me") cell("who", ago(run.at));
+    else {
+      cell("who", run.name);
+      if (!best) cell("when", ago(run.at));
+    }
+    cell("score", String(run.score));
+    // (A group's best can be watched, if this game can still play it.)
+    if (who !== "me" && best && run.version === gameVersion) {
+      const watch = cell("watch", "▶");
+      watch.title = "Watch this run";
+      onTap(watch, () => watchRun(run.id, id));
+    }
+    ol.append(li);
+  });
+  list.append(ol);
+};
+const openPlace = (id, from) => {
+  placeOf = id;
+  placeFrom = from;
+  visit(id);
+  showPlace();
+  openSheet("place");
+  loadScores().then(() => {
+    if (!sheets.place.hidden) showPlace();
+  });
+};
+onTap(sheets.place.querySelector(".play"), () => goTo(placeOf));
+
+// Where the game starts: the place he was last at (an earlier day's
+// becoming today's; and for someone new, the tutorial).
+const startPlace = () => {
+  const last = stored("skate.course", 0) || 0;
+  const start = last === 0 && !stored("skate.tutorial", false) ? TUTORIAL : last || 1;
+  return isDaily(start) ? Math.sign(start) * today() : start;
+};
+// The sheet that is open, shown again (its scores have come).
+const showOpen = () => {
+  if (!sheets.menu.hidden) showMenu();
+  if (!sheets.places.hidden) showPlaces();
+  if (!sheets.place.hidden) showPlace();
+};
 
 async function main() {
   const params = new URLSearchParams(location.search);
+  // Nothing here waits for the groups' scores, or for the game: the menu
+  // is up at once (?play goes straight in), with the scores as they were
+  // last time, and what he picks from it before the game has loaded is
+  // where the game starts.
+  if (!params.has("L8_SEED")) placeNow = startPlace();
+  if (params.has("play")) {
+    sheets.menu.hidden = true;
+    sheetsChanged();
+  } else openMenu();
+  // (Opened by his link: who he is, once the leaderboards say.)
+  if (linked) {
+    loadMe().then((ok) => {
+      if (ok) toast(`Playing as ${account.name}`);
+      showOpen();
+    });
+  }
   const module = await WebAssembly.compileStreaming(fetch("skate.wasm"));
   const fs = new MemFS({});
+  gameFs = fs;
   const decoder = new TextDecoder();
   // (What it writes comes in pieces: a line at a time from here.)
   let written = "";
@@ -204,11 +587,22 @@ async function main() {
   };
   const sys = fs.sys(["skate"]);
   // L8_ parameters are also the game's environment (as L8_SEED=n, L8_PARK=1).
-  if (startNight && !params.has("L8_LOOK")) params.set("L8_LOOK", "n");
-  // He starts on the course he was last on (or the first), and the game
-  // says what is on the first few.
-  if (!params.has("L8_SEED")) params.set("L8_SEED", String(stored("skate.course", 1) || 1));
-  params.set("L8_COURSES", String(COURSES));
+  // (And night or day, as it is by now: he may have changed it already.)
+  const night = document.body.classList.contains("night");
+  if (night && (!startNight || !params.has("L8_LOOK"))) params.set("L8_LOOK", "n");
+  if (!night && startNight) params.delete("L8_LOOK");
+  // The game loads the place picked from the menu already, or else the
+  // one he was last at.
+  const start = wanted ?? startPlace();
+  if (wanted !== null || !params.has("L8_SEED")) {
+    if (wanted !== null) params.delete("L8_PARK");
+    params.set("L8_SEED", String(Math.abs(start)));
+    if (start < 0) params.set("L8_PARK", "1");
+  }
+  if (touch) params.set("L8_TOUCH", "1");
+  // (On a page: the game stops for frames while it builds a place, and
+  // leaves it to the page to show that it is loading. See L8LOAD.)
+  params.set("L8_PAGE", "1");
   sys.env = [...params].filter(([k]) => k.startsWith("L8_")).map(([k, v]) => `${k}=${v}`);
   const env = Object.fromEntries([...params].filter(([k]) => k.startsWith("L8_")));
   const zoom = Math.min(4, Math.max(0.25, Number(params.get("zoom")) || 0.85));
@@ -221,10 +615,9 @@ async function main() {
     // ?skip=prog3 drops a program's draws, to measure what they cost.
     timing: params.has("gputime"), gpuTiming: params.has("gputime"),
     skip: new Set((params.get("skip") ?? "").split(",").filter(Boolean)) });
-  // Tab on a keyboard switches too.
   canvas.addEventListener("keydown", (e) => {
-    if (e.code === "Tab" && !e.repeat) setMode(!document.body.classList.contains("park"));
     if (e.code === "KeyL" && !e.repeat) setNight(!document.body.classList.contains("night"));
+    if (e.code === "KeyM" && !e.repeat) openMenu();
   });
   // The steering and trick panels, placed over the game's view where the
   // game reads them: these fractions match programs/skate/touch.l8.
@@ -249,29 +642,45 @@ async function main() {
   const { instance, mem } = await instantiate(module, sys, platform.imports);
   platform.attach(instance, mem);
   sendKey = platform.key;
-  show(touch ? "Tap to start" : "Click to start");
+  // The game is held behind a sheet that is open (see openSheet).
+  overlay.hidden = true;
+  if (sheetOpen()) sendKey(2, 65299, "");
+  else closeSheets();
+  syncPreview();
+  // (Picked while the game was starting somewhere else.)
+  if (wanted !== null && wanted !== placeNow) visit(wanted);
+  wanted = null;
   canvas.addEventListener("focus", () => (overlay.hidden = true));
   canvas.addEventListener("blur", () => {
-    if (!touch && guide.hidden && courses.hidden) show("Click to continue");
+    if (!touch && !sheetOpen()) show("Click to continue");
   });
   addEventListener("pointerdown", (e) => {
     if (e.target.closest?.(".ui")) return;
     canvas.focus();
     overlay.hidden = true;
   });
-  canvas.focus();
-  // ?control lets web/control.py drive the page (see ./control.js).
+  // ?control lets web/control.py drive the page (see ../game/control.js).
   if (params.has("control")) {
     const session = Math.random().toString(36).slice(2, 10);
     const post = (kind, data) =>
       fetch("/telemetry", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ session, kind, t: Date.now(), ...data }) });
     startControl(platform, { session, post, reportNow: () => null });
   }
-  const status = await runResumable(instance, () => platform.nextFrame());
-  show(`The game exited${status ? ` with status ${status}` : ""}.<br><a href="">Play again</a>`);
+  // The game pauses at the end of each frame, until the next. While it is
+  // building a place it pauses without having drawn one, only to let the
+  // page breathe (see programs/skate/breathe.l8): then it goes straight
+  // on, after whatever the page has waiting.
+  const breath = new MessageChannel();
+  const breathed = () =>
+    new Promise((resolve) => {
+      breath.port1.onmessage = resolve;
+      breath.port2.postMessage(0);
+    });
+  const status = await runResumable(instance, () => (document.body.classList.contains("loading") ? breathed() : platform.nextFrame()));
+  stopped(`The game exited${status ? ` with status ${status}` : ""}.<br><a href="">Play again</a>`);
 }
 
 main().catch((e) => {
   console.error(e);
-  show(`The game stopped: ${e.message}`);
+  stopped(`The game stopped: ${e.message}`);
 });
