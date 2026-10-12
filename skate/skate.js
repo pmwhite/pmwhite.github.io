@@ -38,7 +38,7 @@ for (const name of ["gesturestart", "gesturechange", "dblclick"]) {
 // it lands on this same page, which steps forward again.
 for (const name of ["touchstart", "touchmove"]) {
   document.addEventListener(name, (e) => {
-    if (!e.target.closest?.("a, .guide, #perf")) e.preventDefault();
+    if (!e.target.closest?.("a, .guide")) e.preventDefault();
   }, { passive: false });
 }
 history.pushState({ stay: true }, "", location.href);
@@ -105,7 +105,7 @@ const onTap = (el, act, accepts = () => true) => {
 // run just finished again (its P), which the game says when to offer
 // (L8OVER).
 // (A mouse pressed on one does not take the keyboard from the game.)
-for (const el of document.querySelectorAll(".look, .replay, .again, .back, .perf .key, #perf .auto")) el.addEventListener("mousedown", (e) => e.preventDefault());
+for (const el of document.querySelectorAll(".look, .replay, .again, .back, .rate")) el.addEventListener("mousedown", (e) => e.preventDefault());
 onTap(document.querySelector(".look"), () => {
   setNight(!document.body.classList.contains("night"));
   typeKeys([108]);
@@ -122,7 +122,7 @@ onTap(document.querySelector(".again"), () => {
 
 // Sheets over the game: home, the guide, the places to pick from, a place,
 // and a person. The game pauses (Pause, held) while any is open.
-const sheets = Object.fromEntries(["menu", "guide", "places", "place", "person"].map((id) => [id, document.getElementById(id)]));
+const sheets = Object.fromEntries(["menu", "guide", "places", "days", "place", "person"].map((id) => [id, document.getElementById(id)]));
 const sheetOpen = () => Object.values(sheets).some((el) => !el.hidden);
 // Whether he has started riding: until then home cannot be left without
 // choosing.
@@ -173,7 +173,7 @@ const present = () => {
   const view = trail.at(-1);
   if (!view) return closeSheets();
   const [id, of] = view;
-  if (id === "places") pickingParks = of;
+  if (id === "places" || id === "days") picking = of;
   if (id === "place") visit((placeOf = of));
   if (id === "person") personOf = of;
   showOpen(id);
@@ -216,6 +216,10 @@ const PLACES = 5;
 // The tutorial's course (see programs/skate/tutorial.l8): where a new
 // player starts, until he has left it for another.
 const TUTORIAL = 100000000;
+// Big air's places are numbered from here (big air 3 is BIG_AIR + 3): see
+// lay_big_air, in programs/skate/layout.l8.
+const BIG_AIR = 200000000;
+const isBigAir = (id) => id > BIG_AIR && id < BIG_AIR + 100000000;
 let placeNow = 0;
 const stored = (key, fallback) => {
   try {
@@ -248,10 +252,10 @@ const noteRun = (id, score) => {
 // How long ago, in a word or two.
 const ago = (at) => {
   const s = Math.max(0, (Date.now() - at) / 1000);
-  if (s < 90) return "just now";
-  if (s < 3600) return `${Math.round(s / 60)} min ago`;
-  if (s < 86400) return `${Math.round(s / 3600)} h ago`;
-  if (s < 7 * 86400) return `${Math.round(s / 86400)} d ago`;
+  if (s < 90) return "now";
+  if (s < 3600) return `${Math.round(s / 60)} min`;
+  if (s < 86400) return `${Math.round(s / 3600)} h`;
+  if (s < 7 * 86400) return `${Math.round(s / 86400)} d`;
   return new Date(at).toLocaleDateString(undefined, { day: "numeric", month: "short" });
 };
 // The day's places: the date in one time zone for everyone, so that they
@@ -259,14 +263,39 @@ const ago = (at) => {
 const DAILY_ZONE = "America/New_York";
 const today = (at = Date.now()) => Number(new Intl.DateTimeFormat("en-CA", { timeZone: DAILY_ZONE }).format(new Date(at)).replace(/-/g, ""));
 const isDaily = (id) => Math.abs(id) >= 20000101 && Math.abs(id) <= 29991231;
+// How long the day's places are open for: until midnight where the day is
+// kept (see DAILY_ZONE); and that, in words.
+const dayLeft = (at = Date.now()) => {
+  const parts = Object.fromEntries(new Intl.DateTimeFormat("en-US", { timeZone: DAILY_ZONE, hour: "numeric", minute: "numeric", second: "numeric", hourCycle: "h23" }).formatToParts(new Date(at)).map((p) => [p.type, p.value]));
+  return 86400000 - ((Number(parts.hour) * 60 + Number(parts.minute)) * 60 + Number(parts.second)) * 1000;
+};
+const leftText = (ms) => {
+  const m = Math.max(1, Math.ceil(ms / 60000));
+  return m >= 120 ? `${Math.floor(m / 60)} h ${m % 60} min` : m >= 60 ? `1 h ${m % 60} min` : `${m} min`;
+};
+// A day's place, as a number, some days ago.
+const dayAgo = (days) => today(Date.now() - days * 86400000);
+
+// (A day's name is its month and day, as "Oct 9", with the year when it
+// is not this one.)
 const dayName = (id) => {
   const n = Math.abs(id);
-  return new Date(Date.UTC(Math.floor(n / 10000), (Math.floor(n / 100) % 100) - 1, n % 100)).toLocaleDateString("en-GB", { timeZone: "UTC", weekday: "short", day: "numeric", month: "short" });
+  const year = Math.floor(n / 10000);
+  return new Date(Date.UTC(year, (Math.floor(n / 100) % 100) - 1, n % 100)).toLocaleDateString("en-US", { timeZone: "UTC", day: "numeric", month: "short", ...(year === Math.floor(today() / 10000) ? {} : { year: "numeric" }) });
 };
+// The first day there were daily places.
+const FIRST_DAY = 20261010;
+// The first few slopestyles and parks have names; the rest, numbers.
+const SLOPE_NAMES = ["Haystack", "Pinewood", "Lantern", "Clover", "Fox Run"];
+const PARK_NAMES = ["Pebble", "Sundial", "Mossy", "Birdbath", "Thistle"];
 const placeName = (id) => {
   if (id === TUTORIAL) return "Tutorial";
-  if (isDaily(id)) return `${id < 0 ? "Daily park" : "Daily course"}${Math.abs(id) === today() ? "" : `, ${dayName(id)}`}`;
-  return `${id < 0 ? "Park" : "Course"} ${Math.abs(id)}`;
+  if (id >= 1 && id <= SLOPE_NAMES.length) return SLOPE_NAMES[id - 1];
+  if (id <= -1 && id >= -PARK_NAMES.length) return PARK_NAMES[-id - 1];
+  if (isBigAir(id)) return id === BIG_AIR + 1 ? "Big air" : `Big air ${id - BIG_AIR}`;
+  // (A day gone by is named by its day: "Slopestyle Oct 9", "Park Oct 9".)
+  if (isDaily(id)) return Math.abs(id) === today() ? (id < 0 ? "Daily park" : "Daily slopestyle") : `${id < 0 ? "Park" : "Slopestyle"} ${dayName(id)}`;
+  return `${id < 0 ? "Park" : "Slopestyle"} ${Math.abs(id)}`;
 };
 // (Picked before the game is up: it starts there instead. See main.)
 let wanted = null;
@@ -292,7 +321,7 @@ const goTo = (id) => {
   else if (id === (headed ?? placeNow)) typeKeys([id === TUTORIAL ? 116 : 114]);
   else typePlace(id);
 };
-const randomPlace = (park) => (park ? -1 : 1) * (PLACES + 1 + Math.floor(Math.random() * 99000));
+const randomPlace = (kind) => (kind === "parks" ? -1 : 1) * (PLACES + 1 + Math.floor(Math.random() * 99000));
 
 // The leaderboards (see ../skate-board/worker.js). There is nothing here to
 // join or sign up to: whoever looks after them makes each person a link
@@ -492,7 +521,11 @@ const loadScores = () => loadMe(false);
 const current = (run) => gameVersion === 0 || run.version >= gameVersion;
 const bestsOn = (id) => (account?.courses?.[id] ?? []).filter(current);
 const recentOn = (id) => account?.recent?.[id] ?? [];
-const postable = (id) => (Math.abs(id) >= 1 && Math.abs(id) <= PLACES) || Math.abs(id) === today();
+// A place the leaderboards keep scores of (so there is a board to see);
+// and one a run may be posted to now: a day's place only on its day, as
+// everyone has the same day to ride it in.
+const boarded = (id) => (Math.abs(id) >= 1 && Math.abs(id) <= PLACES) || (isDaily(id) && Math.abs(id) <= today() && Math.abs(id) >= FIRST_DAY) || (isBigAir(id) && id - BIG_AIR <= PLACES);
+const postable = (id) => boarded(id) && (!isDaily(id) || Math.abs(id) === today());
 // A run just finished, as the game wrote it: posted, to be logged, and
 // kept if it is his best there.
 const postRun = async (version, id, score, replay) => {
@@ -708,6 +741,7 @@ const placeRank = (id) => {
   const n = Math.abs(id);
   const park = id < 0 ? 0.5 : 0;
   if (isDaily(id)) return n === today() ? park : 1e8 - n + park;
+  if (isBigAir(id)) return 2000 + id - BIG_AIR;
   return (id < 0 ? 1000 : 10) + n;
 };
 const bestsOf = (name) =>
@@ -746,10 +780,10 @@ for (const el of sheets.menu.querySelectorAll(".item")) {
   onTap(el, () => {
     const to = el.dataset.go;
     if (to === "tutorial") goTo(TUTORIAL);
-    if (to === "daily") go("place", today());
-    if (to === "dailypark") go("place", -today());
-    if (to === "courses") go("places", false);
-    if (to === "parks") go("places", true);
+    if (to === "courses") go("places", "courses");
+    if (to === "parks") go("places", "parks");
+    // (One big air is enough.)
+    if (to === "bigair") go("place", BIG_AIR + 1);
   });
 }
 onTap(sheets.menu.querySelector(".me"), () => {
@@ -757,23 +791,87 @@ onTap(sheets.menu.querySelector(".me"), () => {
 });
 onTap(document.querySelector(".pick"), goHome);
 
-// The places to pick from: the courses, or the parks, and one at random.
-let pickingParks = false;
+// The places to pick from: the slopestyles or the parks, the day's first,
+// and one at random.
+let picking = "courses";
 const showPlaces = () => {
   const el = sheets.places;
-  const park = pickingParks;
-  el.querySelector("h2").textContent = park ? "Parks" : "Courses";
+  const kind = picking;
+  el.querySelector("h2").textContent = { courses: "Slopestyle", parks: "Park" }[kind];
   const grid = el.querySelector(".grid");
   grid.textContent = "";
-  const card = (title, id) => {
+  const card = (title, id, daily = false) => {
     const div = document.createElement("div");
-    div.className = "course";
+    div.className = daily ? "course daily" : "course";
     div.textContent = title;
-    onTap(div, () => go("place", id || randomPlace(park)));
+    onTap(div, () => go("place", id || randomPlace(kind)));
     grid.append(div);
   };
-  for (let n = 1; n <= PLACES; n++) card(`${park ? "Park" : "Course"} ${n}`, park ? -n : n);
+  const sign = kind === "parks" ? -1 : 1;
+  card(`Daily ${kind === "parks" ? "park" : "slopestyle"}`, sign * today(), true);
+  const daily = grid.lastChild;
+  const left = document.createElement("i");
+  daily.append(left);
+  // (And the days gone by, on a sheet of their own.)
+  const past = document.createElement("div");
+  past.className = "course past";
+  past.textContent = "Past days";
+  onTap(past, () => go("days", kind));
+  grid.append(past);
+  for (let n = 1; n <= PLACES; n++) card(placeName(sign * n), sign * n);
   card("Random", 0);
+  const tick = () => (left.textContent = `${leftText(dayLeft())} left`);
+  tick();
+  clearInterval(showPlaces.timer);
+  showPlaces.timer = setInterval(() => (el.hidden ? clearInterval(showPlaces.timer) : tick()), 15000);
+};
+
+// The days gone by, of slopestyles or of parks: a calendar, a month at a
+// time, with every day since the first (up to yesterday) to pick from.
+// Their boards stand for good, but a run on them is not posted, the day
+// being over (see postable).
+let calendarMonth = null;
+const showDays = () => {
+  const el = sheets.days;
+  const sign = picking === "parks" ? -1 : 1;
+  el.querySelector("h2").textContent = `Past ${picking === "parks" ? "parks" : "slopestyles"}`;
+  const first = FIRST_DAY;
+  const last = dayAgo(1);
+  const now = today();
+  const monthOf = (n) => Math.floor(n / 100);
+  if (calendarMonth === null || calendarMonth > monthOf(now) || calendarMonth < monthOf(first)) calendarMonth = monthOf(last);
+  const [y, m] = [Math.floor(calendarMonth / 100), calendarMonth % 100];
+  el.querySelector(".month b").textContent = new Date(Date.UTC(y, m - 1, 1)).toLocaleDateString("en-US", { timeZone: "UTC", month: "long", year: "numeric" });
+  const prev = el.querySelector(".prev");
+  const next = el.querySelector(".next");
+  prev.classList.toggle("off", calendarMonth <= monthOf(first));
+  next.classList.toggle("off", calendarMonth >= monthOf(now));
+  const step = (by) => {
+    calendarMonth = m + by < 1 ? (y - 1) * 100 + 12 : m + by > 12 ? (y + 1) * 100 + 1 : y * 100 + m + by;
+    showDays();
+  };
+  prev.onclick = () => step(-1);
+  next.onclick = () => step(1);
+  const grid = el.querySelector(".calendar");
+  grid.textContent = "";
+  for (const wd of ["S", "M", "T", "W", "T", "F", "S"]) {
+    const h = document.createElement("span");
+    h.className = "wd";
+    h.textContent = wd;
+    grid.append(h);
+  }
+  const start = new Date(Date.UTC(y, m - 1, 1)).getUTCDay();
+  const days = new Date(Date.UTC(y, m, 0)).getUTCDate();
+  for (let i = 0; i < start; i++) grid.append(document.createElement("span"));
+  for (let d = 1; d <= days; d++) {
+    const n = calendarMonth * 100 + d;
+    const cell = document.createElement("span");
+    const on = n >= first && n <= last;
+    cell.className = `d ${n === now ? "today" : on ? "on" : "off"}`;
+    cell.textContent = String(d);
+    if (on) onTap(cell, () => go("place", sign * n));
+    grid.append(cell);
+  }
 };
 
 // A place, before he rides it. The game goes there and shows it off behind
@@ -790,8 +888,18 @@ const showPlace = () => {
   const el = sheets.place;
   const id = placeOf;
   el.querySelector("h2").textContent = placeName(id);
+  // A day's place: how long it is open for, or that it is over.
+  const note = el.querySelector(".note");
+  const tick = () => {
+    if (!isDaily(id)) note.textContent = "";
+    else if (Math.abs(id) === today()) note.textContent = `Open for ${leftText(dayLeft())} more`;
+    else note.textContent = "This day is over: runs here are not posted";
+  };
+  tick();
+  clearInterval(showPlace.timer);
+  if (isDaily(id)) showPlace.timer = setInterval(() => (el.hidden ? clearInterval(showPlace.timer) : tick()), 15000);
   // Whose: everyone's (until he picks), or his own.
-  const shared = !!account && postable(id);
+  const shared = !!account && boarded(id);
   const who = shared && tabWho !== "me" ? "all" : "me";
   const whos = el.querySelector(".tabs.who");
   whos.textContent = "";
@@ -863,6 +971,7 @@ const startPlace = () => {
 const showOpen = (id = Object.keys(sheets).find((name) => !sheets[name].hidden)) => {
   if (id === "menu") showMenu();
   if (id === "places") showPlaces();
+  if (id === "days") showDays();
   if (id === "place") showPlace();
   if (id === "person") showPerson();
 };
@@ -955,6 +1064,13 @@ async function main() {
     };
     place(steerPanel, STEER_LEFT, STEER_RIGHT);
     place(trickPanel, 1 - STEER_RIGHT, 1 - STEER_LEFT);
+    // The tutorial's words: a fixed place near him, off the pads and
+    // their tags, and off what he is coming to. On a tall screen he rides
+    // above the pads' band, so they go just above it; on a wide one he
+    // rides within it, so they go just below.
+    const tall = r.height > r.width;
+    const y = tall ? r.top + r.height * PANEL_TOP - 38 - 46 : r.top + r.height * PANEL_BOTTOM + 10;
+    document.documentElement.style.setProperty("--words-y", `${Math.round(y)}px`);
   };
   new ResizeObserver(placePads).observe(canvas);
   addEventListener("resize", placePads);
@@ -972,10 +1088,8 @@ async function main() {
   if (wanted !== null && wanted !== placeNow) visit(wanted);
   wanted = null;
   canvas.addEventListener("focus", () => (overlay.hidden = true));
-  canvas.addEventListener("blur", (e) => {
-    // (Not for the panel of the frames' rate: its slider takes the keyboard
-    // for a moment, and gives it back.)
-    if (!touch && !sheetOpen() && !document.getElementById("perf").contains(e.relatedTarget)) show("Click to continue");
+  canvas.addEventListener("blur", () => {
+    if (!touch && !sheetOpen()) show("Click to continue");
   });
   addEventListener("pointerdown", (e) => {
     if (e.target.closest?.(".ui")) return;
@@ -1033,93 +1147,84 @@ async function main() {
     plain = on;
     typeKeys([on ? 65479 : 65480]);
   };
-  // (Or he sets it himself, with the slider under the frames' rate, as
-  // small as he likes: then it is left where he put it, until he hands it
-  // back.)
-  let own = stored("skate.scale.own", false);
-  const pace = { on: !params.has("scale") && !own, last: 0, quiet: 0 };
+  const pace = { on: !params.has("scale"), last: 0, quiet: 0 };
   // (What each asks of the device: its pixels, and plainly a little less.)
   const WORK = RUNGS.map((r) => r.size * r.size * (r.plain ? 0.85 : 1));
-  let pacer = createPacer({ work: WORK, floor: FLOOR, rung: stored("skate.rung", 0) || 0, beats: stored("skate.beats", 1) || 1 });
+  const pacer = createPacer({ work: WORK, floor: FLOOR, rung: stored("skate.rung", 0) || 0, beats: stored("skate.beats", 1) || 1 });
   // The picture as a rung has it.
   const toRung = (r) => {
     setSize(RUNGS[r].size);
     if (RUNGS[r].plain !== plain) setPlain(RUNGS[r].plain);
   };
   if (params.has("scale")) setSize(scale);
-  else if (pace.on) toRung(pacer.state.rung);
-  else setSize(Math.min(1, Math.max(SIZE_LEAST, stored("skate.scale", 1) || 1)));
+  else toRung(pacer.state.rung);
 
-  // How fast the frames come, top right, if he asks to see it: counted
-  // over each half second. Beside it, a button for a panel that says what
-  // it is, with the picture's resolution to trade for speed.
-  const perf = document.querySelector(".perf");
-  const panel = document.getElementById("perf");
-  const slider = panel.querySelector("input");
-  const rate = { frames: 0, late: 0, since: performance.now(), text: perf.querySelector(".rate b") };
-  const sizeText = () => `${Math.round(size * 100)}%${plain ? " plain" : ""}`;
-  // The button: which beats of the screen the game aims at (or its beat,
-  // when he has set the size himself), the picture's size, and the frames
-  // late over the last half second, if any.
-  const rateText = () => {
+  // How the frames come, top right, if he asks to see it: the button
+  // widens into the stats, counted over each half second.
+  const perf = document.querySelector(".rate");
+  const rate = { frames: 0, late: 0, since: performance.now(), text: perf.querySelector("b"), wide: 0 };
+  // The stats: the frames a second the game aims at (the screen's, or
+  // every second or third of them), the picture's size, the frames late
+  // over the last half second, and that the device is saving its battery
+  // (if it is). Each number has a cell of its own, as wide as its most
+  // digits (measured by an unseen copy, and never narrowed), so that one
+  // changing moves nothing else, nor the pill.
+  const measure = document.createElement("b");
+  measure.className = "measure";
+  perf.querySelector(".stats").appendChild(measure);
+  // (The cells, each with the most it could hold where that is a number.)
+  const cells = ["000", " fps · ", "000", "%", "", " · ", "00", " late", ""].map((widest) => {
+    const el = document.createElement("span");
+    // (A number keeps to its cell's right, so the gap for a digit it has
+    // not got comes after the words before it.)
+    if (/^0+$/.test(widest)) el.className = "num";
+    rate.text.appendChild(el);
+    return { el, widest, wide: 0 };
+  });
+  const showStats = () => {
     const s = pacer.state;
     const hz = Math.round(1000 / s.beat);
-    let text = pace.on ? `${["every", "every 2nd", "every 3rd"][s.beats - 1]} beat of ${hz} · ${sizeText()}` : `${hz} Hz · ${sizeText()}`;
-    if (rate.late > 0) text += ` · ${rate.late} late`;
-    if (lowPower()) text += " · low power";
-    return text;
-  };
-  const showScale = () => {
-    const s = pacer.state;
-    const hz = Math.round(1000 / s.beat);
-    const n = s.late.length;
-    const late = s.late.reduce((a, b) => a + b, 0);
-    const draws = pace.on ? `one every ${["", "second ", "third "][s.beats - 1]}beat of it, <b>${Math.round(hz / s.beats)}</b> a second,` : "one on whichever beat it is ready for,";
-    const lately = pace.on && n >= 10 ? ` <b>${late}</b> of the last ${n} frames came late.` : "";
-    panel.querySelector(".state").innerHTML = `Your screen shows <b>${hz}</b> frames a second. The game draws ${draws} at <b>${sizeText()}</b> of the screen's size.${lately}`;
-    slider.value = String(Math.round(size * 20) * 5);
-    panel.querySelector("output").textContent = `${Math.round(size * 100)}%`;
-    panel.querySelector(".auto").classList.toggle("on", !own);
-    panel.querySelector(".cap").textContent = lowPower() ? `This device looks to be in Low Power Mode, which holds the game to about ${Math.round(1000 / pacer.state.beat)} frames a second whatever the resolution.` : "";
+    const words = [
+      String(Math.round(hz / (pace.on ? s.beats : 1))),
+      " fps · ",
+      String(Math.round(size * 100)),
+      "%",
+      plain ? " plain" : "",
+      " · ",
+      String(rate.late),
+      " late",
+      lowPower() ? " · low power" : "",
+    ];
+    let wide = 0;
+    cells.forEach((cell, i) => {
+      for (const text of [words[i], cell.widest]) {
+        measure.textContent = text;
+        cell.wide = Math.max(cell.wide, measure.getBoundingClientRect().width);
+      }
+      cell.el.style.minWidth = `${Math.ceil(cell.wide)}px`;
+      cell.el.textContent = words[i];
+      wide += Math.ceil(cell.wide);
+    });
+    perf.style.setProperty("--stats", `${wide + 13}px`);
   };
   // Whether the device is saving its battery, as far as can be told: the
   // browser gives far fewer frames than sixty a second even to a game that
   // draws nothing (a phone in Low Power Mode gives thirty).
   const lowPower = () => 1000 / pacer.state.beat < 50;
-  perf.classList.toggle("on", stored("skate.fps", false));
-  onTap(perf.querySelector(".rate"), () => {
+  // (Shown, or not, as it was last time.)
+  if (stored("skate.fps", false)) {
+    showStats();
+    perf.classList.add("on");
+  }
+  onTap(perf, () => {
+    showStats();
     store("skate.fps", perf.classList.toggle("on"));
-    panel.hidden = true;
-  });
-  onTap(perf.querySelector(".what"), () => {
-    showScale();
-    panel.hidden = !panel.hidden;
-  });
-  slider.addEventListener("input", () => {
-    pace.on = false;
-    if (plain) setPlain(false);
-    setSize(Number(slider.value) / 100);
-    store("skate.scale", size);
-    store("skate.scale.own", (own = true));
-    showScale();
-  });
-  slider.addEventListener("change", () => canvas.focus());
-  onTap(panel.querySelector(".auto"), () => {
-    // (Back to full, and down again from there if it must.)
-    pace.on = !params.has("scale");
-    pacer = createPacer({ work: WORK, floor: FLOOR, beat: pacer.state.beat });
-    toRung(0);
-    store("skate.rung", 0);
-    store("skate.beats", 1);
-    store("skate.scale.own", (own = false));
-    showScale();
   });
 
   frameState = () => ({
     refresh: Math.round(1000 / pacer.state.beat),
     scale: Math.round(size * 100) / 100,
     plain,
-    own,
     low: lowPower(),
     pacing: pace.on,
     // (What the pacing is at: its rung, the beats to a frame it aims at,
@@ -1217,11 +1322,10 @@ async function main() {
     // (Late as the pacing counts it: by half a beat past what it aims at.)
     if (rate.frames > 1 && gap > (pacer.state.beats + 0.5) * pacer.state.beat && gap < 2000) rate.late++;
     if (now - rate.since >= 500) {
-      rate.text.textContent = rateText();
+      showStats();
       rate.frames = 0;
       rate.late = 0;
       rate.since = now;
-      if (!panel.hidden) showScale();
     }
     if (body.contains("sheet") || document.hidden) frames.skip = true;
     else frameCame(gap, pacer.state.beats * pacer.state.beat);

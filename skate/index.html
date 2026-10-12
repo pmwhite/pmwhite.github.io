@@ -91,30 +91,28 @@
   body.night .look .moon, body:not(.night) .look .sun { display: none; }
   /* (While a place is shown off, behind its sheet, it can be seen by night
      or by day: the button comes above what else is under a sheet.) */
-  body.showing .look, body.showing .perf, body.showing #perf { z-index: 3; }
-  /* How fast the frames come, top right: a button that shows it (and is
-     then the number, and beside it one that says what it is: a small panel
-     under them, with the picture's resolution to trade for speed). */
-  .perf { position: fixed; top: max(10px, env(safe-area-inset-top)); right: max(10px, env(safe-area-inset-right)); display: flex; flex-direction: row-reverse; gap: 8px; }
-  .perf .round { position: static; }
-  .perf .rate b { display: none; font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
-  .perf.on .rate { width: auto; min-width: 62px; padding: 0 12px; border-radius: 18px; box-sizing: border-box; }
-  body.touch .perf.on .rate { border-radius: 22px; }
-  .perf.on .rate b { display: block; }
-  .perf.on .rate svg, .perf:not(.on) .what { display: none; }
-  #perf { position: fixed; top: calc(max(10px, env(safe-area-inset-top)) + 46px); right: max(10px, env(safe-area-inset-right)); width: min(290px, calc(100vw - 20px)); box-sizing: border-box; padding: 12px 14px 14px; border-radius: 12px; border: 1px solid #323846; background: rgba(14, 17, 24, 0.92); font-size: 13.5px; line-height: 1.4; touch-action: auto; transition: opacity 0.2s ease, visibility 0.2s; }
-  body.touch #perf { top: calc(max(10px, env(safe-area-inset-top)) + 54px); }
-  #perf[hidden] { display: block; opacity: 0; visibility: hidden; pointer-events: none; }
-  #perf p { margin: 0 0 10px; }
-  #perf .cap { color: #ffd36b; }
-  #perf .cap:empty { display: none; }
-  #perf b { color: #fff; }
-  #perf label { display: flex; justify-content: space-between; color: #fff; }
-  #perf output { font-variant-numeric: tabular-nums; color: #ffd36b; }
-  #perf input { width: 100%; margin: 6px 0 2px; accent-color: #ffd36b; }
-  #perf .auto { display: inline-block; margin-top: 6px; padding: 4px 11px; border-radius: 8px; border: 1px solid rgba(255, 248, 236, 0.3); color: #c9cfdb; cursor: pointer; transition: background-color 0.25s ease-out; }
-  #perf .auto.on { border-color: #ffd36b; background: rgba(255, 211, 107, 0.18); color: #fff; }
-  #perf .auto.pressed { background-color: rgba(240, 150, 80, 0.55); }
+  body.showing .look, body.showing .rate { z-index: 3; }
+  /* How the frames come, top right: a round button that, tapped, widens
+     smoothly into a pill with the stats beside its dial (which beats of
+     the screen the game aims at, the picture's size, and late frames). */
+  .rate { top: max(10px, env(safe-area-inset-top)); right: max(10px, env(safe-area-inset-right)); display: grid; grid-template-columns: 36px auto; align-items: center; border-radius: 18px; }
+  /* (A round button's width is fixed, on a phone too: not this one's.) */
+  .key.rate, body.touch .key.rate { width: auto; }
+  body.touch .rate { grid-template-columns: 44px auto; border-radius: 22px; }
+  .rate svg { justify-self: center; }
+  /* The words' box widens from nothing to --stats (the page sets it to
+     the words at their longest, so that a number changing does not move
+     the pill). They keep to its right end, so that as it widens they come
+     out from behind the dial, not cut off at their far end. */
+  .rate .stats { position: relative; display: flex; justify-content: flex-end; width: 0; overflow: hidden; transition: width 0.3s ease; }
+  .rate.on .stats { width: var(--stats, 0px); }
+  .rate .stats b { display: block; padding-right: 13px; font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; opacity: 0; transition: opacity 0.25s ease; }
+  /* (Each number in a cell of its own, as wide as its most digits: one
+     changing moves nothing else.) */
+  .rate .stats b span { display: inline-block; white-space: pre; }
+  .rate .stats b span.num { text-align: right; }
+  .rate .stats .measure { position: absolute; visibility: hidden; width: max-content; padding: 0; white-space: pre; }
+  .rate.on .stats b { opacity: 1; }
   .pick, .how, .back { bottom: max(12px, env(safe-area-inset-bottom)); }
   .pick, .back { left: max(12px, env(safe-area-inset-left)); }
   /* A sheet only covers what is behind it: the buttons there stay as they
@@ -157,38 +155,20 @@
   .panel {
     position: fixed;
     pointer-events: none;
-    border: 2px solid rgba(255, 248, 236, 0.9);
+    border: 1px solid rgba(255, 248, 236, 0.55);
     border-radius: 18px;
-    background: rgba(74, 52, 34, 0.2);
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
-    color: #fff;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+    background: rgba(74, 52, 34, 0.3);
+    color: #fff8ec;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
     font-weight: 700;
   }
-  /* Each says in a word what it is for, and little else until a thumb is
-     on it: the right one then shows which way to slide for which trick. */
-  .panel .label { position: absolute; left: 0; right: 0; top: 9px; text-align: center; font-size: 13px; letter-spacing: 0.08em; }
-  .panel .track { position: absolute; left: 12%; right: 12%; top: 54%; height: 4px; margin-top: -2px; border-radius: 2px; background: rgba(255, 255, 255, 0.55); }
-  .panel .notch { position: absolute; left: 50%; top: 54%; width: 4px; height: 22px; margin: -11px 0 0 -2px; border-radius: 2px; background: #fff; }
-  .panel .chev { position: absolute; top: 54%; transform: translateY(-50%); font-size: 16px; }
-  .panel .chev.left { left: 9px; }
-  .panel .chev.right { right: 9px; }
-  .panel .rest, .panel .live, .panel .dir { transition: opacity 0.18s ease; }
-  .panel .live, .panel .dir { opacity: 0; }
-  .panel .above { position: absolute; left: 0; right: 0; bottom: calc(100% + 8px); text-align: center; font-size: 14px; }
-  .panel .tip { position: absolute; left: 0; right: 0; top: calc(56% + 26px); text-align: center; font-size: 11px; font-weight: 500; letter-spacing: 0.02em; opacity: 0.9; }
-  .panel .dir { position: absolute; font-size: 11.5px; font-weight: 600; white-space: nowrap; }
-  .panel .dir.up { left: 0; right: 0; top: calc(56% - 46px); text-align: center; }
-  .panel .dir.down { left: 0; right: 0; top: calc(56% + 30px); text-align: center; }
-  .panel .dir.left { right: calc(50% + 30px); top: 56%; transform: translateY(-50%); }
-  .panel .dir.right { left: calc(50% + 30px); top: 56%; transform: translateY(-50%); }
-  body.holding .panel.trick .rest { opacity: 0; }
-  body.holding .panel.trick .live, body.holding .panel.trick .dir { opacity: 1; }
-  /* (A short panel, as on a phone held sideways, has not the room for a
-     word above the ring and its name too.) */
-  .panel .dir.up { top: max(4px, calc(56% - 46px)); }
-  .panel .hold { position: absolute; left: 50%; top: 56%; width: 38px; height: 38px; margin: -19px 0 0 -19px; box-sizing: border-box; border: 2px solid rgba(255, 255, 255, 0.85); border-radius: 50%; transition: background-color 0.18s ease, border-color 0.18s ease; }
-  body.holding .panel.trick .hold { background: rgba(240, 150, 80, 0.7); border-color: #ffd36b; }
+  /* Each says in a word what it is for, and nothing more (the tutorial
+     teaches the rest): the left one has its track, and the game draws the
+     thumbs on both (see put_thumbs, in hud.l8). */
+  .panel .label { position: absolute; left: 0; right: 0; top: 9px; text-align: center; font-size: 13px; letter-spacing: 0.08em; color: rgba(255, 248, 236, 0.9); transition: opacity 0.18s ease; }
+  .panel .track { position: absolute; left: 12%; right: 12%; top: 54%; height: 4px; margin-top: -2px; border-radius: 2px; background: rgba(255, 248, 236, 0.4); }
+  .panel .notch { position: absolute; left: 50%; top: 54%; width: 4px; height: 22px; margin: -11px 0 0 -2px; border-radius: 2px; background: #ffd36b; }
+  body.holding .panel.trick .label { opacity: 0; }
   /* The tutorial (see say, in skate.js, and programs/skate/tutorial.l8): the
      game rides a run itself, its own thumbs drawn over these panels, and
      says what it is doing a line at a time. While it does, each panel says
@@ -205,8 +185,13 @@
      they are pressed, in place of thumbs. */
   #teach { position: fixed; inset: 0; pointer-events: none; z-index: 1; transition: opacity 0.25s ease, visibility 0.25s; }
   #teach[hidden] { display: block; opacity: 0; visibility: hidden; }
-  #teach .card { position: absolute; left: 50%; bottom: calc(max(12px, env(safe-area-inset-bottom)) + 54px); transform: translateX(-50%); width: min(440px, calc(100vw - 24px)); box-sizing: border-box; min-height: 86px; padding: 10px 16px; display: grid; place-items: center; border-radius: 14px; border: 1px solid #323846; background: rgba(14, 17, 24, 0.86); text-align: center; }
-  #teach .line { font-size: 16px; line-height: 1.35; font-weight: 600; color: #fff; transition: opacity 0.14s ease; }
+  /* Just below his feet, where the eyes are (read at the bottom, they took
+     them off what they told of; above him, they covered what he was coming
+     to), but off the pads: the page works out where (--words-y: see
+     riderAt, in skate.js). No card, only the words, with a shadow to read
+     them by. */
+  #teach .card { position: absolute; left: 50%; top: min(var(--words-y, 60vh), calc(100vh - 110px)); transform: translateX(-50%); width: min(440px, calc(100vw - 24px)); text-align: center; }
+  #teach .line { font-size: 16px; line-height: 1.35; font-weight: 600; color: #fff8ec; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9), 0 0 8px rgba(0, 0, 0, 0.7); transition: opacity 0.14s ease; }
   #teach .line.out { opacity: 0; }
   #teach .acts { position: absolute; right: max(12px, env(safe-area-inset-right)); bottom: max(12px, env(safe-area-inset-bottom)); display: flex; gap: 8px; }
   #teach .acts .key { height: 36px; padding: 0 18px; border-radius: 18px; font-size: 14px; opacity: 0; visibility: hidden; }
@@ -215,13 +200,8 @@
   #teach .acts .try { border-color: #ffd36b; background: rgba(224, 138, 60, 0.9); }
   #teach.demo .skip, #teach.end .rewatch, #teach.end .try { opacity: 1; visibility: visible; pointer-events: auto; }
   body.showing #teach { opacity: 0; visibility: hidden; }
-  #teach.cue .card { min-height: 0; padding: 8px 14px; background: rgba(14, 17, 24, 0.7); }
   #teach.cue .line { font-size: 14.5px; }
-  body.touch #teach .card { bottom: calc(max(12px, env(safe-area-inset-bottom)) + 62px); }
-  /* (Wide, as a phone on its side or a desk's screen: between the corners'
-     buttons.) */
   @media (min-width: 700px) {
-    #teach .card, body.touch #teach .card { bottom: max(12px, env(safe-area-inset-bottom)); width: min(440px, calc(100vw - 480px)); min-height: 58px; padding: 7px 16px; }
     #teach .line { font-size: 15px; }
   }
   #teach .caps { position: absolute; right: 22px; bottom: 64px; display: grid; grid-template-columns: repeat(3, 44px); gap: 6px; justify-content: center; }
@@ -261,12 +241,34 @@
   #menu:not(.someone) .me, #menu:not(.someone) .feedhead, #menu:not(.someone) .feed { display: none; }
   #menu .me b { flex: 1; font-size: 16px; }
   #menu .feedhead { margin: 14px 0 0; }
-  #menu .feed { flex: none; height: 172px; margin-right: -10px; padding-right: 10px; overflow-y: auto; overscroll-behavior: contain; }
-  #menu .feed ol.runs { margin-top: 2px; }
+  /* (The rows have the sheet's whole width, so that the longest fits a
+     phone on one line; the scrollbar sits in the right padding.) */
+  #menu .feed { flex: none; height: 172px; margin: 0 -22px; padding: 0 10px 0 16px; overflow-y: auto; overscroll-behavior: contain; }
+  /* (Rows that fit a phone's width whole: a little smaller, and closer.) */
+  #menu .feed ol.runs { margin-top: 2px; font-size: 13px; }
+  #menu .feed ol.runs li { gap: 6px; }
   #person .sheet { max-width: 440px; }
   #person .list { min-height: 170px; }
   #places .sheet { max-width: 440px; }
   #places .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; margin-top: 10px; }
+  /* (The day's, a row of its own at the top, in the day's gold.) */
+  #places .course.daily { grid-column: 1 / -1; display: flex; justify-content: space-between; align-items: baseline; border-color: rgba(255, 211, 107, 0.55); background: rgba(255, 211, 107, 0.1); }
+  #places .course.daily i { font-style: normal; font-size: 13px; font-weight: 500; color: #ffd36b; }
+  #places .course.past { grid-column: 1 / -1; font-size: 15px; font-weight: 600; color: #c9cfdb; }
+  /* The days gone by: any day by its date, and the last couple of weeks as
+     rows (each to that day's place). */
+  #days .sheet { max-width: 380px; }
+  #days .month { display: flex; align-items: center; justify-content: space-between; margin-top: 8px; }
+  #days .month b { font-size: 16px; }
+  #days .month .key { width: 36px; height: 36px; border-radius: 50%; font-size: 22px; line-height: 1; }
+  #days .month .key.off { opacity: 0.25; pointer-events: none; }
+  #days .calendar { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-top: 8px; text-align: center; font-variant-numeric: tabular-nums; }
+  #days .calendar .wd { font-size: 12px; color: #9aa3b5; padding-bottom: 2px; }
+  #days .calendar .d { aspect-ratio: 1; display: grid; place-items: center; border-radius: 50%; font-size: 15px; font-weight: 600; color: #fff; }
+  #days .calendar .d.on { border: 1px solid rgba(255, 248, 236, 0.3); background: rgba(255, 248, 236, 0.07); cursor: pointer; transition: background-color 0.25s ease-out; }
+  #days .calendar .d.on.pressed { background-color: rgba(240, 150, 80, 0.55); }
+  #days .calendar .d.off { color: #5c6475; }
+  #days .calendar .d.today { border: 1px solid #ffd36b; color: #ffd36b; }
   #places .course { padding: 14px 12px; border-radius: 10px; background: rgba(255, 248, 236, 0.08); border: 1px solid rgba(255, 248, 236, 0.25); color: #fff; font-size: 17px; font-weight: 700; cursor: pointer; }
   /* A place, shown off behind its sheet (see openPlace, in skate.js):
      nothing darkens the picture, and the sheet keeps to the bottom of a
@@ -279,6 +281,8 @@
   }
   #place .head { display: flex; align-items: center; gap: 12px; }
   #place .head h2 { flex: 1; margin: 0; }
+  #place .note { margin: 6px 0 0; font-size: 13px; color: #ffd36b; }
+  #place .note:empty { display: none; }
   #place .play { padding: 9px 28px; border-radius: 10px; border: 1px solid #ffd36b; background: rgba(224, 138, 60, 0.85); color: #fff; font-size: 16px; font-weight: 700; cursor: pointer; }
   /* Whose scores (everyone's, or his own), and which (the best, or the
      latest). */
@@ -297,11 +301,14 @@
   ol.runs li.mine { color: #ffd36b; }
   ol.runs .link { cursor: pointer; }
   ol.runs .n { min-width: 1.6em; color: #9aa3b5; }
-  ol.runs .who { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  ol.runs .who.link { flex: 0 1 auto; padding: 4px 9px; margin-left: -9px; border-radius: 8px; color: #fff; font-weight: 600; transition: background-color 0.25s ease-out; }
+  ol.runs .who { flex: 1; }
+  /* (A name is short, twelve letters at most; what was ridden gives way to
+     it and to the score and the time, wrapping if it must.) */
+  ol.runs .who.link { flex: none; white-space: nowrap; padding: 4px 9px; margin-left: -9px; border-radius: 8px; color: #fff; font-weight: 600; transition: background-color 0.25s ease-out; }
   ol.runs li.mine .who.link { color: #ffd36b; }
-  ol.runs .what { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  ol.runs .what { flex: 1; white-space: nowrap; }
   ol.runs .who.link + .when, ol.runs .who.link + .score { margin-left: auto; }
+  ol.runs .score, ol.runs .when { flex: none; }
   ol.runs .when { color: #9aa3b5; font-size: 13px; white-space: nowrap; }
   ol.runs .watch { padding: 3px 11px; border-radius: 8px; border: 1px solid rgba(255, 248, 236, 0.45); }
   #toast { position: fixed; left: 50%; top: max(52px, calc(env(safe-area-inset-top) + 52px)); transform: translateX(-50%); padding: 8px 14px; border-radius: 10px; background: rgba(20, 22, 26, 0.85); color: #fff; font-size: 14px; pointer-events: none; opacity: 0; transition: opacity 0.3s; z-index: 3; white-space: nowrap; }
@@ -343,17 +350,10 @@
     <span class="whose">Left thumb</span>
     <span class="label">STEER</span>
     <span class="track"></span><span class="notch"></span>
-    <span class="chev left">&#x25C0;</span><span class="chev right">&#x25B6;</span>
   </div>
   <div class="panel trick">
     <span class="whose">Right thumb</span>
-    <span class="above live">let go to jump</span>
-    <span class="label rest">JUMP</span>
-    <span class="hold"></span>
-    <span class="tip rest">hold</span>
-    <span class="dir up">&#x25B2; flip</span>
-    <span class="dir left">&#x25C0; spin</span><span class="dir right">spin &#x25B6;</span>
-    <span class="dir down">&#x25BC; backflip</span>
+    <span class="label">JUMP</span>
   </div>
 </div>
 <div id="teach" hidden>
@@ -369,20 +369,9 @@
   <svg class="moon" viewBox="0 0 24 24"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5z"/></svg>
   <svg class="sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8"/></svg>
 </div>
-<div class="perf ui">
-  <div class="key round rate" role="button" aria-label="How the frames come">
-    <svg viewBox="0 0 24 24"><path d="M4.5 17a8.5 8.5 0 1 1 15 0M12 14l4-5"/></svg>
-    <b></b>
-  </div>
-  <div class="key round what" role="button" aria-label="What is this?">?</div>
-</div>
-<div id="perf" class="ui" hidden>
-  <p class="state"></p>
-  <p>A frame not ready for its beat of the screen waits for the next, which shows as a stutter. So the game draws the biggest picture that comes in time, down to a quarter of the size, and below that draws fewer frames instead. The slider sets the size yourself.</p>
-  <p class="cap"></p>
-  <label>Resolution <output></output></label>
-  <input type="range" min="10" max="100" step="5">
-  <span class="auto" role="button">Automatic</span>
+<div class="key round rate ui" role="button" aria-label="How the frames come">
+  <svg viewBox="0 0 24 24"><path d="M4.5 17a8.5 8.5 0 1 1 15 0M12 14l4-5"/></svg>
+  <span class="stats"><b></b></span>
 </div>
 <div class="key round pick ui" role="button" aria-label="Home">
   <svg viewBox="0 0 24 24"><path d="M3.5 11.5L12 4l8.5 7.5M6 10v9.5h4.5V14h3v5.5H18V10"/></svg>
@@ -394,7 +383,7 @@
 <div class="ends ui">
   <div class="key replay" role="button"><svg viewBox="0 0 12 12"><path d="M2 1l9 5-9 5z"/></svg>Replay</div>
   <div class="key again" role="button">Again</div>
-  <div class="key onward" role="button">Daily course</div>
+  <div class="key onward" role="button">Daily slopestyle</div>
 </div>
 <div id="menu" class="guide ui">
   <div class="sheet" role="dialog" aria-label="Home">
@@ -402,10 +391,9 @@
     <div class="me" role="button"><b></b><span>&#x203A;</span></div>
     <div class="items">
       <div class="item" data-go="tutorial"><b>Tutorial</b><i></i></div>
-      <div class="item" data-go="daily"><b>Daily course</b><i></i></div>
-      <div class="item" data-go="courses"><b>Courses</b><i></i></div>
-      <div class="item" data-go="dailypark"><b>Daily park</b><i></i></div>
-      <div class="item" data-go="parks"><b>Parks</b><i></i></div>
+      <div class="item" data-go="courses"><b>Slopestyle</b><i></i></div>
+      <div class="item" data-go="parks"><b>Park</b><i></i></div>
+      <div class="item" data-go="bigair"><b>Big air</b><i></i></div>
     </div>
     <h3 class="feedhead">Activity</h3>
     <div class="feed"></div>
@@ -424,14 +412,22 @@
   } catch {}
 </script>
 <div id="places" class="guide ui" hidden>
-  <div class="sheet" role="dialog" aria-label="Courses">
+  <div class="sheet" role="dialog" aria-label="Places">
     <h2></h2>
     <div class="grid"></div>
+  </div>
+</div>
+<div id="days" class="guide ui" hidden>
+  <div class="sheet" role="dialog" aria-label="Past days">
+    <h2></h2>
+    <div class="month"><span class="key prev" role="button">&#x2039;</span><b></b><span class="key next" role="button">&#x203A;</span></div>
+    <div class="calendar"></div>
   </div>
 </div>
 <div id="place" class="guide ui" hidden>
   <div class="sheet" role="dialog" aria-label="Place">
     <div class="head"><h2></h2><span class="play" role="button">Play</span></div>
+    <p class="note"></p>
     <div class="tabs who"></div>
     <div class="tabs what"></div>
     <div class="list"></div>
@@ -460,7 +456,6 @@
     <ul>
       <li>Bigger tricks need more air. You get the most air by letting go at the lip of a ramp.</li>
       <li>While you hold, ramps glow <b>green</b> where letting go will land the trick. A green ring around you means let go now.</li>
-      <li>The tag over each jump shows what the trick would score there, or <b>TOO BIG</b>.</li>
       <li>Without enough air the landing is <b>sketchy</b> and scores nothing.</li>
     </ul>
 
@@ -487,28 +482,29 @@
     </table>
     <p>Landing short of a gap scores nothing.</p>
 
-    <h3>Courses and parks</h3>
+    <h3>Slopestyle, parks and big air</h3>
     <ul>
-      <li>A <b>course</b> run ends at the finish line.</li>
+      <li>A <b>slopestyle</b> run ends at the finish line.</li>
       <li>A <b>park</b> run lasts 60 seconds. Ride up the walls to jump off them.</li>
-      <li>There is a new daily course and daily park every day.</li>
+      <li><b>Big air</b> is one jump: as big a trick as you can land.</li>
+      <li>There is a new daily slopestyle and daily park every day.</li>
     </ul>
 
     <h3>Leaderboards</h3>
     <ul>
       <li>Leaderboards are by invitation. Open your personal link once, and this device plays as you.</li>
-      <li>Every run you finish on a course, park or daily is posted for the people you play with.</li>
+      <li>Every run you finish on a slopestyle, park, big air or daily is posted for the people you play with.</li>
       <li>Tap a name to see that player, or &#x25B6; to watch a run.</li>
     </ul>
 
     <h3>Keyboard</h3>
     <table>
       <tr><th>R</th><td>Restart</td></tr>
-      <tr><th>N</th><td>Random course or park</td></tr>
+      <tr><th>N</th><td>Random slopestyle or park</td></tr>
       <tr><th>P, B</th><td>Replay your last run, or your best</td></tr>
       <tr><th>C</th><td>Change the replay camera</td></tr>
       <tr><th>L</th><td>Night or day</td></tr>
-      <tr><th>Number, then Enter or Tab</th><td>Go to that course, or that park</td></tr>
+      <tr><th>Number, then Enter or Tab</th><td>Go to that slopestyle, or that park</td></tr>
     </table>
   </div>
 </div>
