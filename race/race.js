@@ -74,7 +74,7 @@ const GHOST_KEY = 2n ** 60n;
 const ghosts = {
   // (Each course has its own: under this name, for a kind of car.)
   name(course, kind) {
-    return course === 0 ? `race.ghost.${TRACK}.${kind}` : `race.ghost.${TRACK}.c${course}.${kind}`;
+    return course === 0 ? `race.ghost.${TRACK}.${kind}` : `race.ghost.${TRACK}.c${course}s.${kind}`;
   },
   wrote(line) {
     if (!line.startsWith("L8GHOST ")) return false;
@@ -133,8 +133,8 @@ const link = {
 // ---- the courses ----
 // The game says what courses there are as it starts, a line each (see
 // say_course, in programs/race/main.l8): which, how long its lap is and
-// how far it climbs, in metres, and its middle line as points; then its
-// name. Each is a card in the menu, in a row, to choose it by: its shape
+// how far it climbs, in metres, what its road is, and its middle line as
+// points; then its name. Each is a card in the menu, in a row, to choose it by: its shape
 // and its name; and under the row, those two numbers of the one chosen. (COURSES: how many there are, as
 // programs/race/track.l8 has it.)
 const COURSES = 3;
@@ -143,10 +143,10 @@ const courses = {
   wrote(line) {
     if (!line.startsWith("L8COURSE ")) return false;
     const words = line.slice(9).trim().split(" ");
-    const [k, length, climb, n] = words.slice(0, 4).map(Number);
+    const [k, length, climb, road, n] = words.slice(0, 5).map(Number);
     const points = [];
-    for (let i = 0; i < n; i++) points.push([Number(words[4 + i * 2]), Number(words[5 + i * 2])]);
-    this.all[k] = { name: words.slice(4 + n * 2).join(" "), length, climb, points };
+    for (let i = 0; i < n; i++) points.push([Number(words[5 + i * 2]), Number(words[6 + i * 2])]);
+    this.all[k] = { name: words.slice(5 + n * 2).join(" "), length, climb, road, points };
     this.draw();
     return true;
   },
@@ -172,7 +172,9 @@ const courses = {
       cards.append(card);
     });
     const chosen = this.all[flow.course];
-    document.getElementById("course-facts").textContent = chosen ? `${(chosen.length / 1000).toFixed(1)} km  ·  ${chosen.climb} m of climb` : "";
+    // (What its road is, by the game's number for the ground.)
+    const roads = { 0: "tarmac", 3: "snow", 5: "dirt and mud" };
+    document.getElementById("course-facts").textContent = chosen ? `${roads[chosen.road] ?? "road"}  ·  ${(chosen.length / 1000).toFixed(1)} km  ·  ${chosen.climb} m of climb` : "";
   },
 };
 
