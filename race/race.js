@@ -214,6 +214,12 @@ const room = {
     }
     // (Where the computer drivers are: how many; and of each, its kind of
     // car, how far it has come, and its time if it has finished, or -1.)
+    // (Where the list may start, down the window: under the game's map,
+    // which is in the same corner. See hud_list, in programs/race/hud.l8.)
+    if (line.startsWith("L8LIST ")) {
+      this.list.style.top = `${Number(line.slice(7)) / 10}%`;
+      return true;
+    }
     if (line.startsWith("L8BOTS ")) {
       const words = line.slice(7).split(" ").map(Number);
       if (this.racing && this.bots.length) this.me.far = words[1];
@@ -462,8 +468,6 @@ async function main() {
   // (There is a room to tell where the car is; and the menu is up.)
   params.set("L8_NET", "1");
   params.set("L8_MENU", "1");
-  // (And whether thumbs drive it: the game keeps its map clear of them.)
-  if (touch) params.set("L8_TOUCH", "1");
   sys.env = [...params].filter(([k]) => k.startsWith("L8_")).map(([k, v]) => `${k}=${v}`);
   const env = Object.fromEntries([...params].filter(([k]) => k.startsWith("L8_")));
   const platform = createPlatform(canvas, { log: (text) => console.warn(text), checkErrors: params.has("glcheck"), scale: 1, zoom: 0.85, env, pointers: true, maxTall: 2.4, maxPixels: 2.2e6 });
