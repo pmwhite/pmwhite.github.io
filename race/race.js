@@ -37,6 +37,9 @@ const PAGE_MENU = 90000, PAGE_ALONE = 90001, PAGE_PLACE = 90100;
 // The computer drivers' names, by their places on the grid (see
 // programs/race/bots.l8).
 const BOT_NAMES = ["Vera", "Otto", "Mab", "Finn", "Ines", "Tobe", "Zuri"];
+// How good they can be asked to be, by the game's numbers for it (the last:
+// as good as the player makes them).
+const SKILLS = ["EASY", "MEDIUM", "HARD", "ADAPTIVE"];
 const CAR_COLORS = ["#e6382e", "#2b6edb", "#fab847", "#54c2a8"];
 const stored = (key) => {
   try {
@@ -180,11 +183,11 @@ const room = {
   // second, with so many computer drivers. The game is told, with the
   // car's place on the grid: behind the computer drivers; or, among
   // others, in the order of their seats.
-  race(wait, laps, bots) {
+  race(wait, laps, bots, skill = 1) {
     const seats = [this.me.seat, ...this.others.keys()].sort((a, b) => a - b);
     const place = bots > 0 ? bots : Math.max(seats.indexOf(this.me.seat), 0);
     const tenths = Math.min(Math.max(Math.round(wait / 100), 0), 255);
-    this.platform.key(2, NET_RACE + bots * 65536 + tenths * 256 + Math.min(Math.max(laps | 0, 1), 15) * 16 + place);
+    this.platform.key(2, NET_RACE + skill * 1048576 + bots * 65536 + tenths * 256 + Math.min(Math.max(laps | 0, 1), 15) * 16 + place);
     this.racing = true;
     this.bots = Array.from({ length: bots }, (_, k) => ({ seat: 100 + k, name: BOT_NAMES[k] ?? `Driver ${k + 1}`, kind: 0, far: -100 - k, done: null }));
     for (const who of [this.me, ...this.others.values()]) who.done = null;
@@ -328,8 +331,23 @@ const flow = {
   // it (it does, with nobody else to wait for).
   paused: false,
   held: false,
-  // The laps and computer drivers of the race, for racing again.
+  // How many computer drivers the race on now has (none: it is against
+  // the others here).
   bots: 0,
+  // What the player chose, for a race against computer drivers: how many,
+  // and how good (see SKILLS). They are remembered.
+  drivers: 5,
+  skill: 3,
+  choose(drivers, skill) {
+    this.drivers = Math.min(Math.max(Math.round(drivers) || 1, 1), BOT_NAMES.length);
+    this.skill = ((Math.round(skill) || 0) + SKILLS.length) % SKILLS.length;
+    store("race.drivers", String(this.drivers));
+    store("race.skill", String(this.skill));
+    el("drivers").textContent = String(this.drivers);
+    el("skill").textContent = SKILLS[this.skill];
+    el("fewer").disabled = this.drivers <= 1;
+    el("more").disabled = this.drivers >= BOT_NAMES.length;
+  },
   set(scene) {
     this.scene = scene;
     document.body.dataset.scene = scene;
@@ -357,12 +375,12 @@ const flow = {
   // everyone, me too: see heard); or else against computer drivers.
   call() {
     if (room.socket && room.others.size > 0) room.send("race");
-    else this.race(5000, 3, 5);
+    else this.race(5000, 3, this.drivers, this.skill);
   },
-  race(wait, laps, bots) {
+  race(wait, laps, bots, skill = this.skill) {
     this.bots = bots;
     this.set("race");
-    room.race(wait, laps, bots);
+    room.race(wait, laps, bots, skill);
   },
   // The race is run: in a moment, how it came out.
   finished() {
@@ -384,6 +402,7 @@ const flow = {
     el("came").textContent = room.me.done === null ? "" : `${place}${ends[place % 10 < 4 && (place % 100 < 11 || place % 100 > 13) ? place % 10 : 0]} of ${all.length}  ·  ${clock(room.me.done)}`;
     el("name").textContent = room.me.name;
     const others = room.socket ? room.others.size : 0;
+    el("options").hidden = others > 0;
     el("here").textContent = others === 0 ? "Nobody else is here: a race is against computer drivers." : `${others === 1 ? "1 other is" : `${others} others are`} here: a race is against ${others === 1 ? "them" : "them all"}.`;
   },
   // The pause sheet. Alone, the game stands still under it: as if its
@@ -443,6 +462,8 @@ async function main() {
   // (There is a room to tell where the car is; and the menu is up.)
   params.set("L8_NET", "1");
   params.set("L8_MENU", "1");
+  // (And whether thumbs drive it: the game keeps its map clear of them.)
+  if (touch) params.set("L8_TOUCH", "1");
   sys.env = [...params].filter(([k]) => k.startsWith("L8_")).map(([k, v]) => `${k}=${v}`);
   const env = Object.fromEntries([...params].filter(([k]) => k.startsWith("L8_")));
   const platform = createPlatform(canvas, { log: (text) => console.warn(text), checkErrors: params.has("glcheck"), scale: 1, zoom: 0.85, env, pointers: true, maxTall: 2.4, maxPixels: 2.2e6 });
@@ -495,6 +516,11 @@ async function main() {
   const on = (id, what) => el(id).addEventListener("click", what);
   on("prev", () => pick(-1));
   on("next", () => pick(1));
+  flow.choose(Number(stored("race.drivers") ?? 5), Number(stored("race.skill") ?? 3));
+  on("fewer", () => flow.choose(flow.drivers - 1, flow.skill));
+  on("more", () => flow.choose(flow.drivers + 1, flow.skill));
+  on("easier", () => flow.choose(flow.drivers, flow.skill - 1));
+  on("harder", () => flow.choose(flow.drivers, flow.skill + 1));
   on("go-race", () => flow.call());
   on("go-trial", () => flow.trial());
   on("name", () => room.rename());

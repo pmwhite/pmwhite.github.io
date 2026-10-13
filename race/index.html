@@ -54,7 +54,20 @@
   #start .arrow { position: fixed; top: 27vh; width: 54px; height: 76px; border: 0; background: none; color: #fff; font: 700 54px/1 system-ui, sans-serif; text-shadow: 0 2px 6px rgba(0, 0, 0, 0.6); }
   #start #prev { left: max(4px, env(safe-area-inset-left)); }
   #start #next { right: max(4px, env(safe-area-inset-right)); }
-  #start .choices { position: fixed; left: 50%; bottom: max(26px, env(safe-area-inset-bottom)); transform: translateX(-50%); width: min(300px, 82vw); display: flex; flex-direction: column; gap: 10px; }
+  #start .choices { position: fixed; left: 0; right: 0; margin: 0 auto; bottom: max(26px, env(safe-area-inset-bottom)); width: min(300px, 82vw); display: flex; flex-direction: column; gap: 10px; }
+  /* What a race against computer drivers is to be: how many, and how good.
+     Above the choices; or, in a wide window, beside the car (the car's
+     card is on its other side: see build_hud, in programs/race/hud.l8). */
+  .options { display: flex; flex-direction: column; gap: 6px; }
+  .options[hidden] { display: none; }
+  .pick { display: flex; align-items: center; padding: 2px 4px 2px 14px; border: 2px solid rgba(255, 248, 236, 0.9); border-radius: 14px; background: rgba(74, 52, 34, 0.55); color: #fff; font: 700 12px system-ui, sans-serif; letter-spacing: 0.08em; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2); }
+  .pick .what { flex: 1; opacity: 0.85; }
+  .pick .value { min-width: 5.8em; text-align: center; font-size: 13px; }
+  .pick button { width: 36px; height: 32px; border: 0; padding: 0; background: none; color: #fff; font: 700 24px/1 system-ui, sans-serif; }
+  .pick button:disabled { opacity: 0.3; }
+  @media (min-aspect-ratio: 13/10) {
+    .options { position: fixed; right: max(64px, 9vw); top: 22vh; width: min(220px, 26vw); }
+  }
   .big { padding: 14px 18px; border: 2px solid rgba(255, 248, 236, 0.95); border-radius: 16px; background: rgba(214, 62, 44, 0.92); color: #fff; font: 800 18px system-ui, sans-serif; letter-spacing: 0.1em; box-shadow: 0 3px 12px rgba(0, 0, 0, 0.3); }
   .big.plain { background: rgba(74, 52, 34, 0.55); font-size: 14px; padding: 11px 18px; }
   .note { margin: 0; text-align: center; font-size: 12px; color: rgba(255, 255, 255, 0.92); text-shadow: 0 1px 3px rgba(0, 0, 0, 0.75); }
@@ -84,6 +97,10 @@
   <button class="arrow" id="prev" aria-label="The car before">&#x2039;</button>
   <button class="arrow" id="next" aria-label="The next car">&#x203A;</button>
   <div class="choices">
+    <div class="options" id="options">
+      <div class="pick"><span class="what">DRIVERS</span><button id="fewer" aria-label="Fewer computer drivers">&#x2039;</button><span class="value" id="drivers"></span><button id="more" aria-label="More computer drivers">&#x203A;</button></div>
+      <div class="pick"><span class="what">SKILL</span><button id="easier" aria-label="Less good computer drivers">&#x2039;</button><span class="value" id="skill"></span><button id="harder" aria-label="Better computer drivers">&#x203A;</button></div>
+    </div>
     <button class="big" id="go-race">RACE</button>
     <button class="big plain" id="go-trial">TIME TRIAL</button>
     <p class="note" id="here"></p>
@@ -104,6 +121,6 @@
   <button class="big plain" id="leave">MENU</button>
 </div>
 <div id="overlay"><div id="message">Loading&hellip;</div></div>
-<script type="module" src="race.js?v=202610131017"></script>
+<script type="module" src="race.js?v=202610131038"></script>
 </body>
 </html>
