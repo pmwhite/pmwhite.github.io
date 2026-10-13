@@ -57,8 +57,9 @@ const clock = (ms) => {
 // game starts, the ones kept are given back to it, as key events whose key
 // syms are numbers packed together (see ghost_key there for how). They
 // are of the track as it is: TRACK is changed when the track is, and the
-// old ones are left behind.
-const TRACK = "1";
+// old ones are left behind. (As it is when the cars are made slower, or
+// faster: a ghost of a lap that cannot be driven now is no use.)
+const TRACK = "2";
 const GHOST_KEY = 2n ** 60n;
 const ghosts = {
   wrote(line) {
@@ -228,11 +229,14 @@ const room = {
       this.other(seat).done = Number(words[2]);
       return this.show();
     }
-    const [x, z, yaw, at, slip, speed, kind, far] = words.slice(1).map(Number);
+    const [x, z, yaw, at, slip, speed, kind, far, when] = words.slice(1).map(Number);
     if (![x, z, yaw, at, slip, speed, kind, far].every(Number.isFinite)) return;
+    // (When this was, by its device's clock, in hundredths of a second;
+    // or, from a page that does not say, when it came.)
+    const stamp = (Number.isFinite(when) ? Math.round(when) : Math.round(performance.now() / 10)) & 255;
     const clamp = (v, lo, hi) => Math.min(Math.max(Math.round(v), lo), hi);
     const turn = 2 * Math.PI * 1000;
-    const a = NET_A + seat * 2 ** 38 + clamp(kind, 0, 3) * 2 ** 36 + clamp(x + 131072, 0, 262143) * 2 ** 18 + clamp(z + 131072, 0, 262143);
+    const a = NET_A + stamp * 2 ** 42 + seat * 2 ** 38 + clamp(kind, 0, 3) * 2 ** 36 + clamp(x + 131072, 0, 262143) * 2 ** 18 + clamp(z + 131072, 0, 262143);
     const b = NET_B + seat * 2 ** 40 + clamp(((((yaw % turn) + turn) % turn) / turn) * 4096, 0, 4095) * 2 ** 28 + clamp(at, 0, 4095) * 2 ** 16
       + clamp(slip / 10 + 64, 0, 127) * 2 ** 9 + clamp(speed / 25, 0, 255) * 2;
     this.platform.key(2, a);
