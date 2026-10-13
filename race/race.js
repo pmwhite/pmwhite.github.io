@@ -50,6 +50,34 @@ const clock = (ms) => {
   const cs = Math.round(ms / 10);
   return `${Math.floor(cs / 6000)}:${String(Math.floor(cs / 100) % 60).padStart(2, "0")}.${String(cs % 100).padStart(2, "0")}`;
 };
+// ---- the link ----
+// The game is played from a link: the page's address with a key after its
+// #. The key is asked of the game's server (see web/race-room/worker.js)
+// before the game starts, and is kept on the device, so that the page
+// opens the game again without it.
+const atHome = location.hostname.endsWith("trailingwhite.space");
+const link = {
+  // Where the game's server is: where the address says (?net=), or beside
+  // the page where it is at home, or on the machine the page came from.
+  at: new URLSearchParams(location.search).get("net") ?? (atHome ? `wss://${location.host}/race/api` : `ws://${location.hostname}:8787`),
+  key: (location.hash.slice(1) || stored("race.key") || "").replace(/[^A-Za-z0-9]/g, "").slice(0, 40),
+  // Whether the key opens the game: "yes", "no", or (the server not to be
+  // reached) "lost". Away from home, where there may be no server at all,
+  // the game is open without one.
+  async opens() {
+    try {
+      const answer = await fetch(`${this.at.replace(/^ws/, "http")}/check?key=${this.key}`, { cache: "no-store" });
+      if (answer.ok) {
+        if (this.key) store("race.key", this.key);
+        return "yes";
+      }
+      return answer.status === 403 ? "no" : atHome ? "lost" : "yes";
+    } catch {
+      return atHome ? "lost" : "yes";
+    }
+  },
+};
+
 const room = {
   socket: null,
   platform: null,
@@ -62,12 +90,9 @@ const room = {
   racing: false,
   list: document.getElementById("order"),
   call: document.getElementById("race"),
-  // Where the rooms are: where the address says (?net=), or beside the
-  // page where it is at home, or on the machine the page came from.
   join(platform, params) {
     this.platform = platform;
-    const at = params.get("net") ?? (location.hostname.endsWith("trailingwhite.space") ? `wss://${location.host}/race/api` : `ws://${location.hostname}:8787`);
-    this.url = `${at}/room/${(params.get("room") ?? "track").toLowerCase().replace(/[^a-z0-9-]/g, "").slice(0, 24) || "track"}`;
+    this.url = `${link.at}/room/${(params.get("room") ?? "track").toLowerCase().replace(/[^a-z0-9-]/g, "").slice(0, 24) || "track"}?key=${link.key}`;
     this.call.addEventListener("click", () => this.ask());
     // (A tap on the list: another name.)
     this.list.addEventListener("click", () => {
@@ -215,6 +240,12 @@ const room = {
 
 async function main() {
   const params = new URLSearchParams(location.search);
+  // (Nothing of the game is fetched without the link.)
+  const open = await link.opens();
+  if (open !== "yes") {
+    show(open === "no" ? "This game is played from a link.<br>Open it from yours." : "The game cannot be reached just now.<br><a href=\"\">Try again</a>");
+    return;
+  }
   const module = await WebAssembly.compileStreaming(fetch("race.wasm"));
   const fs = new MemFS({});
   const decoder = new TextDecoder();
