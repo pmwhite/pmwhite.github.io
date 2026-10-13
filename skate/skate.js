@@ -120,9 +120,93 @@ onTap(document.querySelector(".again"), () => {
   typeKeys([114]);
 });
 
+// A lesson's steps (see .steps): read its word (its sheet), watch the
+// game ride it (its T), or try it (its R); any, in any order. The one he
+// is at is lit. They are up for the lesson the game is at, or is on its
+// way to (see lessonNow): from the moment it is picked, loading or not.
+// Reading never waits. Watching or trying asked for before the game is
+// there and done building is kept, and done the moment it is.
+const stepsEl = document.querySelector(".steps");
+const lessonNow = () => {
+  const id = headed ?? placeNow;
+  return isLesson(id) ? id : 0;
+};
+let pendingStep = "";
+const syncSteps = () => {
+  document.body.classList.toggle("lesson", lessonNow() !== 0);
+  // (Under another sheet, as home's or the guide's, they stay where they
+  // are, but beneath it: dimmed with the rest, and out of reach.)
+  document.body.classList.toggle("covered", Object.entries(sheets).some(([name, el]) => name !== "lesson" && !el.hidden));
+  // The one he is at: reading; or what he has asked for and waits on; or
+  // else what the game is doing.
+  const at = !sheets.lesson.hidden ? "read" : pendingStep || (document.body.classList.contains("watching") ? "watch" : "try");
+  for (const tab of stepsEl.querySelectorAll(".tab")) tab.classList.toggle("on", tab.dataset.step === at);
+};
+// The game is at a lesson, built and ready to be told what to do.
+const lessonReady = () => headed === null && isLesson(placeNow) && !document.body.classList.contains("loading");
+const doStep = (step) => {
+  document.body.classList.remove("over");
+  // (As it will be, the moment the game takes the key: see L8RIDE.)
+  document.body.classList.toggle("watching", step === "watch");
+  typeKeys([step === "watch" ? 116 : 114]);
+  syncSteps();
+};
+for (const tab of stepsEl.querySelectorAll(".tab")) {
+  onTap(tab, () => {
+    const id = lessonNow();
+    if (!id) return;
+    const step = tab.dataset.step;
+    if (step === "read") return go("lesson", id - TUTORIAL);
+    pendingStep = lessonReady() ? "" : step;
+    closeSheets();
+    if (!pendingStep) doStep(step);
+  });
+}
+// (Once the game is there and built: see L8COURSE and L8LOAD.)
+const stepWhenReady = () => {
+  syncSteps();
+  if (pendingStep && lessonReady()) {
+    const step = pendingStep;
+    pendingStep = "";
+    doStep(step);
+  }
+};
+// (From the end of his own ride of it, on to today's course.)
+// (From a lesson's end, the next lesson, or the list of them.)
+const onwardEl = document.querySelector(".onward");
+onTap(onwardEl, () => {
+  if (!isLesson(placeNow)) return goTo(today());
+  const n = placeNow - TUTORIAL;
+  if (n < LESSONS.length) go("lesson", n + 1);
+  else go("lessons");
+});
+// What thumbs are doing: his own (as the game has it, left of the middle
+// steers, right of it is the trick), or those of the run the game rides
+// (L8HANDS: see demo_keys, in tutorial.l8). The right-hand control says
+// what it does while it is held; and a keyboard's keys light up for the
+// game's thumbs.
+const thumbs = new Map();
+let hands = 0;
+const thumbsChanged = () => {
+  const sides = [...thumbs.values()];
+  document.body.classList.toggle("steering", sides.includes("steer") || (hands & 32) !== 0);
+  document.body.classList.toggle("holding", sides.includes("trick") || (hands & 4) !== 0);
+  for (const [cap, bit] of [["l", 1], ["r", 2], ["sp", 4], ["u", 8], ["d", 16]]) teachEl.querySelector(`.cap.${cap}`).classList.toggle("on", (hands & bit) !== 0);
+};
+canvas.addEventListener("pointerdown", (e) => {
+  const r = canvas.getBoundingClientRect();
+  thumbs.set(e.pointerId, e.clientX - r.left > r.width / 2 ? "trick" : "steer");
+  thumbsChanged();
+});
+for (const name of ["pointerup", "pointercancel"]) {
+  addEventListener(name, (e) => {
+    if (thumbs.delete(e.pointerId)) thumbsChanged();
+  });
+}
+
 // Sheets over the game: home, the guide, the places to pick from, a place,
 // and a person. The game pauses (Pause, held) while any is open.
-const sheets = Object.fromEntries(["menu", "guide", "places", "days", "place", "person"].map((id) => [id, document.getElementById(id)]));
+const sheets = Object.fromEntries(["menu", "lessons", "lesson", "places", "days", "place", "person"].map((id) => [id, document.getElementById(id)]));
 const sheetOpen = () => Object.values(sheets).some((el) => !el.hidden);
 // Whether he has started riding: until then home cannot be left without
 // choosing.
@@ -140,6 +224,7 @@ const sheetsChanged = () => {
   document.body.classList.toggle("showing", open === "place");
   document.body.classList.toggle("canback", !!open && (trail.length > 1 || started));
   syncPreview();
+  syncSteps();
 };
 // While a place's sheet is up the game shows the place off: a key held
 // tells it so (see fly_over, in programs/skate/main.l8).
@@ -174,6 +259,11 @@ const present = () => {
   if (!view) return closeSheets();
   const [id, of] = view;
   if (id === "places" || id === "days") picking = of;
+  // (A lesson: the game goes to it behind its sheet, and holds.)
+  if (id === "lesson") {
+    lessonOf = of;
+    visit(TUTORIAL + of);
+  }
   if (id === "place") visit((placeOf = of));
   if (id === "person") personOf = of;
   showOpen(id);
@@ -195,6 +285,13 @@ const goHome = () => {
 const goBack = () => {
   // (From a replay: the game leaves it. See L8RIDE.)
   if (trail.length === 0 && document.body.classList.contains("replaying")) typeKeys([65288]);
+  // (From a lesson, at any of its steps: to the lessons, and from them
+  // home.)
+  if (lessonNow() && (trail.length === 0 || trail.at(-1)[0] === "lesson")) {
+    trail.length = 0;
+    trail.push(["menu"], ["lessons"]);
+    return present();
+  }
   if (trail.length === 0 || (trail.length === 1 && !started)) return;
   trail.pop();
   present();
@@ -203,7 +300,6 @@ onTap(document.querySelector(".back"), goBack);
 addEventListener("keydown", (e) => {
   if (e.key === "Escape") goBack();
 });
-onTap(document.querySelector(".how"), () => go("guide"));
 
 // Places: a downhill course is a number; a park is one too, kept negative
 // (as the game says them: see run_id in programs/skate/park.l8). Each
@@ -216,6 +312,51 @@ const PLACES = 5;
 // The tutorial's course (see programs/skate/tutorial.l8): where a new
 // player starts, until he has left it for another.
 const TUTORIAL = 100000000;
+// The tutorial's lessons, TUTORIAL + 1 on: each a stretch of its course
+// with one thing on it (see programs/skate/tutorial.l8), with a word
+// before it (of thumbs, on a phone; of keys, otherwise), and of the
+// scoring it bears on.
+const LESSONS = [
+  {
+    title: "Steering",
+    thumbs: "Your left thumb steers. Slide it toward the side you want to go: the further from the middle, the more he heads across the hill. Lift it, and he keeps his heading. Ride the run to the finish.",
+    keys: "The Left and Right arrows steer: hold one, and he turns further across the hill. Let go, and he keeps his heading. Ride the run to the finish.",
+    scoring: "A run's score is the sum of its tricks. Steering scores nothing, but it gets you to the jumps, and onto the line for them.",
+  },
+  {
+    title: "The ramp",
+    thumbs: "Put your right thumb down early, and he crouches. Slide it up to set a frontflip: the further you slide, the more flips. Let go, and he jumps. A bigger trick needs longer in the air to finish, and the later you let go, the more air you get. The ramp glows green where letting go lands the trick you've set clean: the bigger the trick, the less green there is.",
+    keys: "Hold Space early, and he crouches. Tap Up to set a frontflip: each tap adds a flip. Let go, and he jumps. A bigger trick needs longer in the air to finish, and the later you let go, the more air you get. The ramp glows green where letting go lands the trick you've set clean: the bigger the trick, the less green there is.",
+    scoring: "A flip is 600; two are 900, three 1100. A kicker pays flips double. A trick that hasn't finished when he lands is sketchy, and scores nothing.",
+  },
+  {
+    title: "Backflip and grab",
+    thumbs: "The same trick twice scores half, so set another: slide down for a backflip. In the air, thumb down again to grab the board. Holding the grab slows his flip, so let go of it in time for the flip to finish before he lands.",
+    keys: "The same trick twice scores half, so set another: tap Down for a backflip. In the air, hold Space again to grab the board. Holding the grab slows his flip, so let go of it in time for the flip to finish before he lands.",
+    scoring: "A repeat scores half, then a quarter. A grab adds 300 to 500, more the longer you hold it.",
+  },
+  {
+    title: "The box",
+    thumbs: "Line up early with a box or a rail and ride straight onto it to grind. Keep the steering gentle to stay on, and ride off its end.",
+    keys: "Line up early with a box or a rail and ride straight onto it to grind. Keep the steering gentle to stay on, and ride off its end.",
+    scoring: "A grind is 300, plus 150 for each second on it.",
+  },
+  {
+    title: "The halfpipe",
+    thumbs: "Steer up a wall and he rides it. Slide sideways to set a spin: further for a bigger one, a half turn at a time. Let go on the green near the top, where there's air enough for it. Then the other wall.",
+    keys: "Steer up a wall and he rides it. Hold Space and tap Left or Right to set a spin: each tap adds a half turn. Let go on the green near the top, where there's air enough for it. Then the other wall.",
+    scoring: "A 180 is 200, a 360 is 350, a 540 is 480, a 720 is 580. A halfpipe pays spins double. Landing switch, facing backward, scores half again.",
+  },
+  {
+    title: "The gap",
+    thumbs: "A big jump has room for more. Slide up and across for a flip and a spin at once. Together they need more air than either alone, so let go right at the lip, and clear the gap: landing short scores nothing.",
+    keys: "A big jump has room for more. Hold Space, tap Up and Right for a flip and a spin at once. Together they need more air than either alone, so let go right at the lip, and clear the gap: landing short scores nothing.",
+    scoring: "A gap pays a flip with a spin half again. Each kind of jump favors one kind of trick, so mix them up: set the trick early, and let go late.",
+  },
+];
+const isLesson = (id) => id > TUTORIAL && id <= TUTORIAL + LESSONS.length;
+const inTutorial = (id) => id === TUTORIAL || isLesson(id);
+
 // Big air's places are numbered from here (big air 3 is BIG_AIR + 3): see
 // lay_big_air, in programs/skate/layout.l8.
 const BIG_AIR = 200000000;
@@ -239,6 +380,8 @@ const KEEP_RECENT = 20;
 const KEEP_BEST = 10;
 const KEEP_PLACES = 60;
 const myRuns = stored("skate.runs", {});
+// The tutorial's lessons he has finished (riding them himself to the end).
+const lessonsDone = stored("skate.lessons", {});
 const noteRun = (id, score) => {
   const mine = (myRuns[id] ??= { recent: [], best: [] });
   const run = [score, Date.now()];
@@ -290,6 +433,7 @@ const SLOPE_NAMES = ["Haystack", "Pinewood", "Lantern", "Clover", "Fox Run"];
 const PARK_NAMES = ["Pebble", "Sundial", "Mossy", "Birdbath", "Thistle"];
 const placeName = (id) => {
   if (id === TUTORIAL) return "Tutorial";
+  if (isLesson(id)) return `Lesson ${id - TUTORIAL}: ${LESSONS[id - TUTORIAL - 1].title}`;
   if (id >= 1 && id <= SLOPE_NAMES.length) return SLOPE_NAMES[id - 1];
   if (id <= -1 && id >= -PARK_NAMES.length) return PARK_NAMES[-id - 1];
   if (isBigAir(id)) return id === BIG_AIR + 1 ? "Big air" : `Big air ${id - BIG_AIR}`;
@@ -301,10 +445,14 @@ const placeName = (id) => {
 let wanted = null;
 // Where the game has been asked to go, until it says it is there.
 let headed = null;
+// (Asked for outright, as one key the game knows a page by: 2000000000 and
+// the place's number. Typed as a number and Enter, as on a keyboard, it
+// could be lost: Enter means other things to the game at times.)
 const typePlace = (id) => {
   headed = id;
-  if (id === TUTORIAL) typeKeys([116]);
-  else typeKeys([...String(Math.abs(id))].map((c) => 48 + Number(c)).concat(id < 0 ? 65289 : 65293));
+  pendingStep = "";
+  syncSteps();
+  typeKeys([2000000000 + id]);
 };
 // Have the game go there, the page's sheets left as they are (see
 // showPlace).
@@ -328,7 +476,7 @@ const randomPlace = (kind) => (kind === "parks" ? -1 : 1) * (PLACES + 1 + Math.f
 // else as this device does. Told as a key, 300000000 and the score, when
 // he arrives, and again when the leaderboards come.
 const tellBest = () => {
-  if (!sendKey || !placeNow || placeNow === TUTORIAL) return;
+  if (!sendKey || !placeNow || inTutorial(placeNow)) return;
   const local = myRuns[placeNow]?.best?.[0]?.[0] ?? 0;
   const posted = account ? (bestsOn(placeNow).find((run) => run.id === account.id)?.score ?? 0) : 0;
   const best = Math.max(local, posted);
@@ -583,14 +731,50 @@ const watchRun = async (person, id) => {
 // last, the run being over, 2; a word to him as he rides the course
 // himself, 3; or nothing, 0). The line is shown over the scene, with a way
 // to leave off watching and, at the end, to try it or watch it again.
+// What he did on a lesson, as the game tells it at the end (L8HITS: see
+// main.l8), and the word on how it went, judged by the lesson.
+let lessonHits = [];
+let verdict = "";
+const HIT_AIR = 0, HIT_RAIL = 2, HIT_BOX = 3;
+const FEATURE_PIPE = 2;
+// Whether he did the lesson's thing, and that said plainly.
+const judgeLesson = (n, hits) => {
+  const clean = hits.filter((h) => h.kind === HIT_AIR);
+  const tell = (ok, yes, no) => ({ ok, text: ok ? yes : no });
+  if (n === 1) return tell(true, "You reached the finish.", "");
+  if (n === 2) return tell(clean.some((h) => h.flips !== 0), "You landed the flip.", "No flip landed.");
+  if (n === 3) return tell(clean.some((h) => h.flips !== 0 && h.grab), "You landed a flip with a grab.", "No flip with a grab landed.");
+  if (n === 4) return tell(hits.some((h) => h.kind === HIT_RAIL || h.kind === HIT_BOX), "You grinded the box.", "You missed the box.");
+  if (n === 5) return tell(clean.some((h) => h.item === FEATURE_PIPE && h.halves !== 0), "You landed a spin off the wall.", "No spin landed off the wall.");
+  if (n === 6) return tell(clean.some((h) => h.flips !== 0 && h.halves !== 0), "You landed a flip with a spin.", "No flip with a spin landed.");
+  return tell(false, "", "");
+};
+const sayVerdict = () => {
+  const n = placeNow - TUTORIAL;
+  const { ok, text } = judgeLesson(n, lessonHits);
+  verdict = text;
+  // (A lesson is done once he has done its thing.)
+  if (ok && !lessonsDone[n]) {
+    lessonsDone[n] = true;
+    store("skate.lessons", lessonsDone);
+  }
+  if (!verdict) return;
+  teachEl.hidden = false;
+  teachEl.className = ok ? "result ok" : "result";
+  teachLine.textContent = verdict;
+  teachLine.classList.remove("out");
+};
 const teachEl = document.getElementById("teach");
 const teachLine = teachEl.querySelector(".line");
 let saying = "";
 const say = (kind, text) => {
-  document.body.classList.toggle("watching", kind === 1 || kind === 2);
+  // (That the game rides is told apart: see L8RIDE.)
   const shown = !teachEl.hidden;
+  // (The word on how a lesson went stays up while nothing else is said.)
+  if (kind === 0 && verdict) return;
   teachEl.hidden = kind === 0;
   if (kind === 0) return;
+  verdict = "";
   teachEl.className = ["", "demo", "end", "cue"][kind];
   if (text === saying) return;
   // (One line gives way to the next: out, and the new one in. The first
@@ -609,35 +793,6 @@ const say = (kind, text) => {
     teachLine.classList.remove("out");
   }, 140);
 };
-// (R: he rides it himself. T: the game rides it again, from the top.)
-onTap(teachEl.querySelector(".skip"), () => typeKeys([114]));
-onTap(teachEl.querySelector(".try"), () => typeKeys([114]));
-onTap(teachEl.querySelector(".rewatch"), () => typeKeys([116]));
-// (From the end of his own ride of it, on to today's course.)
-onTap(document.querySelector(".onward"), () => goTo(today()));
-// What thumbs are doing: his own (as the game has it, left of the middle
-// steers, right of it is the trick), or those of the run the game rides
-// (L8HANDS: see demo_keys, in tutorial.l8). The right-hand control says
-// what it does while it is held; and a keyboard's keys light up for the
-// game's thumbs.
-const thumbs = new Map();
-let hands = 0;
-const thumbsChanged = () => {
-  const sides = [...thumbs.values()];
-  document.body.classList.toggle("steering", sides.includes("steer") || (hands & 32) !== 0);
-  document.body.classList.toggle("holding", sides.includes("trick") || (hands & 4) !== 0);
-  for (const [cap, bit] of [["l", 1], ["r", 2], ["sp", 4], ["u", 8], ["d", 16]]) teachEl.querySelector(`.cap.${cap}`).classList.toggle("on", (hands & bit) !== 0);
-};
-canvas.addEventListener("pointerdown", (e) => {
-  const r = canvas.getBoundingClientRect();
-  thumbs.set(e.pointerId, e.clientX - r.left > r.width / 2 ? "trick" : "steer");
-  thumbsChanged();
-});
-for (const name of ["pointerup", "pointercancel"]) {
-  addEventListener(name, (e) => {
-    if (thumbs.delete(e.pointerId)) thumbsChanged();
-  });
-}
 
 const gameSays = (line) => {
   const words = line.trim().split(/\s+/);
@@ -656,9 +811,11 @@ const gameSays = (line) => {
     if (words[1] === "1") gameSays.loading = performance.now();
     else if (gameSays.loading && frames.loads.length < 8) frames.loads.push(Math.round(performance.now() - gameSays.loading));
     document.body.classList.toggle("loading", words[1] === "1");
+    stepWhenReady();
   }
   else if (words[0] === "L8OVER") document.body.classList.toggle("over", words[1] === "1");
   else if (words[0] === "L8SAY") say(Number(words[1]), words.slice(2).join(" "));
+  else if (words[0] === "L8HITS") lessonHits = words.slice(1).map((w) => w.split(":").map(Number)).map(([kind, item, flips, halves, grab, short]) => ({ kind, item, flips, halves, grab: !!grab, short: !!short }));
   else if (words[0] === "L8HANDS") {
     hands = Number(words[1]);
     thumbsChanged();
@@ -670,7 +827,13 @@ const gameSays = (line) => {
     // one of someone's ends back on the sheet it was picked from.
     const ride = Number(words[1]);
     document.body.classList.toggle("done", ride === 1);
-    document.body.classList.toggle("replaying", ride >= 2);
+    document.body.classList.toggle("watching", ride === 4);
+    syncSteps();
+    // (A lesson ridden to its end: a word on how it went.)
+    if (ride === 1 && isLesson(placeNow) && !document.body.classList.contains("watching")) sayVerdict();
+    if (ride !== 1) verdict = "";
+    if (ride === 1) onwardEl.textContent = isLesson(placeNow) ? (placeNow - TUTORIAL < LESSONS.length ? "Next lesson" : "All lessons") : "Daily slopestyle";
+    document.body.classList.toggle("replaying", ride === 2 || ride === 3);
     if (ride < 2 && watchedFrom) {
       const back = watchedFrom;
       watchedFrom = null;
@@ -686,8 +849,9 @@ const gameSays = (line) => {
     if (placeNow === headed) headed = null;
     tellBest();
     document.body.classList.toggle("park", placeNow < 0);
-    document.body.classList.toggle("tutorial", placeNow === TUTORIAL);
-    if (placeNow !== TUTORIAL) {
+    document.body.classList.toggle("tutorial", inTutorial(placeNow));
+    stepWhenReady();
+    if (!inTutorial(placeNow)) {
       store("skate.course", placeNow);
       store("skate.tutorial", true);
     }
@@ -793,7 +957,7 @@ const showMenu = () => {
 for (const el of sheets.menu.querySelectorAll(".item")) {
   onTap(el, () => {
     const to = el.dataset.go;
-    if (to === "tutorial") goTo(TUTORIAL);
+    if (to === "tutorial") go("lessons");
     if (to === "courses") go("places", "courses");
     if (to === "parks") go("places", "parks");
     // (One big air is enough.)
@@ -804,6 +968,35 @@ onTap(sheets.menu.querySelector(".me"), () => {
   if (account) go("person", account.name);
 });
 onTap(document.querySelector(".pick"), goHome);
+
+// The tutorial's lessons, each to its word before it is watched (or to be
+// taken up again, done or not).
+const showLessons = () => {
+  const el = sheets.lessons.querySelector(".items");
+  el.textContent = "";
+  // (The first not yet done is the one to take next: marked so.)
+  const next = LESSONS.findIndex((_, i) => !lessonsDone[i + 1]) + 1;
+  LESSONS.forEach((lesson, i) => {
+    const div = document.createElement("div");
+    const done = !!lessonsDone[i + 1];
+    div.className = `item${done ? " done" : ""}${i + 1 === next ? " first" : ""}`;
+    const b = document.createElement("b");
+    b.textContent = `${i + 1}. ${lesson.title}`;
+    const mark = document.createElement("i");
+    mark.textContent = done ? "\u2713" : i + 1 === next ? "Next" : "";
+    div.append(b, mark);
+    onTap(div, () => go("lesson", i + 1));
+    el.append(div);
+  });
+};
+let lessonOf = 1;
+const showLesson = () => {
+  const el = sheets.lesson;
+  const lesson = LESSONS[lessonOf - 1];
+  el.querySelector("h2").textContent = `${lessonOf}. ${lesson.title}`;
+  el.querySelector(".intro").textContent = touch ? lesson.thumbs : lesson.keys;
+  el.querySelector(".scoring p").textContent = lesson.scoring;
+};
 
 // The places to pick from: the slopestyles or the parks, the day's first,
 // and one at random.
@@ -977,7 +1170,7 @@ const showPerson = () => {
 // becoming today's; and for someone new, the tutorial).
 const startPlace = () => {
   const last = stored("skate.course", 0) || 0;
-  const start = last === 0 && !stored("skate.tutorial", false) ? TUTORIAL : last || 1;
+  const start = last === 0 && !stored("skate.tutorial", false) ? TUTORIAL + 1 : last || 1;
   return isDaily(start) ? Math.sign(start) * today() : start;
 };
 // A sheet's contents, as they now are: the one named, or else whichever is
@@ -985,6 +1178,8 @@ const startPlace = () => {
 const showOpen = (id = Object.keys(sheets).find((name) => !sheets[name].hidden)) => {
   if (id === "menu") showMenu();
   if (id === "places") showPlaces();
+  if (id === "lessons") showLessons();
+  if (id === "lesson") showLesson();
   if (id === "days") showDays();
   if (id === "place") showPlace();
   if (id === "person") showPerson();
