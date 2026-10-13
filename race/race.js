@@ -69,7 +69,7 @@ const clock = (ms) => {
 // are of the track as it is: TRACK is changed when the track is, and the
 // old ones are left behind. (As it is when the cars are made slower, or
 // faster: a ghost of a lap that cannot be driven now is no use.)
-const TRACK = "2";
+const TRACK = "3";
 const GHOST_KEY = 2n ** 60n;
 const ghosts = {
   wrote(line) {
