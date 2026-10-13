@@ -246,7 +246,10 @@ async function main() {
     show(open === "no" ? "This game is played from a link.<br>Open it from yours." : "The game cannot be reached just now.<br><a href=\"\">Try again</a>");
     return;
   }
-  const module = await WebAssembly.compileStreaming(fetch("race.wasm"));
+  // (The game as it is with this script: fetched by the same ?v= as the
+  // script was, if any, so that a kept copy of one is never run with a
+  // newer copy of the other.)
+  const module = await WebAssembly.compileStreaming(fetch(`race.wasm${new URL(import.meta.url).search}`));
   const fs = new MemFS({});
   const decoder = new TextDecoder();
   // (What the game writes comes in pieces: a line at a time from here. A
