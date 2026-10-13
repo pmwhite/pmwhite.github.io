@@ -50,6 +50,41 @@ const clock = (ms) => {
   const cs = Math.round(ms / 10);
   return `${Math.floor(cs / 6000)}:${String(Math.floor(cs / 100) % 60).padStart(2, "0")}.${String(cs % 100).padStart(2, "0")}`;
 };
+// ---- ghosts ----
+// A ghost is the best lap driven in a kind of car, for the game to drive
+// again as a car that is only seen (see programs/race/ghost.l8). The game
+// writes each new one as a line, which is kept on the device; and as the
+// game starts, the ones kept are given back to it, as key events whose key
+// syms are numbers packed together (see ghost_key there for how). They
+// are of the track as it is: TRACK is changed when the track is, and the
+// old ones are left behind.
+const TRACK = "1";
+const GHOST_KEY = 2n ** 60n;
+const ghosts = {
+  wrote(line) {
+    if (!line.startsWith("L8GHOST ")) return false;
+    const kind = Number(line.slice(8).split(" ", 1)[0]);
+    if (kind >= 0 && kind < 4) store(`race.ghost.${TRACK}.${kind}`, line.slice(8));
+    return true;
+  },
+  give(platform) {
+    const within = (v, lo, hi) => BigInt(Math.min(Math.max(Math.round(v), lo), hi));
+    const turn = 2 * Math.PI * 1000;
+    for (let kind = 0; kind < 4; kind++) {
+      const words = (stored(`race.ghost.${TRACK}.${kind}`) ?? "").split(" ").map(Number);
+      const [k, ms, n] = words;
+      if (k !== kind || !(n > 1) || words.length !== 3 + n * 4 || !words.every(Number.isFinite)) continue;
+      const of = GHOST_KEY + (BigInt(kind) << 57n);
+      platform.key(2, of + (1n << 59n) + within(ms, 0, 16777215));
+      for (let i = 0; i < n; i++) {
+        const [x, z, yaw, slip] = words.slice(3 + i * 4, 7 + i * 4);
+        platform.key(2, of + (within(slip / 10 + 64, 0, 127) << 48n) + (within(((((yaw % turn) + turn) % turn) / turn) * 4096, 0, 4095) << 36n)
+          + (within(z + 131072, 0, 262143) << 18n) + within(x + 131072, 0, 262143));
+      }
+    }
+  },
+};
+
 // ---- the link ----
 // The game is played from a link: the page's address with a key after its
 // #. The key is asked of the game's server (see web/race-room/worker.js)
@@ -260,7 +295,7 @@ async function main() {
     const lines = written.split("\n");
     written = lines.pop();
     for (const line of lines) {
-      if (!room.wrote(line) && line.trim()) console.log(line.trimEnd());
+      if (!room.wrote(line) && !ghosts.wrote(line) && line.trim()) console.log(line.trimEnd());
     }
   };
   const sys = fs.sys(["race"]);
@@ -298,6 +333,7 @@ async function main() {
   placePads();
   window.l8Game = platform;
   room.join(platform, params);
+  ghosts.give(platform);
   const { instance, mem } = await instantiate(module, sys, platform.imports);
   platform.attach(instance, mem);
   // Start over: the game's R key. The next car: its keys 1 to 4. (The
