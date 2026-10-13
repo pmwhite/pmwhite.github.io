@@ -310,23 +310,25 @@ async function main() {
   sys.env = [...params].filter(([k]) => k.startsWith("L8_")).map(([k, v]) => `${k}=${v}`);
   const env = Object.fromEntries([...params].filter(([k]) => k.startsWith("L8_")));
   const platform = createPlatform(canvas, { log: (text) => console.warn(text), checkErrors: params.has("glcheck"), scale: 1, zoom: 0.85, env, pointers: true, maxTall: 2.4, maxPixels: 2.2e6 });
-  // The steering panel and the pedals, placed over the game's view where
-  // the game reads them: these fractions match programs/race/touch.l8.
-  const STEER_LEFT = 0.04, STEER_RIGHT = 0.47, PANEL_TOP = 0.52, PANEL_BOTTOM = 0.8, PEDAL_SPLIT = 0.72;
+  // The steering panel, the veer button, and the brake, placed over the
+  // game's view where the game reads them: these fractions match
+  // programs/race/touch.l8.
+  const STEER_LEFT = 0.04, STEER_RIGHT = 0.47, PANEL_TOP = 0.52, PANEL_BOTTOM = 0.8;
+  const BRAKE_LEFT = 0.62, BRAKE_RIGHT = 0.88, BRAKE_TOP = 0.83, BRAKE_BOTTOM = 0.89;
   const steerPanel = document.querySelector(".panel.steer");
+  const veerPanel = document.querySelector(".panel.veer");
   const brakePanel = document.querySelector(".panel.brake");
-  const gasPanel = document.querySelector(".panel.gas");
   const placePads = () => {
     const r = canvas.getBoundingClientRect();
-    const place = (el, left, right) => {
+    const place = (el, left, right, top, bottom) => {
       el.style.left = `${r.left + r.width * left}px`;
       el.style.width = `${r.width * (right - left)}px`;
-      el.style.top = `${r.top + r.height * PANEL_TOP}px`;
-      el.style.height = `${r.height * (PANEL_BOTTOM - PANEL_TOP)}px`;
+      el.style.top = `${r.top + r.height * top}px`;
+      el.style.height = `${r.height * (bottom - top)}px`;
     };
-    place(steerPanel, STEER_LEFT, STEER_RIGHT);
-    place(brakePanel, 1 - STEER_RIGHT, PEDAL_SPLIT - 0.01);
-    place(gasPanel, PEDAL_SPLIT + 0.01, 1 - STEER_LEFT);
+    place(steerPanel, STEER_LEFT, STEER_RIGHT, PANEL_TOP, PANEL_BOTTOM);
+    place(veerPanel, 1 - STEER_RIGHT, 1 - STEER_LEFT, PANEL_TOP, PANEL_BOTTOM);
+    place(brakePanel, BRAKE_LEFT, BRAKE_RIGHT, BRAKE_TOP, BRAKE_BOTTOM);
   };
   new ResizeObserver(placePads).observe(canvas);
   addEventListener("resize", placePads);
