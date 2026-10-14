@@ -1,5 +1,5 @@
 // The skate game on a canvas that fills the screen. It shares the block
-// game's browser implementation of X11, GLX, and OpenGL (./platform.js).
+// game's browser implementation of X11, GLX, and OpenGL (../game/platform.js).
 import { instantiate, runResumable, MemFS } from "./l8-runtime.js";
 import { createPlatform } from "./platform.js";
 import { startControl } from "./control.js";
@@ -112,6 +112,7 @@ onTap(document.querySelector(".look"), () => {
 });
 onTap(document.querySelector(".replay"), () => {
   document.body.classList.remove("over");
+  go("watch");
   typeKeys([112]);
 });
 // (And riding it again, from the top: the game's R.)
@@ -127,23 +128,34 @@ onTap(document.querySelector(".again"), () => {
 // Reading never waits. Watching or trying asked for before the game is
 // there and done building is kept, and done the moment it is.
 const stepsEl = document.querySelector(".steps");
-const lessonNow = () => {
-  const id = headed ?? placeNow;
-  return isLesson(id) ? id : 0;
-};
+const lessonNow = () => (pageNow() === "lesson" ? TUTORIAL + trail.at(-1)[1] : 0);
 let pendingStep = "";
 const syncSteps = () => {
-  document.body.classList.toggle("lesson", lessonNow() !== 0);
-  // (Under another sheet, as home's or the guide's, they stay where they
-  // are, but beneath it: dimmed with the rest, and out of reach.)
-  document.body.classList.toggle("covered", Object.entries(sheets).some(([name, el]) => name !== "lesson" && !el.hidden));
+  const lesson = lessonNow() !== 0;
+  document.body.classList.toggle("lesson", lesson);
+  document.body.classList.toggle("reading", lesson && reading);
+  // A plain ground (see body::before) under a page until the game has
+  // drawn anything at all: so that the first place comes up from the
+  // ground, whole. (After that, one place fades into the next: see
+  // keepPicture.)
+  document.body.classList.toggle("veiled", !gameDrawn && (lesson || pageNow() in sheets));
   // The one he is at: reading; or what he has asked for and waits on; or
   // else what the game is doing.
-  const at = !sheets.lesson.hidden ? "read" : pendingStep || (document.body.classList.contains("watching") ? "watch" : "try");
-  for (const tab of stepsEl.querySelectorAll(".tab")) tab.classList.toggle("on", tab.dataset.step === at);
+  const at = reading ? "read" : pendingStep || (document.body.classList.contains("watching") ? "watch" : "try");
+  let on = null;
+  for (const tab of stepsEl.querySelectorAll(".tab")) {
+    tab.classList.toggle("on", tab.dataset.step === at);
+    if (tab.dataset.step === at) on = tab;
+  }
+  // (The thumb slides to it.)
+  const thumb = stepsEl.querySelector(".thumb");
+  thumb.style.left = `${on.offsetLeft}px`;
+  thumb.style.width = `${on.offsetWidth}px`;
 };
+addEventListener("resize", () => syncSteps());
+document.fonts?.ready.then(() => syncSteps());
 // The game is at a lesson, built and ready to be told what to do.
-const lessonReady = () => headed === null && isLesson(placeNow) && !document.body.classList.contains("loading");
+const lessonReady = () => headed === null && placeNow === lessonNow() && !document.body.classList.contains("loading");
 const doStep = (step) => {
   document.body.classList.remove("over");
   // (As it will be, the moment the game takes the key: see L8RIDE.)
@@ -156,10 +168,12 @@ for (const tab of stepsEl.querySelectorAll(".tab")) {
     const id = lessonNow();
     if (!id) return;
     const step = tab.dataset.step;
-    if (step === "read") return go("lesson", id - TUTORIAL);
-    pendingStep = lessonReady() ? "" : step;
-    closeSheets();
-    if (!pendingStep) doStep(step);
+    // (The lesson's one page, whichever step of it shows: none of them
+    // is a page further on.)
+    reading = step === "read";
+    pendingStep = reading || lessonReady() ? "" : step;
+    present();
+    if (!reading && !pendingStep) doStep(step);
   });
 }
 // (Once the game is there and built: see L8COURSE and L8LOAD.)
@@ -175,10 +189,10 @@ const stepWhenReady = () => {
 // (From a lesson's end, the next lesson, or the list of them.)
 const onwardEl = document.querySelector(".onward");
 onTap(onwardEl, () => {
-  if (!isLesson(placeNow)) return goTo(today());
+  if (!isLesson(placeNow)) return goTo(today(), true);
   const n = placeNow - TUTORIAL;
-  if (n < LESSONS.length) go("lesson", n + 1);
-  else go("lessons");
+  if (n < LESSONS.length) goInstead("lesson", n + 1);
+  else goBack();
 });
 // What thumbs are doing: his own (as the game has it, left of the middle
 // steers, right of it is the trick), or those of the run the game rides
@@ -204,96 +218,106 @@ for (const name of ["pointerup", "pointercancel"]) {
   });
 }
 
-// Sheets over the game: home, the guide, the places to pick from, a place,
-// and a person. The game pauses (Pause, held) while any is open.
+// Pages. Home is the root: it is where the page opens, there is nothing to
+// go back to from it, and nothing closes it but going on to something. The
+// rest are a history back to it (`trail`, home first, the page showing
+// last): each a kind and what it is of. Most are sheets over the game,
+// which is held (Pause, held) while one is up: the lessons, a lesson read,
+// the places to pick from, the days gone by, a place, a person. Three have
+// no sheet, the game itself showing: a place ridden ("ride"), a run
+// watched ("watch"), and a lesson watched or tried (the lesson's own page,
+// when it is not being read: see `reading`).
+//
+// Two buttons, on every page but home: back, a page; and home.
 const sheets = Object.fromEntries(["menu", "lessons", "lesson", "places", "days", "place", "person"].map((id) => [id, document.getElementById(id)]));
 const sheetOpen = () => Object.values(sheets).some((el) => !el.hidden);
-// Whether he has started riding: until then home cannot be left without
-// choosing.
-let started = false;
-// The sheets he has come through, the one showing last: each a sheet's
-// name and what it is of (a place's number, a person's name, whether the
-// places are parks). Going on to another adds one; going back takes one
-// off, down to the game.
-const trail = [];
-// (The page's buttons know of it: with a sheet open, the one that goes back
-// from it takes home's place, unless there is nowhere to go back to.)
+const trail = [["menu"]];
+const pageNow = () => trail.at(-1)[0];
+// (A lesson's page is its sheet only while its word is being read.)
+let reading = true;
 const sheetsChanged = () => {
   const open = Object.keys(sheets).find((id) => !sheets[id].hidden);
   document.body.classList.toggle("sheet", !!open);
+  document.body.classList.toggle("home", open === "menu");
   document.body.classList.toggle("showing", open === "place");
-  document.body.classList.toggle("canback", !!open && (trail.length > 1 || started));
+  document.body.classList.toggle("canback", trail.length > 1);
   syncPreview();
   syncSteps();
 };
-// While a place's sheet is up the game shows the place off: a key held
-// tells it so (see fly_over, in programs/skate/main.l8).
+// Behind a sheet the game flies over the place it is at, as a drone
+// would, so that no page is a bare one: a key held tells it so (see
+// fly_over, in programs/skate/main.l8). But behind a lesson's word, which
+// has the lesson's own stretch behind it, as he will ride it.
 let previewing = false;
 const syncPreview = () => {
-  const want = !sheets.place.hidden;
+  const want = sheetOpen() && sheets.lesson.hidden;
   if (!sendKey || want === previewing) return;
   previewing = want;
   sendKey(want ? 2 : 3, 65300, "");
 };
-const openSheet = (id) => {
+// The sheet named is up, and the game held; or none is, and the game goes.
+const showSheet = (id) => {
   for (const [name, el] of Object.entries(sheets)) el.hidden = name !== id;
   sheetsChanged();
   // (Nothing to click to go on with, under a sheet.)
   overlay.hidden = true;
-  canvas.blur();
-  sendKey?.(2, 65299, "");
+  if (id) {
+    canvas.blur();
+    sendKey?.(2, 65299, "");
+  } else {
+    sendKey?.(3, 65299);
+    canvas.focus();
+  }
 };
-const closeSheets = () => {
-  for (const el of Object.values(sheets)) el.hidden = true;
-  trail.length = 0;
-  started = true;
-  sheetsChanged();
-  overlay.hidden = true;
-  sendKey?.(3, 65299);
-  canvas.focus();
-};
-// Show the sheet he has come to (or the game, if there is none), with its
-// scores as they are now when they come.
+// Show the page he has come to, with its scores as they are now when they
+// come.
 const present = () => {
   const view = trail.at(-1);
-  if (!view) return closeSheets();
   const [id, of] = view;
   if (id === "places" || id === "days") picking = of;
-  // (A lesson: the game goes to it behind its sheet, and holds.)
+  // (A lesson: the game goes to it, behind its sheet if that is up.)
   if (id === "lesson") {
     lessonOf = of;
     visit(TUTORIAL + of);
   }
   if (id === "place") visit((placeOf = of));
   if (id === "person") personOf = of;
-  showOpen(id);
-  openSheet(id);
-  loadScores().then(() => {
-    if (trail.at(-1) === view) showOpen(id);
-  });
+  const sheet = id in sheets && (id !== "lesson" || reading) ? id : null;
+  if (sheet) showOpen(sheet);
+  showSheet(sheet);
+  if (sheet)
+    loadScores().then(() => {
+      if (trail.at(-1) === view) showOpen(sheet);
+    });
 };
 const go = (id, of) => {
+  if (id === "lesson") {
+    reading = true;
+    pendingStep = "";
+  }
   trail.push([id, of]);
   present();
 };
-const goHome = () => {
-  trail.length = 0;
-  go("menu");
+// (In place of the page showing: on from one lesson to the next, or one
+// ride to another, back from either being to where they were come to
+// from.)
+const goInstead = (id, of) => {
+  if (trail.length > 1) trail.pop();
+  go(id, of);
 };
-// A sheet is left by the button in the corner that goes back, or Escape
-// (not by a tap outside it, which is too easily made by mistake).
+const goHome = () => {
+  // (A run being watched is left.)
+  if (pageNow() === "watch") typeKeys([65288]);
+  trail.length = 1;
+  present();
+};
+// Back a page, by the button in the corner or Escape (not by a tap outside
+// a sheet, which is too easily made by mistake). From home there is
+// nowhere back to.
 const goBack = () => {
-  // (From a replay: the game leaves it. See L8RIDE.)
-  if (trail.length === 0 && document.body.classList.contains("replaying")) typeKeys([65288]);
-  // (From a lesson, at any of its steps: to the lessons, and from them
-  // home.)
-  if (lessonNow() && (trail.length === 0 || trail.at(-1)[0] === "lesson")) {
-    trail.length = 0;
-    trail.push(["menu"], ["lessons"]);
-    return present();
-  }
-  if (trail.length === 0 || (trail.length === 1 && !started)) return;
-  trail.pop();
+  if (trail.length <= 1) return;
+  // (From a run being watched: the game leaves it. See L8RIDE.)
+  if (trail.pop()[0] === "watch") typeKeys([65288]);
   present();
 };
 onTap(document.querySelector(".back"), goBack);
@@ -451,18 +475,63 @@ let headed = null;
 const typePlace = (id) => {
   headed = id;
   pendingStep = "";
+  keepPicture();
   syncSteps();
   typeKeys([2000000000 + id]);
 };
+// The picture as it is, kept over the game while another place is built
+// (which takes a moment, and shows nothing meanwhile), and faded away once
+// that place has been drawn: one fades into the next, with no gap between.
+// It is copied from the next frame the game draws, as it is drawn (a
+// picture already shown cannot be read back).
+const snap = document.getElementById("snap");
+let snapAt = 0;
+let snapFrames = 0;
+const keepPicture = () => {
+  // (Not while a place is being built: no frame is drawn then, and the
+  // picture from before it is kept already.)
+  if (!gameDrawn || !keepFrame || snap.classList.contains("on") || document.body.classList.contains("loading")) return;
+  keepFrame(async () => {
+    // (As a bitmap handed straight to the other canvas, which stays on
+    // the GPU: drawn into a 2D canvas, the copy came back through memory
+    // and held a frame up for a fifth of a second.)
+    const r = canvas.getBoundingClientRect();
+    let bitmap;
+    try {
+      bitmap = await createImageBitmap(canvas);
+    } catch {
+      return;
+    }
+    snap.width = bitmap.width;
+    snap.height = bitmap.height;
+    Object.assign(snap.style, { left: `${r.left}px`, top: `${r.top}px`, width: `${r.width}px`, height: `${r.height}px` });
+    snap.getContext("bitmaprenderer").transferFromImageBitmap(bitmap);
+    snap.classList.add("on");
+    snapAt = performance.now();
+    snapFrames = 0;
+  });
+};
+// (Each frame: once the place headed for is built and has been drawn a
+// couple of times, or if it never comes, the kept picture goes.)
+const dropPicture = () => {
+  if (!snap.classList.contains("on")) return;
+  const there = headed === null && !document.body.classList.contains("loading");
+  if (there) snapFrames++;
+  if (snapFrames >= 3 || performance.now() - snapAt > 12000) snap.classList.remove("on");
+};
+// (The next frame the game draws, handed over as it is drawn: see main.)
+let keepFrame = null;
 // Have the game go there, the page's sheets left as they are (see
 // showPlace).
 const visit = (id) => {
   if (!sendKey) wanted = id;
   else if (id !== (headed ?? placeNow)) typePlace(id);
 };
-// Ride there: from its start, if the game is there already.
-const goTo = (id) => {
-  closeSheets();
+// Ride there: from its start, if the game is there already. (A page of its
+// own; or, `instead`, in place of the ride he is on.)
+const goTo = (id, instead = false) => {
+  if (instead && pageNow() === "ride") goInstead("ride", id);
+  else go("ride", id);
   if (!sendKey) wanted = id;
   // (Already there: from the top; and in the tutorial, which starts with
   // the game riding it, that again.)
@@ -578,10 +647,18 @@ canvas.addEventListener("webglcontextlost", () => fault("context", "graphics con
 // place took to build; and how long the page took to its first frame. Told
 // early in a visit, every so often after, and when the page is put away.
 const FRAME_RATES = [15, 25, 35, 50, 70];
-const frames = { n: 0, ms: 0, slow: 0, hitches: 0, worst: 0, by: [0, 0, 0, 0, 0, 0], loads: [], boot: 0, skip: true, told: 0, drawn: 0, work: 0 };
+const frames = { n: 0, ms: 0, slow: 0, hitches: 0, worst: 0, by: [0, 0, 0, 0, 0, 0], loads: [], how: [], boot: 0, skip: true, told: 0, drawn: 0, work: 0 };
 // (What the frames are paced by, and at what resolution: see main. And how
 // many the game has drawn, and how long it has spent working them out, for
 // the milliseconds of its own work that a frame takes: cpu.)
+// How the time a place takes to build goes: the game works for a few
+// milliseconds, then stops to let the page breathe (see main's end, and
+// programs/skate/breathe.l8), over and over. So of each build: how long the
+// game was working, how long the page took over its breaths, and how many
+// there were; and the game's own word on each stage, where it gives it
+// (L8_TRACE). A device slow to build is slow in one of these, and which
+// says why.
+const building = { work: 0, wait: 0, breaths: 0, since: 0, stages: [], done: null };
 let frameState = () => ({});
 let frameWork = () => [0, 0];
 const reportFrames = (why) => {
@@ -601,10 +678,11 @@ const reportFrames = (why) => {
     worst: Math.round(frames.worst),
     by: frames.by,
     loads: frames.loads,
+    how: frames.how,
     boot: frames.boot,
     ...frameState(),
   });
-  Object.assign(frames, { n: 0, ms: 0, slow: 0, hitches: 0, worst: 0, by: [0, 0, 0, 0, 0, 0], loads: [], told: frames.told + 1 });
+  Object.assign(frames, { n: 0, ms: 0, slow: 0, hitches: 0, worst: 0, by: [0, 0, 0, 0, 0, 0], loads: [], how: [], told: frames.told + 1 });
 };
 const frameCame = (gap, refresh) => {
   // (Not the first after a pause: it is as long as the pause was.)
@@ -708,8 +786,6 @@ const postRun = async (version, id, score, replay) => {
   }
   showOpen();
 };
-// The sheets a run being watched was reached through, to go back to after.
-let watchedFrom = null;
 const watchRun = async (person, id) => {
   if (!sendKey) return;
   try {
@@ -717,9 +793,9 @@ const watchRun = async (person, id) => {
     const run = await r.json();
     if (!r.ok) throw new Error(run.error);
     gameFs.writeFile("watch.txt", `${run.version} ${run.course} ${run.score} ${run.name.replace(/ /g, "_")} ${run.replay}`);
-    // (Going back from the run comes back to this sheet: see L8RIDE.)
-    watchedFrom = trail.slice();
-    closeSheets();
+    // (Going back from the run, or its end, comes back to this sheet:
+    // see L8RIDE.)
+    go("watch");
     typeKeys([118]);
   } catch {
     toast("Couldn't load that run");
@@ -768,7 +844,9 @@ const teachEl = document.getElementById("teach");
 const teachLine = teachEl.querySelector(".line");
 let saying = "";
 const say = (kind, text) => {
-  // (That the game rides is told apart: see L8RIDE.)
+  // (That the game rides is told apart: see L8RIDE. Its ride over, the
+  // next step asks to be taken.)
+  document.body.classList.toggle("nudge", kind === 2);
   const shown = !teachEl.hidden;
   // (The word on how a lesson went stays up while nothing else is said.)
   if (kind === 0 && verdict) return;
@@ -807,9 +885,21 @@ const gameSays = (line) => {
     showOpen();
   }
   else if (words[0] === "L8LOAD") {
-    // (How long the place took to build is one of the things reported.)
-    if (words[1] === "1") gameSays.loading = performance.now();
-    else if (gameSays.loading && frames.loads.length < 8) frames.loads.push(Math.round(performance.now() - gameSays.loading));
+    // (How long the place took to build is one of the things reported;
+    // and how that time went: see building.)
+    const now = performance.now();
+    if (words[1] === "1") {
+      gameSays.loading = now;
+      Object.assign(building, { work: 0, wait: 0, breaths: 0, since: now, stages: [] });
+    } else if (gameSays.loading) {
+      building.work += now - building.since;
+      const how = [Math.round(now - gameSays.loading), Math.round(building.work), Math.round(building.wait), building.breaths];
+      if (frames.loads.length < 8) {
+        frames.loads.push(how[0]);
+        frames.how.push(how.slice(1));
+      }
+      building.done?.({ ms: how[0], work: how[1], wait: how[2], breaths: how[3], stages: building.stages });
+    }
     document.body.classList.toggle("loading", words[1] === "1");
     stepWhenReady();
   }
@@ -833,14 +923,17 @@ const gameSays = (line) => {
     if (ride === 1 && isLesson(placeNow) && !document.body.classList.contains("watching")) sayVerdict();
     if (ride !== 1) verdict = "";
     if (ride === 1) onwardEl.textContent = isLesson(placeNow) ? (placeNow - TUTORIAL < LESSONS.length ? "Next lesson" : "All lessons") : "Daily slopestyle";
-    document.body.classList.toggle("replaying", ride === 2 || ride === 3);
-    if (ride < 2 && watchedFrom) {
-      const back = watchedFrom;
-      watchedFrom = null;
-      if (trail.length === 0 && back.length > 0) {
-        trail.push(...back);
-        present();
-      }
+    const replaying = ride === 2 || ride === 3;
+    document.body.classList.toggle("replaying", replaying);
+    // A run being watched is a page: come to by the game's own key, it
+    // is noted; and over, it is left, for the page before it.
+    if (replaying && pageNow() !== "watch" && !sheetOpen()) {
+      trail.push(["watch"]);
+      sheetsChanged();
+    }
+    if (!replaying && pageNow() === "watch") {
+      trail.pop();
+      present();
     }
   }
   else if (words[0] === "L8REPLAY") postRun(Number(words[1]), Number(words[2]), Number(words[3]), words.slice(4).join(" "));
@@ -993,7 +1086,8 @@ let lessonOf = 1;
 const showLesson = () => {
   const el = sheets.lesson;
   const lesson = LESSONS[lessonOf - 1];
-  el.querySelector("h2").textContent = `${lessonOf}. ${lesson.title}`;
+  el.querySelector(".eyebrow").textContent = `Lesson ${lessonOf} of ${LESSONS.length}`;
+  el.querySelector("h2").textContent = lesson.title;
   el.querySelector(".intro").textContent = touch ? lesson.thumbs : lesson.keys;
   el.querySelector(".scoring p").textContent = lesson.scoring;
 };
@@ -1185,6 +1279,95 @@ const showOpen = (id = Object.keys(sheets).find((name) => !sheets[name].hidden))
   if (id === "person") showPerson();
 };
 
+// ?diag: find out why places build slowly on this device, and say so, on
+// the page and to the leaderboards' reports. It times a small loop of
+// arithmetic in WebAssembly, cold and again (which shows whether the
+// browser is compiling WebAssembly at all, or only interpreting it: some
+// thirty times slower); then has the game build three places, and says of
+// each how long the game worked, how long its breaths took, and what the
+// game says of each stage.
+const loopModule = () => {
+  // (func (param n i32) (result f64): a = a * 1.0000001 + i, n times.)
+  const k = [...new Uint8Array(new Float64Array([1.0000001]).buffer)];
+  const body = [2, 1, 0x7f, 1, 0x7c, 0x02, 0x40, 0x03, 0x40, 0x20, 1, 0x20, 0, 0x4f, 0x0d, 1, 0x20, 2, 0x44, ...k, 0xa2, 0x20, 1, 0xb8, 0xa0, 0x21, 2, 0x20, 1, 0x41, 1, 0x6a, 0x21, 1, 0x0c, 0, 0x0b, 0x0b, 0x20, 2, 0x0b];
+  return new Uint8Array([0, 0x61, 0x73, 0x6d, 1, 0, 0, 0, 1, 6, 1, 0x60, 1, 0x7f, 1, 0x7c, 3, 2, 1, 0, 7, 7, 1, 3, 0x72, 0x75, 0x6e, 0, 0, 10, body.length + 2, 1, body.length, ...body]);
+};
+const diagnose = async (platform) => {
+  const out = document.createElement("pre");
+  out.style.cssText = "position:fixed;left:8px;right:8px;top:60px;z-index:9;margin:0;padding:10px;border-radius:10px;background:rgba(8,10,16,0.92);color:#fff8ec;font:12px/1.45 ui-monospace,monospace;white-space:pre-wrap;pointer-events:none";
+  document.body.append(out);
+  const found = { why: "diag", agent: navigator.userAgent.slice(0, 160), secure: isSecureContext, at: location.origin };
+  const say = (line) => (out.textContent += `${line}\n`);
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+  say("diagnosing: leave this open for half a minute");
+  say(`${location.origin} (${isSecureContext ? "a secure context" : "NOT a secure context"})`);
+  // (What might tell one kind of tab from another: whether this browser
+  // has been here before, as its storage says, and how much it may keep,
+  // which a private tab is given far less of.)
+  try {
+    found.visits = Number(localStorage.getItem("skate.diag") || 0) + 1;
+    localStorage.setItem("skate.diag", String(found.visits));
+    found.keys = localStorage.length;
+    found.quota = Math.round(((await navigator.storage?.estimate?.())?.quota ?? 0) / 1e6);
+    say(`visit ${found.visits} of this probe here; ${found.keys} things kept; may keep ${found.quota} MB`);
+  } catch (e) {
+    found.storage = String(e).slice(0, 80);
+    say(`storage: ${found.storage}`);
+  }
+  try {
+    // The loop, in one long call (as a build is: long loops in few
+    // calls), four times; then in many short calls.
+    const t0 = performance.now();
+    const { instance } = await WebAssembly.instantiate(loopModule());
+    const run = instance.exports.run;
+    found.compile = Math.round(performance.now() - t0);
+    found.long = [];
+    for (let i = 0; i < 4; i++) {
+      const t = performance.now();
+      run(20000000);
+      found.long.push(Math.round(performance.now() - t));
+      await sleep(30);
+    }
+    const t = performance.now();
+    for (let i = 0; i < 20000; i++) run(1000);
+    found.short = Math.round(performance.now() - t);
+    say(`loop of 20M, one call, four times: ${found.long.join(", ")} ms`);
+    say(`the same work in 20000 calls: ${found.short} ms`);
+    say(found.long[3] > 400 ? "=> WebAssembly is NOT being compiled here (interpreted)" : "=> WebAssembly is compiled here");
+  } catch (e) {
+    found.loopError = String(e).slice(0, 120);
+    say(`loop failed: ${found.loopError}`);
+  }
+  // The game's own builds: the first (as the page came up), and three more.
+  const built = () => new Promise((resolve) => (building.done = resolve));
+  const ready = async () => {
+    while (!gameDrawn || document.body.classList.contains("loading")) await sleep(100);
+  };
+  await ready();
+  found.boot = frames.boot;
+  found.builds = [];
+  for (const id of [4, 5, 4]) {
+    await sleep(600);
+    const done = built();
+    typePlace(id);
+    const b = await done;
+    await ready();
+    found.builds.push([b.ms, b.work, b.wait, b.breaths, b.stages.join("; ")]);
+    say(`place ${id}: ${b.ms} ms = game ${b.work} + breaths ${b.wait} (${b.breaths})`);
+    if (b.stages.length) say(`  ${b.stages.join(", ")}`);
+  }
+  building.done = null;
+  const slow = found.builds.at(-1);
+  if (slow) say(slow[1] > 4 * slow[2] ? "=> the time is the game's own work" : slow[2] > 4 * slow[1] ? "=> the time is in the breaths between" : "=> the time is in both");
+  // (And an ordinary frame's work, over a couple of seconds of them.)
+  const [w0, f0] = [platform.workMs(), platform.frames()];
+  await sleep(2000);
+  found.frame = Math.round(((platform.workMs() - w0) / Math.max(1, platform.frames() - f0)) * 100) / 100;
+  say(`the game's work in a frame: ${found.frame} ms`);
+  report("perf", found);
+  say("sent. thanks!");
+};
+
 async function main() {
   const params = new URLSearchParams(location.search);
   // Nothing here waits for anyone's scores, or for the game: the menu
@@ -1192,10 +1375,9 @@ async function main() {
   // last time, and what he picks from it before the game has loaded is
   // where the game starts.
   if (!params.has("L8_SEED")) placeNow = startPlace();
-  if (params.has("play")) {
-    sheets.menu.hidden = true;
-    sheetsChanged();
-  } else goHome();
+  // (Home; or with ?play, riding where he last was.)
+  if (params.has("play")) trail.push(["ride", placeNow]);
+  present();
   // (Opened by his link: who he is, once the leaderboards say.)
   if (linked) {
     loadMe().then((ok) => {
@@ -1214,7 +1396,11 @@ async function main() {
     const lines = written.split("\n");
     written = lines.pop();
     for (const line of lines) {
-      if (line.trim() && !gameSays(line)) console.log(line.trimEnd());
+      if (!line.trim() || gameSays(line)) continue;
+      // (The game's word on a stage of a build: "stage mesh ms: 260".)
+      const stage = line.match(/^stage (.+) ms: (\d+)/);
+      if (stage) building.stages.push(`${stage[1]} ${stage[2]}`);
+      console.log(line.trimEnd());
     }
   };
   const sys = fs.sys(["skate"]);
@@ -1235,6 +1421,8 @@ async function main() {
   // (On a page: the game stops for frames while it builds a place, and
   // leaves it to the page to show that it is loading. See L8LOAD.)
   params.set("L8_PAGE", "1");
+  // (?diag has the game say how long each stage of a build takes.)
+  if (params.has("diag")) params.set("L8_TRACE", "1");
   sys.env = [...params].filter(([k]) => k.startsWith("L8_")).map(([k, v]) => `${k}=${v}`);
   const env = Object.fromEntries([...params].filter(([k]) => k.startsWith("L8_")));
   const zoom = Math.min(4, Math.max(0.25, Number(params.get("zoom")) || 0.85));
@@ -1285,14 +1473,16 @@ async function main() {
   addEventListener("resize", placePads);
   placePads();
   window.l8Game = platform;
+  keepFrame = (take) =>
+    platform.setOnSwap(() => {
+      platform.setOnSwap(null);
+      take();
+    });
   const { instance, mem } = await instantiate(module, sys, platform.imports);
   platform.attach(instance, mem);
   sendKey = platform.key;
-  // The game is held behind a sheet that is open (see openSheet).
-  overlay.hidden = true;
-  if (sheetOpen()) sendKey(2, 65299, "");
-  else closeSheets();
-  syncPreview();
+  // (The game is held behind a sheet that is up: see showSheet.)
+  present();
   // (Picked while the game was starting somewhere else.)
   if (wanted !== null && wanted !== placeNow) visit(wanted);
   wanted = null;
@@ -1305,7 +1495,7 @@ async function main() {
     canvas.focus();
     overlay.hidden = true;
   });
-  // ?control lets web/control.py drive the page (see ./control.js).
+  // ?control lets web/control.py drive the page (see ../game/control.js).
   if (params.has("control")) {
     const session = Math.random().toString(36).slice(2, 10);
     const post = (kind, data) =>
@@ -1521,8 +1711,10 @@ async function main() {
         pacer.idle(now - was);
       }
     }
+    dropPicture();
     if (!gameDrawn) {
       gameDrawn = true;
+      syncSteps();
       frames.boot = Math.round(now);
     }
     const gap = now - pace.last;
@@ -1559,11 +1751,18 @@ async function main() {
     }
     if (pacer.state.beats !== aimed) store("skate.beats", pacer.state.beats);
   };
-  const status = await runResumable(instance, () => {
+  if (params.has("diag")) diagnose(platform);
+  const status = await runResumable(instance, async () => {
     if (!document.body.classList.contains("loading")) return paced();
     pace.quiet = performance.now() + 1500;
     frames.skip = true;
-    return breathed();
+    // (Of a build: the game's work up to this breath, and the breath.)
+    const paused = performance.now();
+    building.work += paused - building.since;
+    building.breaths++;
+    await breathed();
+    building.since = performance.now();
+    building.wait += building.since - paused;
   });
   fault("exited", `status ${status}`);
   stopped(`The game exited${status ? ` with status ${status}` : ""}.<br><a href="">Play again</a>`);
