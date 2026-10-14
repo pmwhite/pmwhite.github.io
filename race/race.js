@@ -35,9 +35,6 @@ const touch = matchMedia("(pointer: coarse)").matches || navigator.maxTouchPoint
 // how).
 const NET_A = 2 ** 50, NET_B = 2 ** 51, NET_RACE = 2 ** 52;
 const NET_NAME = 2n ** 54n, NET_DONE = 2n ** 55n, NET_FAR = 2n ** 56n;
-// The characters the game can write, in the order it knows them by (see
-// NAME_CHARS, in programs/race/racers.l8).
-const NAME_CHARS = " ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-.'!?_+/():";
 const stored = (key) => {
   try {
     return localStorage.getItem(key);
@@ -179,16 +176,17 @@ const room = {
     if (this.socket?.readyState === WebSocket.OPEN) this.socket.send(text);
   },
   // A name, to the game: whose (a seat, or 31 for me), and its twelve
-  // characters as their places in NAME_CHARS, six at a time.
+  // characters by their codes, six at a time. (The game's font has the
+  // plain ones only: any other is a question mark.)
   name(seat, name) {
-    const text = name.toUpperCase().padEnd(12).slice(0, 12);
+    const text = name.padEnd(12).slice(0, 12);
     for (let half = 0; half < 2; half++) {
       let packed = 0n;
       for (let i = 0; i < 6; i++) {
-        const at = NAME_CHARS.indexOf(text[half * 6 + i]);
-        packed = packed * 64n + BigInt(at >= 0 ? at : NAME_CHARS.indexOf("?"));
+        const code = text.charCodeAt(half * 6 + i);
+        packed = packed * 128n + BigInt(code >= 32 && code <= 126 ? code : 63);
       }
-      this.platform.key(2, NET_NAME + (BigInt(seat) << 37n) + (BigInt(half) << 36n) + packed);
+      this.platform.key(2, NET_NAME + (BigInt(seat) << 43n) + (BigInt(half) << 42n) + packed);
     }
   },
   // Another name for me: asked for here, and told to the game and the
@@ -330,6 +328,23 @@ async function main() {
   sys.env = [...params].filter(([k]) => k.startsWith("L8_")).map(([k, v]) => `${k}=${v}`);
   const env = Object.fromEntries([...params].filter(([k]) => k.startsWith("L8_")));
   const platform = createPlatform(canvas, { log: (text) => console.warn(text), checkErrors: params.has("glcheck"), scale: 1, zoom: 0.85, env, pointers: true, maxTall: 2.4, maxPixels: 2.2e6 });
+  // The edges a phone keeps for itself (its notch, and the bar at its
+  // foot) are told to the game, in its window's pixels (which are as the
+  // platform makes them: no smaller than 0.85 of a CSS pixel), so that it
+  // draws nothing to be pressed there. See ui_page_key, in
+  // programs/race/ui.l8.
+  const edges = document.createElement("div");
+  edges.style.cssText = "position:fixed;visibility:hidden;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)";
+  document.body.append(edges);
+  const sayEdges = () => {
+    const w = Math.min(innerWidth, innerHeight * 2.4), h = Math.min(innerHeight, innerWidth * 2.4);
+    const s = Math.max(Math.min(w / 1200, h / 720), 0.85);
+    const style = getComputedStyle(edges);
+    const side = (name) => BigInt(Math.min(Math.max(Math.round((parseFloat(style[name]) || 0) / s), 0), 1023));
+    platform.key(2, 2n ** 58n + (side("paddingTop") << 30n) + (side("paddingRight") << 20n) + (side("paddingBottom") << 10n) + side("paddingLeft"));
+  };
+  addEventListener("resize", () => setTimeout(sayEdges, 50));
+  sayEdges();
   window.l8Game = platform;
   window.l8Race = { room };
   room.join(platform, params, course);
