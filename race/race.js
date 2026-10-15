@@ -34,7 +34,12 @@ const touch = matchMedia("(pointer: coarse)").matches || navigator.maxTouchPoint
 // packed together (see net_key and more_key, in programs/race/net.l8, for
 // how).
 const NET_A = 2 ** 50, NET_B = 2 ** 51, NET_RACE = 2 ** 52;
-const NET_NAME = 2n ** 54n, NET_DONE = 2n ** 55n, NET_FAR = 2n ** 56n;
+const NET_NAME = 2n ** 54n, NET_DONE = 2n ** 55n, NET_FAR = 2n ** 56n, NET_CONFIG = 2n ** 57n;
+// The seats of people, and after them those of the computer drivers that
+// race with them (driven on the device whose race it is: see
+// HUMAN_SEATS, in programs/race/net.l8), and their names.
+const HUMAN_SEATS = 8;
+const BOT_NAMES = ["Vera", "Otto", "Mab", "Finn", "Ines", "Tobe", "Zuri"];
 const stored = (key) => {
   try {
     return localStorage.getItem(key);
@@ -119,56 +124,51 @@ const link = {
   },
 };
 
+// Everyone is in the one room (or the one the address names: ?room=). The
+// room keeps what a race is to be, for everyone in it: the course, the
+// laps, and how many computer drivers and how good; anyone may change it,
+// and it changes for all. The game says what is chosen on it (L8SET), and
+// is told what the room says (NET_CONFIG).
 const room = {
   socket: null,
   platform: null,
-  // Me, and the others by their seats: of each, its name.
+  // Me, and the others by their seats: of each, how far it has come.
   me: { seat: -1, name: tidyName(stored("race.name")) || `Driver ${10 + Math.floor(Math.random() * 90)}` },
   others: new Map(),
-  // The room: the one the address names (?room=), or everyone's; and
-  // each course has a room of its own, so that those in a room are all on
-  // one course.
-  base: "track",
-  course: 0,
-  live: null,
-  hurry: false,
-  join(platform, params, course) {
+  // What a race is to be, as it was last said here or heard; and whose
+  // device drives the computer drivers of the race on now (or -1).
+  config: { course: 0, laps: 3, bots: 5, skill: 3 },
+  botHost: -1,
+  name_: "track",
+  join(platform, params, config) {
     this.platform = platform;
-    this.base = (params.get("room") ?? "track").toLowerCase().replace(/[^a-z0-9-]/g, "").slice(0, 20) || "track";
-    this.course = course;
+    this.name_ = (params.get("room") ?? "track").toLowerCase().replace(/[^a-z0-9-]/g, "").slice(0, 24) || "track";
+    this.config = config;
     this.open();
-  },
-  // To another course's room: this one is left (see the socket's onclose),
-  // and that one joined at once.
-  move(course) {
-    if (course === this.course) return;
-    this.course = course;
-    if (this.live) {
-      this.hurry = true;
-      this.live.close();
-    }
   },
   open() {
     let socket;
     try {
-      socket = new WebSocket(`${link.at}/room/${this.base}${this.course > 0 ? `-${this.course}` : ""}?key=${link.key}`);
+      socket = new WebSocket(`${link.at}/room/${this.name_}?key=${link.key}`);
     } catch {
       return;
     }
-    this.live = socket;
     socket.onopen = () => {
       this.socket = socket;
       this.send(`name ${this.me.name}`);
+      // (What a race is to be, as it is here: the room takes it, if
+      // nobody else is in it; else it says what it is.)
+      const c = this.config;
+      this.send(`offer ${c.course} ${c.laps} ${c.bots} ${c.skill}`);
     };
     socket.onmessage = (e) => this.heard(String(e.data));
     // (No room, or the room lost: the others are gone, and it is tried
     // again in a while.)
     socket.onclose = () => {
       if (this.socket === socket) this.socket = null;
-      if (this.live === socket) this.live = null;
       for (const seat of [...this.others.keys()]) this.gone(seat);
-      setTimeout(() => this.open(), this.hurry ? 0 : 4000);
-      this.hurry = false;
+      this.dropBots();
+      setTimeout(() => this.open(), 4000);
     };
     socket.onerror = () => socket.close();
   },
@@ -200,36 +200,68 @@ const room = {
     this.send(`name ${name}`);
     this.name(31, name);
   },
-  // A race is on, the room says: of so many laps, to start in `wait`
-  // thousandths of a second. The game is told, with the car's place on
-  // the grid: in the order of the seats.
-  race(wait, laps) {
-    const seats = [this.me.seat, ...this.others.keys()].sort((a, b) => a - b);
-    const place = Math.max(seats.indexOf(this.me.seat), 0);
-    const tenths = Math.min(Math.max(Math.round(wait / 100), 0), 255);
-    this.platform.key(2, NET_RACE + tenths * 256 + Math.min(Math.max(laps | 0, 1), 15) * 16 + Math.min(place, 15));
+  // What a race is to be, to the game.
+  tell(c) {
+    const n = (v, lo, hi) => BigInt(Math.min(Math.max(Math.round(Number(v)) || 0, lo), hi));
+    this.platform.key(2, NET_CONFIG + (n(c.course, 0, 7) << 9n) + (n(c.laps, 1, 9) << 5n) + (n(c.bots, 0, 7) << 2n) + n(c.skill, 0, 3));
   },
-  // What the game wrote: where its car is, that it has finished, that a
-  // race is asked for, that it is in another course's room, that the
-  // player would change the name, or something to keep. Whether the line
-  // was one of those.
+  // The computer drivers of the last race are gone.
+  dropBots() {
+    for (let k = 0; k < BOT_NAMES.length; k++) this.platform.key(2, NET_B + (HUMAN_SEATS + k) * 2 ** 40 + 1);
+    this.botHost = -1;
+  },
+  // A race is on, the room says: to start in `wait` thousandths of a
+  // second, of so many laps, on a course, with so many computer drivers
+  // (driven by seat `host`'s device), so good. The game is told, with the
+  // car's place on the grid: behind the computer drivers, in the order of
+  // the seats.
+  race(wait, laps, bots, skill, host, course) {
+    this.dropBots();
+    this.botHost = bots > 0 ? host : -1;
+    const here = host === this.me.seat;
+    if (bots > 0 && !here) for (let k = 0; k < bots; k++) this.name(HUMAN_SEATS + k, BOT_NAMES[k]);
+    const seats = [this.me.seat, ...[...this.others.keys()].filter((s) => s < HUMAN_SEATS)].sort((a, b) => a - b);
+    const place = Math.min(bots + Math.max(seats.indexOf(this.me.seat), 0), 15);
+    const tenths = Math.min(Math.max(Math.round(wait / 100), 0), 255);
+    const k = (v, lo, hi) => Math.min(Math.max(v | 0, lo), hi);
+    this.platform.key(2, NET_RACE + k(course, 0, 7) * 33554432 + (bots > 0 && !here ? 16777216 : 0) + k(skill, 0, 3) * 1048576
+      + k(bots, 0, 7) * 65536 + tenths * 256 + k(laps, 1, 15) * 16 + place);
+  },
+  // What the game wrote: where its car is (or, in a race it drives the
+  // computer drivers of, theirs), that one has finished, that a race is
+  // asked for, what a race is to be, the course it is on (for its ghosts),
+  // that the player would change the name, or something to keep. Whether
+  // the line was one of those.
   wrote(line) {
     if (line.startsWith("L8AT ")) {
       this.send(line.slice(5));
+      return true;
+    }
+    if (line.startsWith("L8BOTAT ")) {
+      this.send(`bots ${line.slice(8)}`);
       return true;
     }
     if (line.startsWith("L8DONE ")) {
       this.send(`done ${Number(line.slice(7))}`);
       return true;
     }
-    if (line.startsWith("L8RACE ")) {
-      this.send(`race ${Number(line.slice(7))}`);
+    if (line.startsWith("L8BOTDONE ")) {
+      const [k, ms] = line.slice(10).split(" ").map(Number);
+      this.send(`botdone ${k} ${ms}`);
+      return true;
+    }
+    if (line === "L8RACE") {
+      this.send("race");
+      return true;
+    }
+    if (line.startsWith("L8SET ")) {
+      const [course, laps, bots, skill] = line.slice(6).split(" ").map(Number);
+      this.config = { course, laps, bots, skill };
+      this.send(`set ${course} ${laps} ${bots} ${skill}`);
       return true;
     }
     if (line.startsWith("L8ROOM ")) {
-      const course = Number(line.slice(7));
-      this.move(course);
-      ghosts.give(this.platform, course);
+      ghosts.give(this.platform, Number(line.slice(7)));
       return true;
     }
     if (line === "L8NAME") {
@@ -246,24 +278,13 @@ const room = {
   gone(seat) {
     this.platform.key(2, NET_B + seat * 2 ** 40 + 1);
     this.others.delete(seat);
+    if (seat === this.botHost) this.dropBots();
   },
-  heard(text) {
-    const words = text.split(" ");
-    if (words[0] === "you") {
-      this.me.seat = Number(words[1]);
-      return;
-    }
-    if (words[0] === "race") return this.race(Number(words[1]), Number(words[2]));
-    const seat = Number(words[0]);
-    if (!(seat >= 0 && seat < 16)) return;
-    if (words[1] === "gone") return this.gone(seat);
-    if (!this.others.has(seat)) this.others.set(seat, { far: 0 });
-    if (words[1] === "name") return this.name(seat, tidyName(words.slice(2).join(" ")) || `Driver ${seat + 1}`);
-    if (words[1] === "done") {
-      this.platform.key(2, NET_DONE + (BigInt(seat) << 28n) + BigInt(Math.min(Math.max(Math.round(Number(words[2])) || 0, 0), 2 ** 28 - 1)));
-      return;
-    }
-    const [x, z, yaw, at, slip, speed, kind, far, when] = words.slice(1).map(Number);
+  // Where a car is (a seat's), as the room said it: to the game, as the
+  // two key syms of a place (see net_key), and how far round it is, when
+  // that has changed by a metre.
+  place(seat, words, when) {
+    const [x, z, yaw, at, slip, speed, kind, far] = words.map(Number);
     if (![x, z, yaw, at, slip, speed, kind, far].every(Number.isFinite)) return;
     // (When this was, by its device's clock, in hundredths of a second;
     // or, from a page that does not say, when it came.)
@@ -275,12 +296,56 @@ const room = {
       + clamp(slip / 10 + 64, 0, 127) * 2 ** 9 + clamp(speed / 25, 0, 255) * 2;
     this.platform.key(2, a);
     this.platform.key(2, b);
-    // (And how far round it is, when that has changed by a metre.)
+    if (!this.others.has(seat)) this.others.set(seat, { far: 0 });
     const who = this.others.get(seat);
     if (Math.abs(far - who.far) >= 1) {
       who.far = far;
       this.platform.key(2, NET_FAR + (BigInt(seat) << 20n) + BigInt(clamp(far + 1000, 0, 2 ** 20 - 1)));
     }
+  },
+  heard(text) {
+    const words = text.split(" ");
+    if (words[0] === "you") {
+      this.me.seat = Number(words[1]);
+      this.platform.key(2, NET_CONFIG + 2n ** 40n + BigInt(Math.min(Math.max(this.me.seat, 0), HUMAN_SEATS - 1)));
+      return;
+    }
+    if (words[0] === "set") {
+      const [course, laps, bots, skill] = words.slice(1).map(Number);
+      this.config = { course, laps, bots, skill };
+      this.tell(this.config);
+      return;
+    }
+    if (words[0] === "race") {
+      const [wait, laps, bots = 0, skill = 1, host = -1, course = this.config.course] = words.slice(1).map(Number);
+      return this.race(wait, laps, bots, skill, host, course);
+    }
+    const seat = Number(words[0]);
+    if (!(seat >= 0 && seat < HUMAN_SEATS)) return;
+    if (words[1] === "gone") return this.gone(seat);
+    if (words[1] === "name") {
+      if (!this.others.has(seat)) this.others.set(seat, { far: 0 });
+      return this.name(seat, tidyName(words.slice(2).join(" ")) || `Driver ${seat + 1}`);
+    }
+    if (words[1] === "done") {
+      this.platform.key(2, NET_DONE + (BigInt(seat) << 28n) + BigInt(Math.min(Math.max(Math.round(Number(words[2])) || 0, 0), 2 ** 28 - 1)));
+      return;
+    }
+    // The computer drivers of a race, from the device that drives them:
+    // each as a seat after the people's.
+    if (words[1] === "bots") {
+      if (seat !== this.botHost) return;
+      const when = Number(words[2]), n = Math.min(Number(words[3]) | 0, BOT_NAMES.length);
+      for (let k = 0; k < n; k++) this.place(HUMAN_SEATS + k, words.slice(4 + k * 8, 12 + k * 8), when);
+      return;
+    }
+    if (words[1] === "botdone") {
+      if (seat !== this.botHost) return;
+      const k = Number(words[2]);
+      if (k >= 0 && k < BOT_NAMES.length) this.platform.key(2, NET_DONE + (BigInt(HUMAN_SEATS + k) << 28n) + BigInt(Math.min(Math.max(Math.round(Number(words[3])) || 0, 0), 2 ** 28 - 1)));
+      return;
+    }
+    this.place(seat, words.slice(1, 9), Number(words[9]));
   },
 };
 
@@ -347,7 +412,8 @@ async function main() {
   sayEdges();
   window.l8Game = platform;
   window.l8Race = { room };
-  room.join(platform, params, course);
+  const [laps, bots, skill] = params.get("L8_SET").split(",").map(Number);
+  room.join(platform, params, { course, laps, bots, skill });
   room.name(31, room.me.name);
   ghosts.give(platform, course);
   const { instance, mem } = await instantiate(module, sys, platform.imports);
