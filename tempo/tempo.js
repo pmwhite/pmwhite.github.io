@@ -27,8 +27,10 @@
 //
 // Tempo is told how the log is kept (11): on this device only (0), saved
 // (1), being saved (2), offline (3), or on this device only because its
-// link is not one the worker knows (4); and that a newer log is in its
-// file (10).
+// link is not one the worker knows (4); that a newer log is in its file
+// (10); and whether the phone is set dark (12, and L8_DARK to begin
+// with). Light or dark as picked on this device is kept here (L8_THEME to
+// begin with; Tempo says L8THEME PICK light|dark when it changes).
 //
 // The name field is drawn by Tempo, but a phone's keyboard comes up only
 // for a real text field touched by a finger: so Tempo says where its field
@@ -41,9 +43,9 @@
 // worker; ?sim=K records a made-up course K times as fast as the clock
 // (no location asked for). Keys from the page are
 // 1000000000 + 1000 * what + number (see page_says in app.l8).
-import { instantiate, runResumable, MemFS } from "./l8-runtime.js?v=202610152042";
-import { createPlatform } from "./platform.js?v=202610152042";
-import { kept } from "./store.js?v=202610152042";
+import { instantiate, runResumable, MemFS } from "./l8-runtime.js?v=202610161039";
+import { createPlatform } from "./platform.js?v=202610161039";
+import { kept } from "./store.js?v=202610161039";
 
 const LOG = "/log.txt";
 const LIVE = "/live.txt";
@@ -102,6 +104,7 @@ async function main() {
       else if (word === "L8GPSRETRY") gps.retry();
       else if (word === "L8GPS") gps.want(arg === "1" && !sim);
       else if (word === "L8WAKE") wake.want(arg === "1");
+      else if (word === "L8THEME") look.set(arg, line.split(" ")[2] === "dark");
       else console.log(line);
     }
   };
@@ -118,7 +121,7 @@ async function main() {
     }
     return status;
   };
-  const env = { L8_PAGE: "1" };
+  const env = { L8_PAGE: "1", L8_THEME: localStorage.getItem("tempo:theme") || "0", L8_DARK: phoneDark.matches ? "1" : "0" };
   if (touch) env.L8_TOUCH = "1";
   if (sim > 0) env.L8_SIM = String(Math.round(sim));
   // (Kilometers, where miles are not what is used.)
@@ -151,6 +154,7 @@ async function main() {
     send(10, 0);
   };
   sync.tell();
+  phoneDark.addEventListener("change", () => send(12, phoneDark.matches ? 1 : 0));
 
   // Tempo's pixels are the page's: how many window pixels to one, and the
   // phone's own edges (its notch, its home bar), measured each frame and
@@ -318,14 +322,32 @@ document.addEventListener("visibilitychange", () => {
   gps.start();
 });
 
-// ---- the screen kept on while recording; the page dark to match ----
+// ---- light or dark ----
+// The page's own background and the phone's bar over it are Tempo's: dark
+// in the dark theme, and while recording (the recording is always dark).
+// The pick (0 as the phone is, 1 light, 2 dark) is kept on this device.
+const phoneDark = matchMedia("(prefers-color-scheme: dark)");
+const look = {
+  dark: document.documentElement.classList.contains("dark"),
+  set(pick, dark) {
+    localStorage.setItem("tempo:theme", pick);
+    this.dark = dark;
+    this.paint();
+  },
+  paint() {
+    const dark = this.dark || wake.wanted;
+    document.documentElement.classList.toggle("dark", dark);
+    document.querySelector('meta[name="theme-color"]').content = dark ? "#121317" : "#f4f4f1";
+  },
+};
+
+// ---- the screen kept on while recording ----
 const wake = {
   wanted: false,
   lock: null,
   async want(on) {
     this.wanted = on;
-    document.querySelector('meta[name="theme-color"]').content = on ? "#121317" : "#f4f4f1";
-    document.body.style.background = on ? "#121317" : "";
+    look.paint();
     if (!on) {
       this.lock?.release().catch(() => {});
       this.lock = null;
