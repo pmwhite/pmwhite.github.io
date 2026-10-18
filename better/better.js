@@ -49,9 +49,9 @@
 // worker; ?sim=K records a made-up course K times as fast as the clock
 // (no location asked for). Keys from the page are
 // 1000000000 + 1000 * what + number (see page_says in app.l8).
-import { instantiate, runResumable, MemFS } from "./l8-runtime.js?v=202610181726";
-import { createPlatform } from "./platform.js?v=202610181726";
-import { kept, keptBefore } from "./store.js?v=202610181726";
+import { instantiate, runResumable, MemFS } from "./l8-runtime.js?v=202610181736";
+import { createPlatform } from "./platform.js?v=202610181736";
+import { kept, keptBefore } from "./store.js?v=202610181736";
 
 const LOG = "/log.txt";
 const LIVE = "/live.txt";
