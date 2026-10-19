@@ -67,9 +67,9 @@
 // an account and friends, with no worker (nothing is kept or sent). Keys
 // from the page are 1000000000 + 1000 * what + number (see page_says in
 // app.l8).
-import { instantiate, runResumable, MemFS } from "./l8-runtime.js?v=202610190258";
-import { createPlatform } from "./platform.js?v=202610190258";
-import { kept, keptBefore } from "./store.js?v=202610190258";
+import { instantiate, runResumable, MemFS } from "./l8-runtime.js?v=202610190415";
+import { createPlatform } from "./platform.js?v=202610190415";
+import { kept, keptBefore } from "./store.js?v=202610190415";
 
 const LOG = "/log.txt";
 const LIVE = "/live.txt";
