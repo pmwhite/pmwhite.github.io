@@ -30,7 +30,12 @@ $the_making_of_missiles =
   , "id" => "the-making-of-missiles"
   , "date" => "Feb 11, 2026" ];
 
-$pages = [
+$battle_pong_page =
+  [ "title" => "Battle pong."
+  , "id" => "battle-pong"
+  , "date" => "Oct 29, 2026" ];
+
+$posts = [
 
   $new_types_page,
   $modularity_page,
@@ -48,13 +53,19 @@ $pages = [
   , "id" => "opinions-about-crossword-clues"
   , "date" => "Apr 11, 2025" ],
 
+  $parts_of_a_pl_implementation_page,
+  $yet_wisdom_is_justified_by_her_deeds_page,
+  $the_making_of_missiles
+
+];
+
+$pages = [
+
   [ "title" => "2025 Cycling log."
   , "id" => "cycling-log-2025"
   , "date" => "Apr 12, 2025" ],
 
-  $parts_of_a_pl_implementation_page,
-  $yet_wisdom_is_justified_by_her_deeds_page,
-  $the_making_of_missiles
+  $battle_pong_page
 
 ];
 

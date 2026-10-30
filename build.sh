@@ -9,3 +9,4 @@ php -f yet-wisdom-is-justified-by-her-deeds.php > yet-wisdom-is-justified-by-her
 php -f bfm2000.php > bfm2000.html
 php -f bible-search.php > bible-search.html
 php -f the-making-of-missiles.php > the-making-of-missiles.html
+php -f battle-pong.php > battle-pong.html
