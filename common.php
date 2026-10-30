@@ -69,6 +69,19 @@ $pages = [
 
 ];
 
+$games = [
+
+  [ "title" => "Crosswords."
+  , "id" => "crosswords" ],
+
+  [ "title" => "Missiles."
+  , "id" => "missiles" ],
+
+  [ "title" => "Block game."
+  , "id" => "block-game" ]
+
+];
+
 function essay_begin($page) {
 ?>
 <!DOCTYPE>
@@ -79,6 +92,7 @@ function essay_begin($page) {
   <title><?php echo $page["title"] ?></title>
 </head>
 <body>
+<a class="masthead" href="/">Trailing Whitespace</a>
 <h1><?php echo $page["title"] ?></h1>
 <?php
 }

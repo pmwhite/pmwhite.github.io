@@ -6,6 +6,7 @@
     <title>Trailing Whitespace</title>
   </head>
   <body>
+    <a class="masthead" href="/">Trailing Whitespace</a>
 <?php
 include "common.php";
 ?>
@@ -26,6 +27,18 @@ foreach (array_reverse($posts) as $page) {
     <ul class="index-page-list">
 <?php
 foreach ($pages as $page) {
+?>
+      <li>
+        <a href="<?php echo $page["id"] ?>.html"><?php echo $page["title"] ?></a>
+      </li>
+<?php
+}
+?>
+    </ul>
+    <h1>Games</h1>
+    <ul class="index-page-list">
+<?php
+foreach ($games as $page) {
 ?>
       <li>
         <a href="<?php echo $page["id"] ?>.html"><?php echo $page["title"] ?></a>
