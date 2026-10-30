@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="styles.css?v=2" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>2025 Cycling log.</title>
   </head>

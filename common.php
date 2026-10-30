@@ -87,7 +87,7 @@ function essay_begin($page) {
 <!DOCTYPE>
 <html>
 <head>
-  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="styles.css?v=2" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title><?php echo $page["title"] ?></title>
 </head>
