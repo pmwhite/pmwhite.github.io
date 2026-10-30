@@ -6,9 +6,15 @@
   --background: #fdfdfc;
 }
 
+@font-face {
+  font-family: "Chomsky";
+  src: url("fonts/Chomsky.woff2") format("woff2");
+  font-display: block;
+}
+
 body {
   margin: 0 auto;
-  padding: 4rem 1.25rem 6rem;
+  padding: 2rem 1.25rem 6rem;
   max-width: 38rem;
   font-family: Charter, "Bitstream Charter", "Sitka Text", Cambria, Georgia, serif;
   font-size: 1.125rem;
@@ -17,6 +23,16 @@ body {
   background: var(--background);
   -webkit-font-smoothing: antialiased;
   text-size-adjust: 100%;
+}
+
+.masthead {
+  display: inline-block;
+  margin-bottom: 3rem;
+  font-family: "Chomsky", serif;
+  font-size: 1.75rem;
+  line-height: 1;
+  color: inherit;
+  text-decoration: none;
 }
 
 h1, h2, h3 {
@@ -372,12 +388,17 @@ h1:has(+ .index-page-list):first-of-type {
 
 @media (max-width: 600px) {
   body {
-    padding: 2.5rem 1.25rem 4rem;
+    padding: 1.5rem 1.25rem 4rem;
     font-size: 1.0625rem;
   }
 
   h1 {
     font-size: 1.75rem;
+  }
+
+  .masthead {
+    margin-bottom: 2rem;
+    font-size: 1.5rem;
   }
 
   pre {

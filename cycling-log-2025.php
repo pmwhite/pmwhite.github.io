@@ -6,6 +6,7 @@
     <title>2025 Cycling log.</title>
   </head>
   <body>
+    <a class="masthead" href="/">Trailing Whitespace</a>
     <h1>2025 Cycling log.</h1>
 
     <p>My goal this year is to hit a thousand miles on my bike. Below is the
