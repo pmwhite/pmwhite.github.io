@@ -218,6 +218,66 @@ export function createPlatform(canvas, { log = console.log, checkErrors = false,
   const gpuPending = [];
   let gpuQuery = null;
   const timerExt = gpuTiming ? gl.getExtension("EXT_disjoint_timer_query_webgl2") : null;
+  // Now and then, what the graphics chip takes over each part of one frame
+  // (sampleGpu), on any device (few phones' browsers offer timer queries).
+  // It is waited for before the frame, so that it starts idle, and at each
+  // boundary within it, the wait being the chip's time on what came before.
+  // (gl.finish does not wait, in Chrome; reading a pixel back does, and
+  // the chip does what it was asked in turn: so a wait is a pixel cleared
+  // in a framebuffer of its own and read.) The boundaries are either each
+  // framebuffer drawn into ("targets": a tiled chip draws each target
+  // whole anyway, so this changes little of what it does), or each part of
+  // the frame the game marks ("parts": a tiled chip is made to put its
+  // tiles away and fetch them back between parts drawn to one target, so
+  // the parts add up to more than the frame takes). Each part's time is how
+  // long the game took to ask for it and how long the chip took after that.
+  let waitBuffer = null;
+  const pixel = new Uint8Array(4);
+  const bound = { read: null, draw: null };
+  const waitForChip = () => {
+    if (!waitBuffer) {
+      const was = gl.getParameter(gl.TEXTURE_BINDING_2D);
+      const texture = gl.createTexture();
+      gl.bindTexture(gl.TEXTURE_2D, texture);
+      gl.texStorage2D(gl.TEXTURE_2D, 1, gl.RGBA8, 1, 1);
+      waitBuffer = gl.createFramebuffer();
+      gl.bindFramebuffer(gl.FRAMEBUFFER, waitBuffer);
+      gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
+      gl.bindTexture(gl.TEXTURE_2D, was);
+    }
+    // (The pixel is cleared whatever the game has set that would stop it:
+    // a clear that does nothing may not be waited for.)
+    const scissored = gl.isEnabled(gl.SCISSOR_TEST);
+    const mask = gl.getParameter(gl.COLOR_WRITEMASK);
+    if (scissored) gl.disable(gl.SCISSOR_TEST);
+    gl.colorMask(true, true, true, true);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, waitBuffer);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+    gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, pixel);
+    if (scissored) gl.enable(gl.SCISSOR_TEST);
+    gl.colorMask(...mask);
+    gl.bindFramebuffer(gl.READ_FRAMEBUFFER, bound.read);
+    gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER, bound.draw);
+  };
+  let sampling = null;
+  let gpuSampled = null;
+  const sampleCut = (next) => {
+    const t0 = performance.now();
+    waitForChip();
+    const t1 = performance.now();
+    const label = sampling.label || "-";
+    const [issue, wait] = sampling.parts[label] ?? [0, 0];
+    sampling.parts[label] = [issue + t0 - sampling.since, wait + t1 - t0];
+    sampling.since = t1;
+    sampling.label = next;
+  };
+  // (A target is named for the parts that drew into it, cleared it or
+  // copied to it: "world+grass+guy". The game names a part before it binds
+  // the part's target, so a name as it comes is not yet the target's.)
+  const targetName = () => sampling.names.join("+");
+  const drawing = () => {
+    if (sampling && !sampling.names.includes(part || "-")) sampling.names.push(part || "-");
+  };
   // Draws to leave out, to measure what they cost: "fb44" or "prog3" for one
   // framebuffer or program, "offscreen" for every framebuffer but the
   // window's, "part:world" for a part of the frame that the game marks by
@@ -427,7 +487,7 @@ export function createPlatform(canvas, { log = console.log, checkErrors = false,
       return 0n;
     },
     glClearColor: (r, g, b, a) => (gl.clearColor(r, g, b, a), 0n),
-    glClear: (mask) => (gl.clear(n(mask)), 0n),
+    glClear: (mask) => (drawing(), gl.clear(n(mask)), 0n),
     // The game marks parts of a frame with debug groups; with timing, their
     // milliseconds go to the telemetry.
     glPushDebugGroup(_source, _id, length, message) {
@@ -438,6 +498,7 @@ export function createPlatform(canvas, { log = console.log, checkErrors = false,
         phaseNames.set(key, label);
       }
       part = label;
+      if (sampling?.kind === "parts") sampleCut(label);
       if (!timing) return 0n;
       phaseStack.push(label, performance.now());
       if (gpuTiming && timerExt && !gpuQuery) {
@@ -465,15 +526,15 @@ export function createPlatform(canvas, { log = console.log, checkErrors = false,
       }
       return 0n;
     },
-    glDrawArrays: (mode, first, count) => (skipped() || gl.drawArrays(n(mode), n(first), n(count)), 0n),
-    glDrawElements: (mode, count, type, offset) => (skipped() || gl.drawElements(n(mode), n(count), n(type), n(offset)), 0n),
+    glDrawArrays: (mode, first, count) => (drawing(), skipped() || gl.drawArrays(n(mode), n(first), n(count)), 0n),
+    glDrawElements: (mode, count, type, offset) => (drawing(), skipped() || gl.drawElements(n(mode), n(count), n(type), n(offset)), 0n),
     // (WebGL has no buffers by name: this one is of triangles' corners.)
     glNamedBufferData(buffer, size, data, usage) {
       gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, obj(buffer));
       gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, bytes().subarray(n(data), n(data) + n(size)), n(usage));
       return 0n;
     },
-    glDrawArraysInstanced: (mode, first, count, k) => (skipped() || gl.drawArraysInstanced(n(mode), n(first), n(count), n(k)), 0n),
+    glDrawArraysInstanced: (mode, first, count, k) => (drawing(), skipped() || gl.drawArraysInstanced(n(mode), n(first), n(count), n(k)), 0n),
     glEnable: (cap) => (gl.enable(n(cap)), 0n),
     glDisable: (cap) => (gl.disable(n(cap)), 0n),
     glBlendFunc: (s, d) => (gl.blendFunc(n(s), n(d)), 0n),
@@ -506,8 +567,15 @@ export function createPlatform(canvas, { log = console.log, checkErrors = false,
     },
     glGenFramebuffers: (count, ptr) => genObjects(count, ptr, () => gl.createFramebuffer()),
     glBindFramebuffer(target, fb) {
+      if (sampling?.kind === "targets" && n(fb) !== boundFramebufferId) {
+        sampling.label = targetName();
+        sampling.names = [];
+        sampleCut("");
+      }
       boundFramebuffer = obj(fb);
       boundFramebufferId = n(fb);
+      if (n(target) !== gl.DRAW_FRAMEBUFFER) bound.read = boundFramebuffer;
+      if (n(target) !== gl.READ_FRAMEBUFFER) bound.draw = boundFramebuffer;
       gl.bindFramebuffer(n(target), boundFramebuffer);
       applyViewport();
       return 0n;
@@ -522,7 +590,7 @@ export function createPlatform(canvas, { log = console.log, checkErrors = false,
     // (As many samples as asked for, or as the device has.)
     glRenderbufferStorageMultisample: (target, samples, internal, w, h) =>
       (gl.renderbufferStorageMultisample(n(target), Math.min(n(samples), gl.getParameter(gl.MAX_SAMPLES)), n(internal), n(w), n(h)), 0n),
-    glBlitFramebuffer: (...args) => (gl.blitFramebuffer(...args.map(n)), 0n),
+    glBlitFramebuffer: (...args) => (drawing(), gl.blitFramebuffer(...args.map(n)), 0n),
     glFramebufferRenderbuffer(target, attachment, rbtarget, rb) {
       gl.framebufferRenderbuffer(n(target), n(attachment), n(rbtarget), obj(rb));
       return 0n;
@@ -618,8 +686,11 @@ export function createPlatform(canvas, { log = console.log, checkErrors = false,
 
   // ---- X11 and GLX ----
 
-  // Frames shown, and the milliseconds the game spent computing them.
+  // Beats of the screen waited for (frames, though the game may let some
+  // pass without drawing), frames drawn, and the milliseconds the game
+  // spent computing them.
   let frames = 0;
+  let swaps = 0;
   let work = 0;
   let resumed = 0;
   // Called with each finished frame, before it is shown (see setOnSwap).
@@ -696,6 +767,14 @@ export function createPlatform(canvas, { log = console.log, checkErrors = false,
         return 0n;
       }
       if (resumed) work += performance.now() - resumed;
+      swaps++;
+      if (sampling) {
+        if (sampling.kind === "targets") sampling.label = targetName();
+        sampleCut("");
+        const { kind, drain, base, parts } = sampling;
+        gpuSampled = { kind, drain, base, parts };
+        sampling = null;
+      }
       // The frame is complete and still in the drawing buffer.
       onSwap?.();
       state.value = 1n;
@@ -816,6 +895,25 @@ export function createPlatform(canvas, { log = console.log, checkErrors = false,
     // The running per-part totals themselves, for per-frame differences.
     phaseTotals: () => phaseMs,
     frames: () => frames,
+    swaps: () => swaps,
+    // Time the next frame's parts (see sampling, above), "targets" or
+    // "parts"; called just before the game goes on to draw it. Its times
+    // are had of takeGpuSample, once it has been drawn: also how long the
+    // chip took over what it had left of the frames before (drain), and a
+    // wait for nothing (base), which every part's wait includes.
+    sampleGpu(kind) {
+      const t0 = performance.now();
+      waitForChip();
+      const t1 = performance.now();
+      waitForChip();
+      const t2 = performance.now();
+      sampling = { kind, drain: t1 - t0, base: t2 - t1, parts: {}, label: part, names: [], since: t2 };
+    },
+    takeGpuSample() {
+      const got = gpuSampled;
+      gpuSampled = null;
+      return got;
+    },
     // The fraction of the window's size the canvas renders at.
     scale: () => scale,
     setScale(k) {

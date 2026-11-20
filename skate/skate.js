@@ -11,6 +11,7 @@ import { instantiate, runResumable, MemFS } from "./l8-runtime.js";
 import { createPlatform } from "./platform.js";
 import { startControl } from "./control.js";
 import { createPacer } from "./pace.js";
+import { createTimeline } from "./timeline.js";
 import { saveLocalJson as store } from "./local-storage.js";
 // (Who plays: see the leaderboards, below. A person's link is taken out of
 // the address as this comes in, before anything else sees it there.)
@@ -656,6 +657,15 @@ let gameDrawn = false;
 let chip = null;
 // (And how many samples its pixels are made of: see antialias, in main.)
 let samples = undefined;
+// (And its battery, where the browser says: how full, and whether it is
+// charging. A phone saving its battery, or hot, slows its chip.)
+let battery = undefined;
+navigator.getBattery?.().then((b) => {
+  const said = () => (battery = [Math.round(b.level * 100), b.charging]);
+  said();
+  b.addEventListener("levelchange", said);
+  b.addEventListener("chargingchange", said);
+}).catch(() => {});
 const device = () => {
   if (gameDrawn && chip === null) {
     try {
@@ -681,6 +691,7 @@ const device = () => {
     rules: gameVersion,
     night: document.body.classList.contains("night"),
     up: Math.round(performance.now() / 1000),
+    battery,
   };
 };
 const report = (kind, data) => {
@@ -713,7 +724,8 @@ canvas.addEventListener("webglcontextlost", () => fault("context", "graphics con
 // long again as the screen's own beat, or more) and how many a hitch (a
 // tenth of a second, or more), and the worst; how many came at each of a
 // few rates (under 15 a second, 25, 35, 50, 70, and over); how long each
-// place took to build; and how long the page took to its first frame. Told
+// place took to build; and how long the page took to its first frame; and
+// second by second, what the frames did, and why (see timeline.js). Told
 // early in a visit, every so often after, and when the page is put away.
 const FRAME_RATES = [15, 25, 35, 50, 70];
 const frames = { n: 0, ms: 0, slow: 0, hitches: 0, worst: 0, by: [0, 0, 0, 0, 0, 0], loads: [], how: [], boot: 0, skip: true, told: 0, drawn: 0, work: 0 };
@@ -730,6 +742,7 @@ const frames = { n: 0, ms: 0, slow: 0, hitches: 0, worst: 0, by: [0, 0, 0, 0, 0,
 const building = { work: 0, wait: 0, breaths: 0, since: 0, stages: [], done: null };
 let frameState = () => ({});
 let frameWork = () => [0, 0];
+const timeline = createTimeline();
 const reportFrames = (why) => {
   // (Too little to go on is not worth telling.)
   if (frames.ms < 5000) return;
@@ -750,6 +763,7 @@ const reportFrames = (why) => {
     how: frames.how,
     boot: frames.boot,
     ...frameState(),
+    ...timeline.take(performance.now()),
   });
   Object.assign(frames, { n: 0, ms: 0, slow: 0, hitches: 0, worst: 0, by: [0, 0, 0, 0, 0, 0], loads: [], how: [], told: frames.told + 1 });
 };
@@ -2048,7 +2062,7 @@ async function main() {
     base: Math.round(pacer.state.base * 1000) / 1000,
     hold: Math.round(pacer.state.hold / 1000),
   });
-  frameWork = () => [platform.frames(), platform.workMs()];
+  frameWork = () => [platform.swaps(), platform.workMs()];
   // ?probe: a test of what a frame's time goes on, on this device. Once he
   // has ridden a few seconds, parts of the work are left out, each for a
   // moment, and the picture drawn smaller for one, the frames timed through
@@ -2109,9 +2123,25 @@ async function main() {
     report("perf", { why: "probe", probe: probe.got, ...frameState(), scale: probe.scale });
     toast("Test done, thanks");
   };
+  // (For the timeline: the game's milliseconds of work as last told, the
+  // screen's beat as last told, and the rung a frame being timed part by
+  // part was drawn at, if the last was.)
+  let workTold = 0;
+  let beatTold = pacer.state.beat;
+  let sampledAt = -1;
   const paced = async () => {
+    await pacedFrame();
+    // Now and then the frame about to be drawn is timed part by part (see
+    // sampleGpu): it is late for it, and passed over by the pacing. Not in
+    // a probe, which times its own way.
+    const kind = !probe && !document.body.classList.contains("sheet") && !document.hidden && timeline.sampleDue(performance.now());
+    sampledAt = kind ? pacer.state.rung : -1;
+    if (kind) platform.sampleGpu(kind);
+  };
+  const pacedFrame = async () => {
     await platform.nextFrame();
     let now = performance.now();
+    timeline.beat(now);
     // Aiming at a frame every second beat (or third), the beats between
     // are waited out, so that the frames come evenly rather than on
     // whichever beat each happens to make: each such wait is a beat of
@@ -2122,6 +2152,7 @@ async function main() {
         const was = now;
         await platform.nextFrame();
         now = performance.now();
+        timeline.beat(now);
         pacer.idle(now - was);
       }
     }
@@ -2138,14 +2169,24 @@ async function main() {
     pace.last = now;
     rate.frames++;
     // (Late as the pacing counts it: by half a beat past what it aims at.)
-    if (rate.frames > 1 && gap > (pacer.state.beats + 0.5) * pacer.state.beat && gap < 2000) rate.late++;
+    const late = gap > (pacer.state.beats + 0.5) * pacer.state.beat && gap < 2000;
+    if (rate.frames > 1 && late) rate.late++;
+    const sampled = platform.takeGpuSample();
+    if (sampled) timeline.sampled(now, sampledAt, sampled);
+    const work = platform.workMs();
+    timeline.frame(now, { gap, late: late && !sampled, rung: pacer.state.rung, aim: pace.on ? pacer.state.beats : 0, state: body.contains("sheet") ? "s" : "r", work: work - workTold });
+    workTold = work;
+    if (Math.abs(pacer.state.beat - beatTold) > 0.12 * beatTold) {
+      beatTold = pacer.state.beat;
+      timeline.event(now, "beat", Math.round(beatTold * 10) / 10);
+    }
     if (now - rate.since >= 500) {
       showStats();
       rate.frames = 0;
       rate.late = 0;
       rate.since = now;
     }
-    if (body.contains("sheet") || document.hidden) frames.skip = true;
+    if (body.contains("sheet") || document.hidden || sampled) frames.skip = true;
     else frameCame(gap, pacer.state.beats * pacer.state.beat);
     if (probe) probed(gap, now);
     // (Held behind a sheet, with no place shown off, the game draws
@@ -2159,7 +2200,7 @@ async function main() {
     // (Not the frames after a pause, or the first few after a place is
     // built: those are slow whatever the device.)
     if (gap > 250 || document.hidden) pace.quiet = now + 1500;
-    if (now < pace.quiet) return;
+    if (now < pace.quiet || sampled) return;
     const [was, aimed] = [pacer.state.rung, pacer.state.beats];
     const rung = pacer.frame(gap, now);
     if (rung !== was) {
@@ -2167,6 +2208,7 @@ async function main() {
       store("skate.rung", rung);
     }
     if (pacer.state.beats !== aimed) store("skate.beats", pacer.state.beats);
+    if (rung !== was || pacer.state.beats !== aimed) timeline.event(now, pacer.state.why, rung, pacer.state.beats, Math.round(gap));
   };
   if (params.has("diag")) diagnose(platform);
   const status = await runResumable(instance, async () => {
@@ -2176,6 +2218,7 @@ async function main() {
     if (!document.body.classList.contains("loading")) return paced();
     pace.quiet = performance.now() + 1500;
     frames.skip = true;
+    timeline.showing(performance.now(), "l");
     // (Of a build: the game's work up to this breath, and the breath.)
     const paused = performance.now();
     building.work += paused - building.since;

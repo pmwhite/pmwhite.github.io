@@ -108,6 +108,9 @@ export function createPacer({ work, rung = 0, beats = 1, beat = 1000 / 60, floor
     // (Frames quicker than the beat it believes in: the beat may be wrong.)
     quick: 0,
     quickMean: beat,
+    // Why it last changed the rung or the beats (for the reports: see
+    // timeline.js).
+    why: "",
   };
   const share = (flags, n) => {
     const from = Math.max(0, flags.length - n);
@@ -150,6 +153,7 @@ export function createPacer({ work, rung = 0, beats = 1, beat = 1000 / 60, floor
       // (A screen too fast to be worth every beat.)
       if (s.beats < least()) {
         s.beats = least();
+        s.why = "fast screen";
         s.from = -1;
         fresh(t);
         return s.rung;
@@ -192,6 +196,7 @@ export function createPacer({ work, rung = 0, beats = 1, beat = 1000 / 60, floor
         if (after > 0.5 * before && s.run < running) {
           s.base = Math.max(s.base, after);
           s.rung = Math.max(0, s.rung - 1);
+          s.why = "did not help";
           fresh(t);
           return s.rung;
         }
@@ -217,6 +222,7 @@ export function createPacer({ work, rung = 0, beats = 1, beat = 1000 / 60, floor
             while (to < last && work[to] > want) to++;
           }
           s.rung = Math.min(last, to);
+          s.why = s.run >= running ? "late running" : "often late";
           const rate = s.rate;
           fresh(t);
           s.rate = rate;
@@ -228,6 +234,7 @@ export function createPacer({ work, rung = 0, beats = 1, beat = 1000 / 60, floor
           const middle = [...s.gaps].sort((a, b) => a - b)[s.gaps.length >> 1];
           if (middle > aim + 0.9 * s.beat) s.retry = RETRY_MOST;
           s.beats = Math.min(BEATS_MOST, Math.max(s.beats + 1, Math.round(middle / s.beat)));
+          s.why = "late at the floor";
           s.eased = t;
           s.trial = null;
           if (s.from >= 0) s.rung = s.from;
@@ -241,6 +248,7 @@ export function createPacer({ work, rung = 0, beats = 1, beat = 1000 / 60, floor
       // aim at that.
       if (s.beats > least() && s.early.length >= LONG / 2 && share(s.early, LONG) >= 0.6) {
         s.beats--;
+        s.why = "early";
         s.from = -1;
         fresh(t);
         return s.rung;
@@ -258,6 +266,7 @@ export function createPacer({ work, rung = 0, beats = 1, beat = 1000 / 60, floor
       // Up.
       if (s.rung > 0 && quiet && t - s.changed >= s.hold) {
         s.rung--;
+        s.why = "quiet";
         s.up = t;
         s.held = s.hold;
         s.eager = false;
@@ -268,6 +277,7 @@ export function createPacer({ work, rung = 0, beats = 1, beat = 1000 / 60, floor
       if (s.beats > least() && quiet && t - s.eased >= s.retry && t - s.changed >= HOLD) {
         s.from = s.rung;
         s.beats--;
+        s.why = "retry";
         s.eased = t;
         s.retry = Math.min(s.retry * 2, RETRY_MOST);
         s.base = 0;
